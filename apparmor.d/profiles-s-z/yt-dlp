@@ -33,6 +33,8 @@ profile yt-dlp @{exec_path} {
   @{bin}/ffmpeg  rPx,
   @{bin}/ffprobe rPx,
 
+  @{bin}/deno rPx,
+
   /etc/magic r,
 
   owner @{user_music_dirs}/{,**} rwk,
@@ -41,6 +43,9 @@ profile yt-dlp @{exec_path} {
   owner @{user_cache_dirs}/yt-dlp/{,**} rw,
 
   owner @{user_config_dirs}/yt-dlp/{,**} rw,
+
+  owner @{tmp}/yt_dlp*/ rw,
+  owner @{tmp}/yt_dlp*/** rwk,
 
   owner @{PROC}/@{pid}/fd/ r,
 

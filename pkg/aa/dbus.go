@@ -16,7 +16,7 @@ func init() {
 			"send", "receive", "bind", "eavesdrop", "r", "read",
 			"w", "write", "rw",
 		},
-		"bus": []string{"system", "session", "accessibility"},
+		"bus": []string{"system", "session", "accessibility", "fcitx"},
 	}
 }
 
@@ -36,6 +36,12 @@ type Dbus struct {
 func newDbus(q Qualifier, rule rule) (Rule, error) {
 	accesses, err := toAccess(DBUS, rule.GetString())
 	if err != nil {
+		return nil, err
+	}
+	if err := rule.ValidateMapKeys([]string{"bus", "name", "path", "interface", "member", "peer"}); err != nil {
+		return nil, err
+	}
+	if err := rule.GetValues("peer").ValidateMapKeys([]string{"name", "label"}); err != nil {
 		return nil, err
 	}
 	return &Dbus{
@@ -60,6 +66,10 @@ func newDbusFromLog(log map[string]string) Rule {
 	} else {
 		peerName = log["name"]
 	}
+	member, present := log["member"]
+	if !present {
+		member = log["method"]
+	}
 	return &Dbus{
 		Base:      newBaseFromLog(log),
 		Qualifier: newQualifierFromLog(log),
@@ -68,7 +78,7 @@ func newDbusFromLog(log map[string]string) Rule {
 		Name:      name,
 		Path:      log["path"],
 		Interface: log["interface"],
-		Member:    log["member"],
+		Member:    member,
 		PeerName:  peerName,
 		PeerLabel: log["peer_label"],
 	}
@@ -90,7 +100,28 @@ func (r *Dbus) Validate() error {
 	if err := validateValues(r.Kind(), "access", r.Access); err != nil {
 		return fmt.Errorf("%s: %w", r, err)
 	}
-	return validateValues(r.Kind(), "bus", []string{r.Bus})
+	if err := validateValues(r.Kind(), "bus", []string{r.Bus}); err != nil {
+		return fmt.Errorf("%s: %w", r, err)
+	}
+
+	// Bind access cannot have member, interface, or path modifiers
+	if len(r.Access) == 1 && r.Access[0] == "bind" {
+		if r.Member != "" {
+			return fmt.Errorf("dbus bind cannot have member modifier")
+		}
+		if r.Interface != "" {
+			return fmt.Errorf("dbus bind cannot have interface modifier")
+		}
+	}
+
+	// Eavesdrop access cannot have non-bus modifiers
+	if len(r.Access) == 1 && r.Access[0] == "eavesdrop" {
+		if r.Name != "" || r.Path != "" || r.Interface != "" || r.Member != "" ||
+			r.PeerName != "" || r.PeerLabel != "" {
+			return fmt.Errorf("dbus eavesdrop cannot have non-bus modifiers")
+		}
+	}
+	return nil
 }
 
 func (r *Dbus) Compare(other Rule) int {

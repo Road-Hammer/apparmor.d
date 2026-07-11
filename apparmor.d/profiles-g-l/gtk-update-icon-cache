@@ -11,8 +11,13 @@ include <tunables/global>
 profile gtk-update-icon-cache @{exec_path} flags=(attach_disconnected) {
   include <abstractions/base>
   include <abstractions/consoles>
+  include <abstractions/icons>
+
+  capability fowner,
 
   @{exec_path} mr,
+
+  /usr/share/icons/**.icon r,
 
   @{system_share_dirs}/icons/{,**/} r,
   @{system_share_dirs}/icons/**/.icon-theme.cache rw,

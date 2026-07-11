@@ -15,13 +15,33 @@ profile deb-systemd-invoke @{exec_path} {
   capability net_admin,
   capability sys_resource,
 
+  ptrace read peer=@{p_systemd},
+
   signal send set=(cont term) peer=systemd-tty-ask-password-agent,
+
+  unix type=stream peer=(label=dbus-system),
+  unix type=stream peer=(label=deb-systemd-invoke//run),
+  unix type=stream peer=(label=systemd-stdio-bridge),
 
   @{exec_path} mr,
 
   @{sh_path} rix,
-  @{bin}/systemctl  rix,
+  @{bin}/dpkg        Px -> child-dpkg,
+  @{bin}/sed        rix,
+  @{bin}/systemctl  rix, #aa:lint ignore=transition
   @{bin}/systemd-tty-ask-password-agent Px,
+
+  @{bin}/systemd-run  Cx -> run,
+
+  /tmp/tmp.@{rand10} rw,
+
+  profile run {
+    include <abstractions/base>
+
+    capability net_admin,
+
+    include if exists <local/deb-systemd-invoke_run>
+  }
 
   include if exists <local/deb-systemd-invoke>
 }

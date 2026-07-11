@@ -11,12 +11,12 @@ include <tunables/global>
 profile xkbcomp @{exec_path} flags=(attach_disconnected) {
   include <abstractions/base>
   include <abstractions/consoles>
-  include <abstractions/consoles>
   include <abstractions/mesa>
   include <abstractions/X-strict>
 
   unix (send,receive) type=stream addr=none peer=(label=gnome-shell),
   unix (send,receive) type=stream addr=none peer=(label=xwayland),
+  unix (send,receive) type=stream addr=none peer=(label=kwin_wayland),
 
   @{exec_path} mr,
 

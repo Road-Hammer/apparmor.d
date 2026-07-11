@@ -1,7 +1,6 @@
 # apparmor.d - Full set of apparmor profiles
 # Copyright (C) 2024 Alexandre Pujol <alexandre@pujol.io>
 # SPDX-License-Identifier: GPL-2.0-only
-# vim:syntax=apparmor
 
 abi <abi/4.0>,
 
@@ -11,10 +10,24 @@ include <tunables/global>
 profile snapshot @{exec_path} flags=(attach_disconnected) {
   include <abstractions/base>
   include <abstractions/audio-client>
+  include <abstractions/camera>
   include <abstractions/common/gnome>
   include <abstractions/gstreamer>
+  include <abstractions/media-control>
   include <abstractions/nameservice-strict>
-  include <abstractions/video>
+
+  network netlink raw,
+
+  #aa:dbus own bus=session name=org.gnome.Snapshot
+
+  dbus send bus=session path=/org/freedesktop/portal/desktop
+       interface=org.freedesktop.portal.Camera
+       member=AccessCamera
+       peer=(name=org.freedesktop.portal.Desktop, label=xdg-desktop-portal),
+  dbus send bus=session path=/org/freedesktop/portal/desktop
+       interface=org.freedesktop.portal.Camera
+       member=OpenPipeWireRemote
+       peer=(name=org.freedesktop.portal.Desktop, label=xdg-desktop-portal),
 
   @{exec_path} mr,
 
@@ -22,8 +35,6 @@ profile snapshot @{exec_path} flags=(attach_disconnected) {
 
   owner @{user_pictures_dirs}/Camera/{,**} rw,
   owner @{user_videos_dirs}/Camera/{,**} rw,
-
-  @{sys}/devices/virtual/dmi/id/bios_vendor r,
 
   include if exists <local/snapshot>
 }

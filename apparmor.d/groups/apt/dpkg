@@ -18,6 +18,9 @@ profile dpkg @{exec_path} {
   capability fowner,
   capability fsetid,
   capability setgid,
+  capability sys_ptrace,
+
+  ptrace read peer=apt,
 
   @{exec_path} mr,
 
@@ -25,11 +28,15 @@ profile dpkg @{exec_path} {
   @{bin}/cat                  ix,
   @{bin}/deb-systemd-helper   Px,
   @{bin}/deb-systemd-invoke   Px,
+  @{bin}/diff                 ix,
   @{bin}/rm                   ix,
 
   @{bin}/dpkg-deb                   px,
+  @{bin}/dpkg-divert                px,
+  @{bin}/dpkg-maintscript-helper    px,
   @{bin}/dpkg-query                 px,
   @{bin}/dpkg-split                 px,
+  @{bin}/dpkg-trigger               px,
   @{bin}/systemctl                  Cx -> systemctl,
   @{lib}/needrestart/dpkg-status    Px,
   @{pager_path}                     Px -> child-pager,
@@ -43,10 +50,11 @@ profile dpkg @{exec_path} {
   # For shell pwd
   /root/ r,
 
+  #aa:lint ignore=too-wide
   # Install/update packages
   / r,
   /*{,/} rw,
-  /boot/** rwl -> /boot/**,
+  @{efi}/** rwl -> @{efi}/**,
   /etc/** rwl -> /etc/**,
   /opt/** rwl -> /opt/**,
   /srv/** rwl -> /srv/**,
@@ -60,7 +68,10 @@ profile dpkg @{exec_path} {
         @{PROC}/sys/kernel/random/boot_id r,
   owner @{PROC}/@{pid}/fd/ r,
 
-  owner /dev/tty@{int} rw,
+  owner /dev/tty@{u8} rw,
+
+  #aa:only test
+  /tmp/tmp@{word8}tmp/{,**} rwlk,
 
   profile systemctl {
     include <abstractions/base>

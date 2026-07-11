@@ -11,6 +11,7 @@ include <tunables/global>
 profile blueman-mechanism @{exec_path} flags=(attach_disconnected) {
   include <abstractions/base>
   include <abstractions/bus-system>
+  include <abstractions/fonts>
   include <abstractions/nameservice-strict>
   include <abstractions/python>
 
@@ -22,7 +23,7 @@ profile blueman-mechanism @{exec_path} flags=(attach_disconnected) {
   network inet6 stream,
   network netlink raw,
 
-  #aa:dbus own bus=system name=org.blueman.Mechanism
+  #aa:dbus own bus=system name=org.blueman.{m,M}echanism
 
   @{exec_path} mr,
 

@@ -12,8 +12,9 @@ include <tunables/global>
 profile thermald @{exec_path} flags=(attach_disconnected) {
   include <abstractions/base>
   include <abstractions/bus-system>
-  include <abstractions/bus/net.hadess.PowerProfiles>
-  include <abstractions/bus/org.freedesktop.UPower>
+  include <abstractions/power-profiles>
+  include <abstractions/upower-observe>
+  include <abstractions/sys/hwmon-temp>
 
   capability sys_boot,
 
@@ -24,11 +25,9 @@ profile thermald @{exec_path} flags=(attach_disconnected) {
   /etc/thermald/{,*} r,
 
   owner @{run}/thermald/ rw,
-  owner @{run}/thermald/thd_preference.conf rw,
-  owner @{run}/thermald/thd_preference.conf.save w,
+  owner @{run}/thermald/** rw,
   owner @{run}/thermald/thermald.pid rwk,
 
-  @{sys}/class/hwmon/ r,
   @{sys}/class/thermal/ r,
   @{sys}/devices/platform/ r,
   @{sys}/devices/platform/** r,
@@ -44,9 +43,6 @@ profile thermald @{exec_path} flags=(attach_disconnected) {
   @{sys}/devices/@{pci}/power_limits/power_limit_@{int}_tmax_us r,
   @{sys}/devices/@{pci}/power_limits/power_limit_@{int}_tmin_us r,
 
-  @{sys}/devices/**/hwmon@{int}/ r,
-  @{sys}/devices/**/hwmon@{int}/name r,
-  @{sys}/devices/**/hwmon@{int}/temp@{int}_{max,crit} r,
   @{sys}/devices/**/path r,
 
   @{sys}/devices/platform/*/uuids/current_uuid rw,

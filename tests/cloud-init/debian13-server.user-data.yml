@@ -2,8 +2,12 @@
 
 packages: *core-packages
 
-runcmd: *debian13-runcmd
+runcmd:
+  # Enable auditd systemd socket
+  - systemctl enable systemd-journald-audit.socket
 
 write_files:
-  - *shared-directory    # Setup shared directory
-  - *systemd-netword     # Network configuration for server
+  - *shared-directory          # Setup shared directory
+  - *systemd-netword           # Network configuration for server
+  - *disable-printk-ratelimit  # Disable printk rate limiting
+

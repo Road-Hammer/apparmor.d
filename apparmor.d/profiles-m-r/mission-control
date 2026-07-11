@@ -10,13 +10,13 @@ include <tunables/global>
 profile mission-control @{exec_path} flags=(attach_disconnected)  {
   include <abstractions/base>
   include <abstractions/dconf-write>
+  include <abstractions/gschemas>
 
   network netlink raw,
 
   @{exec_path} mr,
 
   /usr/share/telepathy/{,**} r,
-  /usr/share/glib-2.0/schemas/gschemas.compiled r,
 
   owner @{user_share_dirs}/telepathy/ rw,
   owner @{user_share_dirs}/telepathy/mission-control/ rw,
@@ -25,7 +25,7 @@ profile mission-control @{exec_path} flags=(attach_disconnected)  {
   owner @{user_config_dirs}/libaccounts-glib/accounts.db{,-shm,-wal} rwk,
   owner @{user_cache_dirs}/.mc_connections rw,
 
-  @{att}/@{run}/systemd/inhibit/@{int}.ref rw,
+  @{att}@{run}/systemd/inhibit/@{int}.ref rw,
 
   include if exists <local/mission-control>
 }

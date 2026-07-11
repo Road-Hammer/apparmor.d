@@ -6,7 +6,7 @@ abi <abi/4.0>,
 
 include <tunables/global>
 
-@{exec_path} = @{bin}/gtk-query-immodules-{2,3}.0 @{lib}/@{multiarch}/libgtk-*/gtk-query-immodules-*
+@{exec_path} = @{bin}/gtk-query-immodules-* @{lib}/@{multiarch}/libgtk-*/gtk-query-immodules-*
 profile gtk-query-immodules @{exec_path} {
   include <abstractions/base>
   include <abstractions/consoles>
@@ -17,7 +17,10 @@ profile gtk-query-immodules @{exec_path} {
   @{exec_path} mr,
 
   @{lib}/gtk-{2,3,4}.0/**/immodules.cache w,
-  @{lib}/gtk-{2,3,4}.0/**/immodules.cache.[0-9A-Z]* w,
+  @{lib}/gtk-{2,3,4}.0/**/immodules.cache.@{rand6} w,
+
+  @{lib}/@{multiarch}/gtk-{2,3,4}.0/**/immodules.cache w,
+  @{lib}/@{multiarch}/gtk-{2,3,4}.0/**/immodules.cache.@{rand6} w,
 
   # Inherit silencer
   deny network inet6 stream,

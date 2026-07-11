@@ -7,25 +7,24 @@ abi <abi/4.0>,
 include <tunables/global>
 
 @{exec_path} = /usr/share/libalpm/scripts/depmod
-profile pacman-hook-depmod @{exec_path} {
+profile pacman-hook-depmod @{exec_path} flags=(attach_disconnected) {
   include <abstractions/base>
 
   capability dac_read_search,
 
   @{exec_path} mr,
 
+  @{sh_path}       rix,
   @{bin}/basename  rix,
-  @{bin}/bash      rix,
-  @{sbin}/depmod   rPx,
   @{bin}/kmod      rPx,
   @{bin}/rm        rix,
   @{bin}/rmdir     rix,
 
-  /usr/lib/modules/*/{,**} rw,
+  @{lib}/modules/*/{,**} rw,
 
         /dev/tty rw,
-        /dev/tty@{int} rw,
-  owner /dev/pts/@{int} rw,
+        /dev/tty@{u8} rw,
+  owner /dev/pts/@{u16} rw,
 
   # Inherit Silencer
   deny network inet6 stream,

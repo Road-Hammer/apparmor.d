@@ -3,12 +3,15 @@
 # Copyright (C) 2021-2024 Alexandre Pujol <alexandre@pujol.io>
 # SPDX-License-Identifier: GPL-2.0-only
 
-# Based on Libvirt Apparmor profile, it is largelly restricted from it.
-# As upstream profile mostly focus on confining the guests. Not libvirt itself.
-# It uses a lot of profiles provided by apparmor.d
-# Source: https://gitlab.com/libvirt/libvirt/-/blob/master/src/security/apparmor/usr.sbin.libvirtd.in
-
-# Warning: Such a profile is limited as it gives access to a lot of resources.
+# This profile was originally adapted from Libvirt Apparmor profile, it is
+# largelly restricted from it. As upstream profile mostly focus on confining the
+# guests, not libvirt itself.
+#
+# The current profile uses a lot of profiles provided by apparmor.d
+#
+# !!! example "Sources"
+#
+#     - https://gitlab.com/libvirt/libvirt/-/blob/master/src/security/apparmor/usr.sbin.libvirtd.in
 
 abi <abi/4.0>,
 
@@ -17,10 +20,15 @@ include <tunables/global>
 @{exec_path} = @{sbin}/libvirtd
 profile libvirtd @{exec_path} flags=(attach_disconnected) {
   include <abstractions/base>
+  include <abstractions/bus-session>
+  include <abstractions/bus-system>
+  include <abstractions/bus/session/org.gtk.vfs.MountTracker>
+  include <abstractions/bus/system/org.freedesktop.login1>
+  include <abstractions/bus/system/org.freedesktop.PolicyKit1>
   include <abstractions/consoles>
-  include <abstractions/dbus>
   include <abstractions/devices-usb>
   include <abstractions/disks-write>
+  include <abstractions/mime>
   include <abstractions/nameservice-strict>
 
   capability audit_write,
@@ -46,25 +54,29 @@ profile libvirtd @{exec_path} flags=(attach_disconnected) {
   capability sys_pacct,
   capability sys_ptrace,
   capability sys_rawio,
-  capability sys_resource,
+  capability sys_resource,  # Needed for vfio
 
-  network inet stream,
   network inet dgram,
-  network inet6 stream,
+  network inet stream,
   network inet6 dgram,
+  network inet6 stream,
   network netlink raw,
   network packet dgram,
   network packet raw,
 
-  mount options=(rw, rslave) -> /,
+  mount options=(rw, make-rslave) /,
   mount options=(rw, nosuid) -> @{run}/libvirt/qemu/*.dev/,
-  umount @{run}/libvirt/qemu/*.dev/,
 
   # Libvirt provides any mounts under /dev to qemu namespaces
   mount options=(rw, move) /dev/ -> @{run}/libvirt/qemu/*.dev/,
   mount options=(rw, move) /dev/** -> @{run}/libvirt/qemu/*{,/},
   mount options=(rw, move) @{run}/libvirt/qemu/*.dev/ -> /dev/,
   mount options=(rw, move) @{run}/libvirt/qemu/*{,/} -> /dev/**,
+
+  umount @{run}/libvirt/qemu/*.dev/,
+  umount /dev/,
+
+  mqueue getattr type=posix /,
 
   ptrace (read,trace) peer=@{profile_name},
   ptrace (read,trace) peer=dnsmasq,
@@ -85,9 +97,24 @@ profile libvirtd @{exec_path} flags=(attach_disconnected) {
   unix (send, receive) type=stream addr=none peer=(label=libvirtd//qemu_bridge_helper),
   unix (send, receive) type=stream addr=none peer=(label=unconfined addr=none),
   unix (send, receive) type=stream addr=none peer=(label=unconfined),
+  unix (send, receive) type=stream addr=none peer=(label=virt-manager),
 
   # Allow changing to our UUID-based named profiles
   change_profile -> libvirt-@{uuid},
+
+  #aa:dbus talk bus=system name=org.fedoraproject.FirewallD1 label=firewalld
+  #aa:dbus talk bus=system name=org.freedesktop.machine1 label=systemd-machined
+
+  dbus receive bus=session
+       interface=org.freedesktop.DBus.Introspectable
+       member=Introspect
+       peer=(name=@{busname}, label="{gnome-shell,gnome-extension}"),
+
+  # include <abstractions/bus/system/own>
+  dbus send bus=system path=/org/freedesktop/DBus
+       interface=org.freedesktop.DBus
+       member={ListNames,ListActivatableNames}
+       peer=(name=org.freedesktop.DBus, label="@{p_dbus_system}"),
 
   @{exec_path} mr,
 
@@ -103,26 +130,29 @@ profile libvirtd @{exec_path} flags=(attach_disconnected) {
   @{lib}/xen-common/bin/xen-toolstack              rPUx,
   @{lib}/xen/bin/*                                 rPUx,
 
-  @{sbin}/dmidecode                           rPx,
-  @{sbin}/dnsmasq                             rPx,
-  @{bin}/kmod                                 rPx,
-  @{sbin}/lvm                                 rPUx,
-  @{bin}/mdevctl                              rPx,
+  @{bin}/kmod                                 rCx -> kmod,
+  @{bin}/mdevctl                              rPx, #aa:lint ignore=sbin
+  @{bin}/ssh                                  rPx,
   @{bin}/swtpm                                rPx,
   @{bin}/swtpm_ioctl                          rPx,
   @{bin}/swtpm_setup                          rPx,
   @{bin}/udevadm                              rPx,
-  @{bin}/virtiofsd                            rux, # TODO: WIP
+  @{bin}/virtiofsd                            rPx, # TODO: WIP
+  @{sbin}/dmidecode                           rPx,
+  @{sbin}/dnsmasq                             rPx,
+  @{sbin}/lvm                                 rPUx,
+  @{sbin}/mdevctl                             rPx,
   @{sbin}/virtlogd                            rPx,
 
   @{sh_path}                    rix,
+  @{bin}/ip                     rix, #aa:lint ignore=sbin
   @{sbin}/ip                    rix,
   @{sbin}/nft                   rix,
   @{bin}/qemu-img               rUx, # TODO: Integration with virt-aa-helper
   @{bin}/qemu-system*           rUx, # TODO: Integration with virt-aa-helper
   @{sbin}/tc                    rix,
   @{bin}/xmllint                rix,
-  @{sbin}/xtables-nft-multi     rix,
+  @{sbin}/xtables-{nft,legacy}-multi  rix,
   @{lib}/libvirt/virt-aa-helper rPx,
 
   /etc/libvirt/hooks/**    rPUx,
@@ -130,11 +160,12 @@ profile libvirtd @{exec_path} flags=(attach_disconnected) {
   /var/lib/libvirt/virtd*  rix,
 
   /usr/share/edk2*/{,**} rk,
+  /usr/share/gvfs/remote-volume-monitors/{,**} r,
   /usr/share/hwdata/* r,
   /usr/share/iproute2/{,**} r,
   /usr/share/libvirt/{,**} r,
-  /usr/share/mime/mime.cache r,
   /usr/share/misc/pci.ids r,
+  /usr/share/OVMF/{,**} rk,
   /usr/share/qemu/{,**} r,
 
   @{etc_rw}/apparmor.d/libvirt/libvirt-@{uuid} r,
@@ -143,8 +174,11 @@ profile libvirtd @{exec_path} flags=(attach_disconnected) {
   /etc/sasl2/qemu.conf r,
   /etc/xml/catalog r,
 
+  / r,
+
   /var/cache/libvirt/{,**} rw,
-  /var/lib/libvirt/{,**} rwk,
+  /var/lib/libvirt/ rw,
+  /var/lib/libvirt/** rwk,
   /var/log/swtpm/libvirt/{,**} rw,
 
   # User VM images and share
@@ -153,42 +187,63 @@ profile libvirtd @{exec_path} flags=(attach_disconnected) {
   @{user_vm_dirs}/{,**} rwk,
   @{user_publicshare_dirs}/{,**} rwk,
 
-  @{att}/@{run}/systemd/inhibit/@{int}.ref rw,
+  owner @{user_cache_dirs}/libvirt/{,**} rwk,
+  owner @{user_config_dirs}/libvirt/{,**} rwk,
 
+  owner @{run}/user/@{uid}/libvirt/ rw,
+  owner @{run}/user/@{uid}/libvirt/** rwk,
+
+  @{att}@{run}/systemd/inhibit/@{int}.ref rw,
+
+  /dev/shm/ w,
+
+  @{run}/credentials/libvirtd.service/secrets-encryption-key r,
   @{run}/libvirt/ rw,
   @{run}/libvirt/** rwk,
   @{run}/libvirtd.pid wk,
   @{run}/lock/LCK.._pts_@{int} rw,
-  @{run}/systemd/notify w,
   @{run}/utmp rk,
 
-  @{run}/udev/data/+*:* r,
-  @{run}/udev/data/c@{int}:@{int} r,
-  @{run}/udev/data/n@{int} r,
+  @{run}/udev/data/+*:* r,                # Identifies all subsystems
+  @{run}/udev/data/c@{int}:@{int} r,      # Identifies all character devices
+  @{run}/udev/data/n@{int} r,             # For network interfaces
 
   @{sys}/bus/[a-z]*/devices/ r,
+  @{sys}/bus/**/uevent r,
+  @{sys}/bus/hid/drivers/*/uevent r,
   @{sys}/bus/pci/drivers_probe w,
   @{sys}/bus/pci/drivers/*/unbind w,
+  @{sys}/bus/usb/drivers/*/uevent r,
   @{sys}/class/[a-z]*/ r,
-  @{sys}/devices/**/uevent r,
-  @{sys}/devices/@{pci}/{class,revision,subsystem_vendor,subsystem_device} r,
-  @{sys}/devices/@{pci}/{config,numa_node,device,vendor} r,
+  @{sys}/devices/@{pci}/class r,
+  @{sys}/devices/@{pci}/config r,
+  @{sys}/devices/@{pci}/device r,
   @{sys}/devices/@{pci}/driver_override w,
   @{sys}/devices/@{pci}/mdev_supported_types/{,**} r,
   @{sys}/devices/@{pci}/mdev_supported_types/*/create w,
   @{sys}/devices/@{pci}/net/*/{,**} r,
+  @{sys}/devices/@{pci}/numa_node r,
   @{sys}/devices/@{pci}/remove w,
   @{sys}/devices/@{pci}/resource r,
+  @{sys}/devices/@{pci}/revision r,
   @{sys}/devices/@{pci}/sriov_totalvfs r,
+  @{sys}/devices/@{pci}/subsystem_device r,
+  @{sys}/devices/@{pci}/subsystem_vendor r,
+  @{sys}/devices/@{pci}/vendor r,
+  @{sys}/devices/**/uevent r,
 
+  @{sys}/devices/@{pci}/distance r,
+  @{sys}/devices/@{pci}/meminfo r,
   @{sys}/devices/system/cpu/cpu@{int}/cache/{,**} r,
   @{sys}/devices/system/cpu/cpu@{int}/topology/{,**} r,
   @{sys}/devices/system/cpu/isolated r,
   @{sys}/devices/system/cpu/present r,
   @{sys}/devices/system/node/ r,
   @{sys}/devices/system/node/node@{int}/ r,
-  @{sys}/devices/system/node/node@{int}/{cpumap,distance,meminfo} r,
+  @{sys}/devices/system/node/node@{int}/cpumap r,
+  @{sys}/devices/system/node/node@{int}/distance r,
   @{sys}/devices/system/node/node@{int}/hugepages/{,**} r,
+  @{sys}/devices/system/node/node@{int}/meminfo r,
   @{sys}/devices/virtual/dmi/id/* r,
   @{sys}/devices/virtual/net/{,**} rw,
 
@@ -198,6 +253,7 @@ profile libvirtd @{exec_path} flags=(attach_disconnected) {
   @{sys}/kernel/mm/hugepages/{,**} r,
   @{sys}/kernel/security/apparmor/profiles r,
 
+  @{sys}/module/*/uevent r,
   @{sys}/module/kvm_*/parameters/* r,
   @{sys}/module/vhost/parameters/max_mem_regions r,
 
@@ -221,6 +277,7 @@ profile libvirtd @{exec_path} flags=(attach_disconnected) {
         @{PROC}/devices r,
         @{PROC}/mtrr w,
         @{PROC}/sys/net/ipv{4,6}/** rw,
+        @{PROC}/uptime r,
   owner @{PROC}/@{pid}/fd/ r,
   owner @{PROC}/@{pid}/mounts r,
   owner @{PROC}/@{pid}/task/@{tid}/comm rw,
@@ -231,9 +288,14 @@ profile libvirtd @{exec_path} flags=(attach_disconnected) {
   /dev/kvm rw,
   /dev/mapper/ r,
   /dev/mapper/control rw,
+  /dev/mqueue/ w,
   /dev/net/tun rw,
   /dev/ptmx rw,
+  /dev/pts/ w,
+  /dev/random rw,
   /dev/shm/libvirt/{,**} rw,
+  /dev/urandom rw,
+  /dev/userfaultfd w,
   /dev/vfio/@{int} rwk,
   /dev/vhost-net rw,
 
@@ -243,6 +305,20 @@ profile libvirtd @{exec_path} flags=(attach_disconnected) {
   audit deny @{sys}/kernel/security/apparmor/features rwxl,
   audit deny @{sys}/kernel/security/apparmor/matching rwxl,
   audit deny @{sys}/kernel/security/apparmor/.* rwxl,
+
+  profile kmod {
+    include <abstractions/base>
+    include <abstractions/app/kmod>
+
+    capability sys_module,
+
+    @{sys}/module/compression r,
+    @{sys}/module/iommufd/initstate r,
+    @{sys}/module/irqbypass/initstate r,
+    @{sys}/module/vfio/initstate r,
+
+    include if exists <local/libvirtd_kmod>
+  }
 
   profile qemu_bridge_helper {
     include <abstractions/base>
@@ -262,7 +338,7 @@ profile libvirtd @{exec_path} flags=(attach_disconnected) {
 
     /etc/qemu/{,**} r,
 
-    owner @{PROC}/@{pids}/status r,
+    @{PROC}/@{pids}/status r,
 
     /dev/net/tun rw,
 

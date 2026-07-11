@@ -7,16 +7,14 @@ abi <abi/4.0>,
 include <tunables/global>
 
 @{exec_path} = @{lib}/goa-daemon
-profile goa-daemon @{exec_path} {
+profile goa-daemon @{exec_path} flags=(attach_disconnected) {
   include <abstractions/base>
-  include <abstractions/bus-session>
-  include <abstractions/bus-system>
-  include <abstractions/bus/org.freedesktop.NetworkManager>
-  include <abstractions/bus/org.gtk.vfs.MountTracker>
   include <abstractions/dconf-write>
   include <abstractions/gnome-strict>
   include <abstractions/nameservice-strict>
+  include <abstractions/network-manager-observe>
   include <abstractions/p11-kit>
+  include <abstractions/secrets-service>
   include <abstractions/ssl_certs>
 
   network inet stream,
@@ -30,11 +28,11 @@ profile goa-daemon @{exec_path} {
   dbus send bus=session path=/org/gnome/Identity
        interface=org.freedesktop.DBus.ObjectManager
        member=GetManagedObjects
-       peer=(name=:*, label=goa-identity-service),
+       peer=(name=@{busname}, label=goa-identity-service),
   dbus send bus=session path=/org/gnome/Identity/Manager
        interface=org.freedesktop.DBus.Properties
        member=GetAll
-       peer=(name=:*, label=goa-identity-service),
+       peer=(name=@{busname}, label=goa-identity-service),
 
   @{exec_path} mr,
 

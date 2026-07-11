@@ -10,22 +10,28 @@ include <tunables/global>
 profile kcminit @{exec_path} {
   include <abstractions/base>
   include <abstractions/bus-session>
-  include <abstractions/gtk>
+  include <abstractions/bus/session/org.freedesktop.systemd1>
   include <abstractions/kde-strict>
+  include <abstractions/ibus-strict>
+
+  #aa:dbus own bus=session name=org.kde.{KCMI,kcmi}nit path=/kcminit
+
+  #aa:dbus talk bus=session name=org.kde.KSplash path=/KSplash label=ksplashqml
+  #aa:dbus talk bus=session name=org.kde.KWin label=kwin_wayland
 
   @{exec_path} mr,
 
   @{bin}/xrdb      rPx,
   @{bin}/xsetroot  rPx,
 
-  /etc/machine-id r,
   /etc/xdg/kcmdisplayrc r,
+  /etc/X11/xorg.conf r,
 
   owner @{HOME}/.Xdefaults r,
 
-  owner @{user_config_dirs}/#@{int} rw,
   owner @{user_config_dirs}/gtkrc-2.0{,.@{rand6}} rwl,
   owner @{user_config_dirs}/gtkrc{,.@{rand6}} rwl,
+  owner @{user_config_dirs}/kcmfonts r,
   owner @{user_config_dirs}/kcminputrc{,.@{rand6}} rwl,
   owner @{user_config_dirs}/kcminputrc.lock rwk,
   owner @{user_config_dirs}/kgammarc r,

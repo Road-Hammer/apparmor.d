@@ -37,7 +37,7 @@ profile gdm-session-worker @{exec_path} flags=(attach_disconnected) {
   signal send set=hup peer=dbus-accessibility,
   signal send set=hup peer=dbus-session,
   signal send set=hup peer=dconf-service,
-  signal send set=hup peer=gjs-console,
+  signal send set=hup peer=gjs,
   signal send set=hup peer=gnome-*,
   signal send set=hup peer=gsd-*,
   signal send set=hup peer=ibus-*,
@@ -49,13 +49,18 @@ profile gdm-session-worker @{exec_path} flags=(attach_disconnected) {
 
   unix bind type=stream addr=@@{udbus}/bus/gdm-session-wor/system,
 
-  #aa:dbus talk bus=system name=org.freedesktop.Accounts label=accounts-daemon
-  #aa:dbus talk bus=system name=org.freedesktop.home1 interface=org.freedesktop.home1.Manager label=systemd-homed
+  #aa:dbus talk bus=system name=org.freedesktop.Accounts label="@{p_accounts_daemon}"
+  #aa:dbus talk bus=system name=org.freedesktop.home1 interface=org.freedesktop.home1.Manager label="@{p_systemd_homed}"
 
   dbus send bus=system path=/org/freedesktop/login1
        interface=org.freedesktop.login1.Manager
        member={*Session,CreateSessionWithPIDFD}
-       peer=(name=org.freedesktop.login1, label=systemd-logind),
+       peer=(name=org.freedesktop.login1, label="@{p_systemd_logind}"),
+
+  dbus send bus=system path=/org/freedesktop/home1
+       interface=org.freedesktop.home1.Manager
+       member=GetUserRecordByName
+       peer=(name=org.freedesktop.home1, label="@{p_systemd_homed}"),
 
   @{exec_path} mrix,
 
@@ -75,8 +80,6 @@ profile gdm-session-worker @{exec_path} flags=(attach_disconnected) {
   /etc/nshadow rw,
   /etc/shadow w,
 
-  @{etc_ro}/environment r,
-  @{etc_ro}/security/limits.d/{,*.conf} r,
   /etc/default/locale r,
   /etc/fscrypt.conf r,
   /etc/gdm{3,}/custom.conf r,
@@ -99,6 +102,7 @@ profile gdm-session-worker @{exec_path} flags=(attach_disconnected) {
         /.fscrypt/protectors/ r,
   owner /.fscrypt/protectors/@{hex16} r,
 
+  #aa:lint ignore=tunables
         /home/ r,
         /home/.fscrypt/policies/ r,
   owner /home/.fscrypt/policies/@{hex32} r,
@@ -107,6 +111,9 @@ profile gdm-session-worker @{exec_path} flags=(attach_disconnected) {
   owner @{HOME}/.pam_environment r,
 
   owner @{user_cache_dirs}/ w,
+
+  @{run}/systemd/home/@{user}.dont-suspend w,
+  @{run}/systemd/io.systemd.Login rw,
 
         @{run}/cockpit/active.issue r,
         @{run}/cockpit/inactive.motd r,
@@ -118,12 +125,13 @@ profile gdm-session-worker @{exec_path} flags=(attach_disconnected) {
   owner @{run}/gdm{3,}/dbus/ w,
   owner @{run}/gdm{3,}/dbus/dbus-@{rand8} w,
 
-  @{att}/@{run}/systemd/sessions/{,@{l}}@{int}.ref rw,
+  @{att}@{run}/systemd/sessions/{,@{l}}@{int}.ref rw,
   @{run}/cockpit/active.motd r,
   @{run}/faillock/@{user} rwk,
   @{run}/fscrypt/ rw,
   @{run}/fscrypt/@{uid}.count rwk,
   @{run}/motd.d/{,*} r,
+  @{run}/systemd/io.systemd.Login rw,
   @{run}/systemd/sessions/* r,
   @{run}/systemd/users/@{uid} r,
   @{run}/utmp rwk,
@@ -138,7 +146,7 @@ profile gdm-session-worker @{exec_path} flags=(attach_disconnected) {
   owner @{PROC}/@{pid}/uid_map r,
 
   /dev/tty rw,
-  /dev/tty@{int} rw,
+  /dev/tty@{u8} rw,
 
   include if exists <local/gdm-session-worker>
 }

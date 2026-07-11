@@ -1,0 +1,48 @@
+{{- /* apparmor.d - Full set of apparmor profiles */ -}}
+{{- /* Copyright (C) 2021-2024 Alexandre Pujol <alexandre@pujol.io> */ -}}
+{{- /* SPDX-License-Identifier: GPL-2.0-only */ -}}
+
+{{- define "file" -}}
+    {{- template "qualifier" . -}}
+    {{- if .Owner -}}
+        {{- "owner " -}}
+    {{- end -}}
+    {{- .Padding 2 -}}
+    {{- if and (not .Path) (not .Target) (not .Access) -}}
+        {{- "file" -}}
+    {{- end -}}
+    {{- with .Path -}}
+        {{- . -}}{{- " " -}}
+    {{- end -}}
+    {{- .Padding 3 -}}
+    {{- range .Access -}}
+        {{- . -}}
+    {{- end -}}
+    {{- with .Target -}}
+        {{ " -> " }}{{ . }}
+    {{- end -}}
+    {{- "," -}}
+    {{- .Padding 4 -}}
+    {{- template "comment" . -}}
+{{- end -}}
+
+{{- define "link" -}}
+    {{- template "qualifier" . -}}
+    {{- if .Owner -}}
+        {{- "owner " -}}
+    {{- end -}}
+    {{- .Padding 2 -}}
+    {{- "link " -}}
+    {{- if .Subset -}}
+        {{- "subset " -}}
+    {{- end -}}
+    {{- .Padding 3 -}}
+    {{- .Path -}}
+    {{- " " -}}
+    {{- with .Target -}}
+        {{ "-> " }}{{ . }}
+    {{- end -}}
+    {{- "," -}}
+    {{- .Padding 4 -}}
+    {{- template "comment" . -}}
+{{- end -}}

@@ -3,38 +3,55 @@
 
 # Warning: for development only, use https://aur.archlinux.org/packages/apparmor.d-git for production use.
 
-pkgname=apparmor.d
-pkgver=0.001
+pkgbase=apparmor.d
+pkgname=(
+  apparmor.d
+  apparmor.d-base
+  apparmor.d-tools
+)
+pkgver=0.4909.0
 pkgrel=1
 pkgdesc="Full set of apparmor profiles"
 arch=('x86_64' 'armv6h' 'armv7h' 'aarch64')
-url="https://github.com/roddhjav/$pkgname"
+url="https://github.com/roddhjav/apparmor.d"
 license=('GPL-2.0-only')
-depends=('apparmor')
-makedepends=('go' 'git' 'rsync' 'just')
-conflicts=("$pkgname-git")
-
-pkgver() {
-  cd "$srcdir/$pkgname"
-  echo "0.$(git rev-list --count HEAD)"
-}
+makedepends=('go' 'rsync' 'just')
 
 prepare() {
   rsync -a --delete "$startdir" "$srcdir"
 }
 
 build() {
-  cd "$srcdir/$pkgname"
+  cd "$srcdir/$pkgbase"
   export CGO_CPPFLAGS="${CPPFLAGS}"
   export CGO_CFLAGS="${CFLAGS}"
   export CGO_CXXFLAGS="${CXXFLAGS}"
   export CGO_LDFLAGS="${LDFLAGS}"
-  export GOFLAGS="-buildmode=pie -trimpath -ldflags=-linkmode=external -mod=readonly -modcacherw"
+  export GOPATH="${srcdir}"
+  export GOFLAGS="-buildmode=pie -trimpath -ldflags=-linkmode=external -mod=readonly -modcacherw -tags=dev"
   export DISTRIBUTION=arch
   just complain
+#   just prebuild
+  # just build-aa-flatpak
 }
 
-package() {
-  cd "$srcdir/$pkgname"
-  just destdir="$pkgdir" install
+package_apparmor.d() {
+  depends=('apparmor' 'apparmor.d-base' 'apparmor.d-tools')
+  arch=("any")
+  cd "$srcdir/$pkgbase"
+  just destdir="$pkgdir" install-prebuilt
+}
+
+package_apparmor.d-base() {
+  pkgdesc="$pkgdesc (base abstractions, tunables, and booleans)"
+  arch=("any")
+  cd "$srcdir/$pkgbase"
+  just destdir="$pkgdir" install-base
+}
+
+package_apparmor.d-tools() {
+  pkgdesc="$pkgdesc (userland toolings)"
+  cd "$srcdir/$pkgbase"
+  just destdir="$pkgdir" install-tools
+  # just destdir="$pkgdir" install-aa-flatpak
 }

@@ -12,10 +12,15 @@ const UNIX Kind = "unix"
 
 func init() {
 	requirements[UNIX] = requirement{
+		"type":     []string{"stream", "dgram", "seqpacket", "rdm", "raw", "packet"},
+		"protocol": []string{"tcp", "udp", "icmp"},
 		"access": []string{
 			"create", "bind", "listen", "accept", "connect", "shutdown",
 			"getattr", "setattr", "getopt", "setopt", "send", "receive",
 			"r", "w", "rw",
+		},
+		"local-only": []string{
+			"create", "bind", "listen", "getattr", "setattr", "getopt", "setopt", "shutdown",
 		},
 	}
 }
@@ -37,6 +42,12 @@ type Unix struct {
 func newUnix(q Qualifier, rule rule) (Rule, error) {
 	accesses, err := toAccess(UNIX, rule.GetString())
 	if err != nil {
+		return nil, err
+	}
+	if err := rule.ValidateMapKeys([]string{"type", "protocol", "addr", "label", "attr", "opt", "peer"}); err != nil {
+		return nil, err
+	}
+	if err := rule.GetValues("peer").ValidateMapKeys([]string{"label", "addr"}); err != nil {
 		return nil, err
 	}
 	return &Unix{
@@ -86,6 +97,14 @@ func (r *Unix) Validate() error {
 	if err := validateValues(r.Kind(), "access", r.Access); err != nil {
 		return fmt.Errorf("%s: %w", r, err)
 	}
+	if err := validateValues(r.Kind(), "type", []string{r.Type}); err != nil {
+		return fmt.Errorf("%s: %w", r, err)
+	}
+	if r.PeerLabel != "" || r.PeerAddr != "" {
+		if len(r.Access) > 0 && allLocalOnly(r.Access, requirements[UNIX]["local-only"]) {
+			return fmt.Errorf("peer modifier not allowed with local-only access types in unix rule")
+		}
+	}
 	return nil
 }
 
@@ -98,6 +117,9 @@ func (r *Unix) Compare(other Rule) int {
 		return res
 	}
 	if res := compare(r.Protocol, o.Protocol); res != 0 {
+		return res
+	}
+	if res := compare(r.Address == "", o.Address == ""); res != 0 {
 		return res
 	}
 	if res := compare(r.Address, o.Address); res != 0 {
@@ -143,7 +165,6 @@ func (r *Unix) Lengths() []int {
 		r.getLenAccess(),
 		length("", r.Access),
 		length("type=", r.Type),
-		length("protocol=", r.Protocol),
 		length("addr=", r.Address),
 		length("label=", r.Label),
 	}
@@ -151,7 +172,7 @@ func (r *Unix) Lengths() []int {
 
 func (r *Unix) setPaddings(max []int) {
 	r.Paddings = append(r.Qualifier.setPaddings(max[:2]), setPaddings(
-		max[2:], []string{"", "type=", "protocol=", "addr=", "label="},
-		[]any{r.Access, r.Type, r.Protocol, r.Address, r.Label})...,
+		max[2:], []string{"", "type=", "addr=", "label="},
+		[]any{r.Access, r.Type, r.Address, r.Label})...,
 	)
 }

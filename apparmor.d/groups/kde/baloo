@@ -8,8 +8,9 @@ include <tunables/global>
 
 @{exec_path}  = @{bin}/baloo_file @{lib}/{,kf6/}baloo_file
 @{exec_path} += @{lib}/@{multiarch}/{,libexec/}baloo_file
-profile baloo @{exec_path} {
+profile baloo @{exec_path} flags=(attach_disconnected) {
   include <abstractions/base>
+  include <abstractions/bus/system/org.freedesktop.UDisks2>
   include <abstractions/deny-sensitive-home>
   include <abstractions/disks-read>
   include <abstractions/fontconfig-cache-write>
@@ -24,10 +25,10 @@ profile baloo @{exec_path} {
 
   @{lib}/{,kf6/}baloo_file_extractor rix,
 
-  /usr/share/poppler/{,**} r,
-
   /etc/fstab r,
   /etc/machine-id r,
+
+  / r,
 
   # Allow to search user files
   owner @{HOME}/{,**} r,
@@ -36,7 +37,6 @@ profile baloo @{exec_path} {
 
   owner @{user_cache_dirs}/kcrash-metadata/ w,
 
-  owner @{user_config_dirs}/#@{int} rw,
   owner @{user_config_dirs}/baloofilerc rwl,
   owner @{user_config_dirs}/baloofilerc.lock rwkl,
 
@@ -44,8 +44,8 @@ profile baloo @{exec_path} {
 
   @{run}/mount/utab r,
 
-  @{run}/udev/data/+*:* r,
-  @{run}/udev/data/c@{int}:@{int} r,
+  @{run}/udev/data/+*:* r,                # Identifies all subsystems
+  @{run}/udev/data/c@{int}:@{int} r,      # Identifies all character devices
 
   @{sys}/bus/ r,
   @{sys}/bus/*/devices/ r,

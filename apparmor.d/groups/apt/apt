@@ -10,10 +10,10 @@ include <tunables/global>
 @{exec_path} = @{bin}/apt @{bin}/apt-get @{sbin}/aptd
 profile apt @{exec_path} flags=(attach_disconnected) {
   include <abstractions/base>
-  include <abstractions/common/apt>
+  include <abstractions/apt>
   include <abstractions/bus-system>
-  include <abstractions/bus/org.freedesktop.login1>
-  include <abstractions/bus/org.freedesktop.PolicyKit1>
+  include <abstractions/bus/system/org.freedesktop.login1>
+  include <abstractions/bus/system/org.freedesktop.PolicyKit1>
   include <abstractions/consoles>
   include <abstractions/nameservice-strict>
   include <abstractions/python>
@@ -35,6 +35,7 @@ profile apt @{exec_path} flags=(attach_disconnected) {
 
   unix bind type=stream addr=@@{udbus}/bus/apt-get/system,
   unix bind type=stream addr=@@{udbus}/bus/apt/system,
+  unix bind type=stream addr=@@{udbus}/bus/aptd/system,
 
   unix                 type=stream peer=(label=@{p_snap}),
   unix (send, receive) type=stream peer=(label=apt-esm-json-hook),
@@ -55,16 +56,19 @@ profile apt @{exec_path} flags=(attach_disconnected) {
   dbus send bus=system
        interface=org.freedesktop.DBus.Introspectable
        member=Introspect
-       peer=(name="{:*,org.freedesktop.DBus}"),
+       peer=(name="{@{busname},org.freedesktop.DBus}"),
 
   @{exec_path} mr,
   @{python_path} mr,
 
   @{bin}/ r,
+  @{sbin}/ r,
 
   @{sh_path}        rix,
   @{bin}/{,e}grep   rix,
+  @{bin}/cat        rix,
   @{bin}/echo       rix,
+  @{bin}/false      rix,
   @{bin}/gdbus      rix,
   @{bin}/id         rix,
   @{bin}/test       rix,
@@ -81,16 +85,17 @@ profile apt @{exec_path} flags=(attach_disconnected) {
   @{bin}/dpkg                            rPx,
   @{bin}/dpkg-source                     rcx -> dpkg-source,
   @{bin}/etckeeper                       rPx,
+  @{bin}/fakeroot-sysv                   rCx -> fakeroot-sysv,
   @{bin}/ischroot                        rPx,
   @{bin}/localepurge                     rPx,
   @{bin}/ps                              rPx,
   @{bin}/snap                            rPx,
   @{bin}/systemctl                       rCx -> systemctl,
   @{bin}/update-command-not-found        rPx,
-  @{sbin}/dpkg-preconfigure              rPx,
   @{lib}/cnf-update-db                   rPx,
   @{lib}/needrestart/apt-pinvoke         rPx,
   @{lib}/zsys-system-autosnapshot        rPx,
+  @{sbin}/dpkg-preconfigure              rPx,
 
   # For building the source after the download process is finished (apt-get source --compile)
   @{bin}/dpkg-buildpackage               rPUx,
@@ -112,12 +117,11 @@ profile apt @{exec_path} flags=(attach_disconnected) {
   # For changelogs
   @{pager_path}  rCx -> pager,
 
-  #aa:only whonix
-  @{lib}/uwt/uwtwrapper rix,
-
-  /usr/share/xml/iso-codes/{,**} r,
+  /usr/share/doc/*/changelog.*.gz r,
   /usr/share/language-selector/data/pkg_depends r,
+  /usr/share/xml/iso-codes/{,**} r,
 
+  /etc/apt/mirrors/*.list r,
   /etc/apt/sources.list rwk,
   /etc/machine-id r,
   /var/lib/dbus/machine-id r,
@@ -143,23 +147,32 @@ profile apt @{exec_path} flags=(attach_disconnected) {
   # For package building
   @{user_build_dirs}/** rwkl -> @{user_build_dirs}/**,
 
-        /tmp/ r,
-        /tmp/apt-changelog-*/ w,
-        /tmp/apt-changelog-*/*.changelog w,
-  owner @{tmp}/apt-changelog-*/.apt-acquire-privs-test.* rw,
-  owner @{tmp}/apt-dpkg-install-*/ rw,
-  owner @{tmp}/apt-dpkg-install-*/@{int}-*.deb w,
-  owner @{tmp}/apt.conf.* rw,
-  owner @{tmp}/apt.data.* rw,
+  /tmp/ r,
+  /tmp/@{rand8} rw,
+  @{tmp}/apt* rw,
+  @{tmp}/apt*/{,**} rw,
 
-  @{att}/@{run}/systemd/inhibit/@{int}.ref rw,
+  @{att}@{run}/systemd/inhibit/@{int}.ref rw,
 
         @{PROC}/@{pids}/cmdline r,
         @{PROC}/@{pids}/mountinfo r,
+        @{PROC}/@{pids}/stat r,
+        @{PROC}/@{pids}/status r,
   owner @{PROC}/@{pid}/fd/ r,
   owner @{PROC}/@{pid}/mounts r,
 
   /dev/ptmx rw,
+
+  profile fakeroot-sysv {
+    include <abstractions/base>
+
+    @{bin}/fakeroot-sysv mr,
+
+    @{bin}/dpkg          Px,
+    @{bin}/faked-sysv   rix,
+
+    include if exists <local/apt_fakeroot-sysv>
+  }
 
   profile editor flags=(complain) {
     include <abstractions/base>
@@ -187,22 +200,21 @@ profile apt @{exec_path} flags=(attach_disconnected) {
 
     @{bin}/dpkg-source mr,
 
-    @{bin}/bunzip2 rix,
-    @{bin}/chmod   rix,
-    @{bin}/gunzip  rix,
-    @{bin}/gzip    rix,
-    @{bin}/patch   rix,
-    @{bin}/rm      rix,
-    @{bin}/tar     rix,
-    @{bin}/xz      rix,
+    @{archive_path} rix,
+    @{bin}/chmod    rix,
+    @{bin}/patch    rix,
+    @{bin}/rm       rix,
 
-    /etc/dpkg/origins/debian r,
+    /etc/dpkg/origins/* r,
 
                owner @{user_build_dirs}/** rwkl -> @{user_build_dirs}/**,
                owner @{HOME}/**      rwkl -> @{HOME}/**,
     audit deny owner @{HOME}/.*     mrwkl,
     audit deny owner @{HOME}/.*/     rw,
     audit deny owner @{HOME}/.*/**  mrwkl,
+
+    #aa:only test
+    /tmp/tmp.@{word10}/** rwlk,
 
     include if exists <local/apt_dpkg-source>
   }
@@ -213,6 +225,8 @@ profile apt @{exec_path} flags=(attach_disconnected) {
 
     capability net_admin,
     capability sys_resource,
+
+    ptrace read peer=@{p_systemd},
 
     signal (send) set=(cont, term) peer=systemd-tty-ask-password-agent,
 

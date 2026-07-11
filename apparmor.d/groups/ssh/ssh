@@ -8,11 +8,15 @@ abi <abi/4.0>,
 include <tunables/global>
 
 @{exec_path} = @{bin}/ssh
-profile ssh @{exec_path} {
+profile ssh @{exec_path} flags=(attach_disconnected) {
   include <abstractions/base>
   include <abstractions/consoles>
+  include <abstractions/devices-u2f>
   include <abstractions/devices-usb>
+  include <abstractions/kerberosclient>
   include <abstractions/nameservice-strict>
+
+  capability dac_override,
 
   network inet stream,
   network inet6 stream,
@@ -26,40 +30,40 @@ profile ssh @{exec_path} {
   @{exec_path} mrix,
 
   @{bin}/@{shells}     rUx,
+  @{bin}/ssh.hmac      r,
 
   @{lib}/{,ssh/}ssh-sk-helper rix,
+  @{lib}/ssh-askpass/x11-ssh-askpass PUx,
 
   @{etc_ro}/ssh/ssh_config r,
   @{etc_ro}/ssh/ssh_config.d/{,*} r,
   @{etc_ro}/ssh/sshd_config r,
   @{etc_ro}/ssh/sshd_config.d/{,*} r,
   /etc/machine-id r,
+  /etc/gss/mech.d/{,*} r,
 
-  owner @{HOME}/@{XDG_SSH_DIR}/ r,
-  owner @{HOME}/@{XDG_SSH_DIR}/*_*{,.pub} r,
-  owner @{HOME}/@{XDG_SSH_DIR}/config r,
+  / r,
+
+  owner @{HOME}/@{XDG_SSH_DIR}/{,*} r,
   owner @{HOME}/@{XDG_SSH_DIR}/known_hosts{,.*} rwl,
   owner @{HOME}/@{XDG_SSH_DIR}/ssh_control_*_*_* wl,
 
   owner @{user_projects_dirs}/**/ssh/{,*} r,
   owner @{user_projects_dirs}/**/config r,
 
-  audit owner @{tmp}/ssh-*/{,agent.@{int}} rwkl,
+  owner @{tmp}/krb5cc_* rwk,
 
-  owner @{run}/user/@{uid}/gvfsd-sftp/@{hex} wl -> @{run}/user/@{uid}/gvfsd-sftp/@{hex}.@{rand},
-  owner @{run}/user/@{uid}/gvfsd-sftp/@{hex}.@{rand} wl -> @{run}/user/@{uid}/gvfsd-sftp/@{hex}.@{rand},
+  owner @{run}/user/@{uid}/gcr/ssh rw, #  gcr-ssh-agent socket (i.e. Gnome only)
+  owner @{run}/user/@{uid}/gvfsd-sftp/@{hex} rwl -> @{run}/user/@{uid}/gvfsd-sftp/@{hex}.@{rand},
+  owner @{run}/user/@{uid}/gvfsd-sftp/@{hex}.@{rand} rwl -> @{run}/user/@{uid}/gvfsd-sftp/@{hex}.@{rand},
   owner @{run}/user/@{uid}/keyring/ssh rw,
-
-  @{sys}/ r,
-  @{sys}/bus/ r,
-  @{sys}/class/ r,
-  @{sys}/class/hidraw/ r,
-  @{sys}/class/hidraw/hidraw@{int} r,
+  owner @{run}/user/@{uid}/openssh_agent rw,
 
   owner @{PROC}/@{pid}/loginuid r,
   owner @{PROC}/@{pid}/fd/ r,
 
-  /dev/hidraw@{int} rwk,
+  #aa:only test
+  owner @{tmp}/ssh-@{rand10}/{,agent.@{int}} rw,
 
   include if exists <local/ssh>
 }

@@ -12,15 +12,16 @@ profile systemd-machine-id-setup @{exec_path} flags=(attach_disconnected) {
   include <abstractions/consoles>
 
   capability dac_override,
+  capability net_admin,
   capability setgid,
   capability setuid,
   capability sys_admin,
   capability sys_chroot,
 
-  ptrace (read),
+  ptrace read,
 
-  mount options=(rw rshared) -> /,
-  mount options=(rw rslave) -> /,
+  mount options=(rw make-rshared) /,
+  mount options=(rw make-rslave) /,
   umount /etc/machine-id,
 
   @{exec_path} mr,
@@ -31,11 +32,15 @@ profile systemd-machine-id-setup @{exec_path} flags=(attach_disconnected) {
   /etc/machine-id rw,
   /var/ r,
 
+        @{PROC}/@{pid}/fdinfo/@{int} r,
         @{PROC}/1/environ r,
         @{PROC}/cmdline r,
         @{PROC}/sys/kernel/osrelease r,
   owner @{PROC}/@{pid}/setgroups r,
   owner @{PROC}/@{pid}/stat r,
+
+  #aa:only test
+  /tmp/c_busybox.@{rand8}/{,**} rw,
 
   include if exists <local/systemd-machine-id-setup>
 }

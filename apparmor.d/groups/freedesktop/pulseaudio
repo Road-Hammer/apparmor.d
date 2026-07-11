@@ -12,24 +12,27 @@ include <tunables/global>
 profile pulseaudio @{exec_path} {
   include <abstractions/base>
   include <abstractions/audio-server>
-  include <abstractions/bus-session>
-  include <abstractions/bus-system>
-  include <abstractions/bus/org.bluez>
-  include <abstractions/bus/org.freedesktop.Avahi>
-  include <abstractions/bus/org.freedesktop.hostname1>
-  include <abstractions/bus/org.freedesktop.RealtimeKit1>
+  include <abstractions/bus/system/org.bluez>
+  include <abstractions/bus/system/org.freedesktop.Avahi.Server>
+  include <abstractions/bus/system/org.freedesktop.Avahi.ServiceBrowser>
+  include <abstractions/bus/system/org.freedesktop.Avahi.ServiceResolver>
+  include <abstractions/bus/system/org.freedesktop.hostname1>
+  include <abstractions/bus/system/org.freedesktop.RealtimeKit1>
+  include <abstractions/camera>
   include <abstractions/consoles>
   include <abstractions/dconf-write>
+  include <abstractions/desktop>
   include <abstractions/dri>
   include <abstractions/fontconfig-cache-write>
-  include <abstractions/desktop>
   include <abstractions/gstreamer>
   include <abstractions/hosts_access>
+  include <abstractions/media-control>
   include <abstractions/nameservice-strict>
+  include <abstractions/sys/dmi>
 
-  ptrace (trace) peer=@{profile_name},
+  ptrace trace peer=@{profile_name},
 
-  signal (receive) peer=pacmd,
+  signal receive peer=pacmd,
 
   network inet stream,
   network inet6 stream,
@@ -45,27 +48,12 @@ profile pulseaudio @{exec_path} {
   dbus receive bus=session
        interface=org.freedesktop.DBus.Introspectable
        member=Introspect
-       peer=(name=:*, label=gnome-shell),
-
-  dbus receive bus=system path=/Client@{int}/ServiceResolver@{int}
-       interface=org.freedesktop.Avahi.ServiceResolver
-       member=Found
-       peer=(name=:*, label=avahi-daemon),
-
-  dbus receive bus=system path=/Client@{int}/ServiceBrowser@{int}
-       interface=org.freedesktop.Avahi.ServiceBrowser
-       member=ItemRemove
-       peer=(name=:*, label=avahi-daemon),
+       peer=(name=@{busname}, label="{gnome-shell,gnome-extension}"),
 
   dbus send bus=system path=/
        interface=org.freedesktop.DBus.ObjectManager
        member=GetManagedObjects
        peer=(name=org.bluez),
-
-  dbus send bus=system path=/Client@{int}/ServiceResolver@{int}
-       interface=org.freedesktop.Avahi.ServiceResolver
-       member={Found,Free}
-       peer=(name=org.freedesktop.Avahi, label=avahi-daemon),
 
   @{exec_path} mrix,
 
@@ -80,17 +68,12 @@ profile pulseaudio @{exec_path} {
 
   / r,
 
-  owner @{desktop_cache_dirs}/gstreamer-1.0/ rw,
-  owner @{desktop_cache_dirs}/gstreamer-1.0/registry.*.bin{,.tmp@{rand6}} rw,
-  owner @{desktop_config_dirs}/dconf/user   r,
-  owner @{desktop_config_dirs}/pulse/{,**}  rw,
-  owner @{desktop_config_dirs}/pulse/cookie   k,
+  owner @{desktop_config_dirs}/pulse/{,**} rw,
+  owner @{desktop_config_dirs}/pulse/cookie k,
 
   owner @{HOME}/.pulse/{,**} rw,
   owner @{user_config_dirs}/ w,
   owner @{user_config_dirs}/pulse/{,**} rw,
-
-  owner @{user_cache_dirs}/gstreamer-1.0/registry.*.bin r,
 
   owner @{run}/user/@{uid}/ rw,
   owner @{run}/user/@{uid}/pulse/ rw,
@@ -104,8 +87,6 @@ profile pulseaudio @{exec_path} {
   @{run}/udev/data/c@{dynamic}:@{int} r,  # For dynamic assignment range 234 to 254, 384 to 511
 
   @{sys}/devices/**/sound/**/{uevent,pcm_class} r,
-  @{sys}/devices/virtual/dmi/id/{bios_vendor,board_vendor,sys_vendor} r,
-  @{sys}/devices/virtual/video4linux/video@{int}/uevent r,
 
   deny @{sys}/module/apparmor/parameters/enabled r,
 
@@ -113,11 +94,8 @@ profile pulseaudio @{exec_path} {
   owner @{PROC}/@{pids}/stat r,
   owner @{PROC}/@{pids}/cmdline r,
 
-  /dev/media@{int} r,
-  /dev/video@{int} rw,
-
   # file_inherit
-  owner /dev/tty@{int} rw,
+  owner /dev/tty@{u8} rw,
 
   include if exists <local/pulseaudio>
 }

@@ -6,7 +6,7 @@ abi <abi/4.0>,
 
 include <tunables/global>
 
-@{lib_dirs} = @{lib}/ /snap/snapd/@{int}@{lib}
+@{lib_dirs} = @{lib}/ /snap/{snapd,core}/{,x}@{int}@{lib}
 
 @{exec_path} = @{sbin}/apparmor_parser @{lib_dirs}/snapd/apparmor_parser
 profile apparmor_parser @{exec_path} flags=(attach_disconnected) {
@@ -21,14 +21,17 @@ profile apparmor_parser @{exec_path} flags=(attach_disconnected) {
   @{lib_dirs}/snapd/apparmor.d/{,**} r,
   @{lib_dirs}/snapd/apparmor/{,**} r,
 
+  /opt/*/resources/apparmor_* r,
+  /opt/*/resources/apparmor-profile r,
+
+  /usr/share/apparmor-features/{,**} r,
+  /usr/share/apparmor/{,**} r,
+
   /etc/apparmor.d/{,**} r,
   /etc/apparmor.d/cache.d/{,**} rw,
   /etc/apparmor/{,**} r,
   /etc/apparmor/cache.d/{,**} rw,
   /etc/apparmor/earlypolicy/{,**} rw,
-
-  /usr/share/apparmor-features/{,**} r,
-  /usr/share/apparmor/{,**} r,
 
   owner /snap/core@{int}/@{int}/etc/apparmor.d/{,**} r,
   owner /snap/core@{int}/@{int}/etc/apparmor/* r,
@@ -45,8 +48,8 @@ profile apparmor_parser @{exec_path} flags=(attach_disconnected) {
         @{PROC}/sys/kernel/osrelease r,
   owner @{PROC}/@{pid}/mounts r,
 
-  deny network netlink raw, # file_inherit
-  deny /apparmor/.null rw,
+  # Inherit Silencer
+  deny network netlink raw,
 
   include if exists <local/apparmor_parser>
 }

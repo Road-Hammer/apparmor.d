@@ -7,25 +7,26 @@ abi <abi/4.0>,
 include <tunables/global>
 
 @{exec_path} = @{bin}/kaccess
-profile kaccess @{exec_path} {
+profile kaccess @{exec_path} flags=(attach_disconnected) {
   include <abstractions/base>
   include <abstractions/audio-client>
   include <abstractions/graphics>
   include <abstractions/kde-strict>
+  include <abstractions/ibus-strict>
   include <abstractions/nameservice-strict>
+
+  #aa:dbus own bus=session name=org.kde.kaccess
+  #aa:dbus talk bus=session name=org.kde.kglobalaccel path=/kglobalaccel label=kglobalacceld
 
   @{exec_path} mr,
 
   @{bin}/gsettings rPx,
 
-  /usr/share/icons/{,**} r,
-
-  /etc/machine-id r,
-
   owner @{user_config_dirs}/breezerc r,
   owner @{user_config_dirs}/kaccessrc r,
+  owner @{user_config_dirs}/Kvantum/{,**} r,
 
-  owner @{user_share_dirs}/mime/generic-icons r,
+  owner @{PROC}/@{pid}/stat r,
 
   /dev/tty r,
 

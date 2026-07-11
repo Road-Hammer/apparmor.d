@@ -12,7 +12,6 @@ profile kconf_update @{exec_path} {
   include <abstractions/base>
   include <abstractions/dconf-write>
   include <abstractions/graphics>
-  include <abstractions/gtk>
   include <abstractions/kde-globals-write>
   include <abstractions/kde-strict>
   include <abstractions/nameservice-strict>
@@ -41,9 +40,6 @@ profile kconf_update @{exec_path} {
 
   /etc/xdg/*rc r,
   /etc/xdg/ui/*rc r,
-
-  /etc/machine-id r,
-  /var/lib/dbus/machine-id r,
 
   owner @{HOME}/.gtkrc-@{version} w,
 

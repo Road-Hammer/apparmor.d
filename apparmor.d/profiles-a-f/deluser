@@ -7,20 +7,23 @@ abi <abi/4.0>,
 
 include <tunables/global>
 
-@{exec_path} = @{sbin}/deluser @{sbin}/delgroup
+@{exec_path} = @{sbin}/deluser
 profile deluser @{exec_path} {
   include <abstractions/base>
   include <abstractions/perl>
   include <abstractions/consoles>
   include <abstractions/nameservice-strict>
 
-  capability dac_read_search,
   capability dac_override,
+  capability dac_read_search,
+  capability sys_admin,
 
   @{exec_path} r,
 
   @{sh_path}       rix,
-  @{sbin}/crontab  rPx,
+  @{archive_path}  rix,
+  @{bin}/logger    rix,
+  @{bin}/crontab   rPx,
   @{bin}/gpasswd   rPx,
   @{sbin}/groupdel rPx,
   @{bin}/mount     rCx -> mount,
@@ -31,12 +34,13 @@ profile deluser @{exec_path} {
 
   owner /etc/shadow r,
 
+  #aa:lint ignore=too-wide
   # This is for the "--remove-all-files" flag, which it used to remove all files owned by the user
   # that's going to be deleted. Basically it scans all the files in the system in each dir and look
   # for matches. This also includes files required by the "--remove-home" flag as well as the
   # "--backup" and --backup-to flags.
   /   r,
-  /** rw,
+  /** rwk,
 
   profile mount {
     include <abstractions/base>

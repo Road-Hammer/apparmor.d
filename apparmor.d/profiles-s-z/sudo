@@ -17,6 +17,7 @@ profile sudo @{exec_path} flags=(attach_disconnected) {
   capability fowner,
   capability mknod,
   capability sys_ptrace,
+  capability kill,
 
   network inet dgram,
   network inet6 dgram,
@@ -29,6 +30,8 @@ profile sudo @{exec_path} flags=(attach_disconnected) {
   @{lib}/**                         PUx,
   /opt/*/**                         PUx,
   /snap/snapd/@{int}@{bin}/snap    rPUx,
+  @{user_bin_dirs}/**               PUx,
+  @{user_share_dirs}/pipx/venvs/*/bin/* rPUx,
 
   /etc/default/locale r,
 

@@ -6,7 +6,7 @@ abi <abi/4.0>,
 
 include <tunables/global>
 
-@{exec_path} = @{bin}/mdevctl
+@{exec_path} = @{sbin}/mdevctl @{bin}/mdevctl #aa:lint ignore=sbin
 profile mdevctl @{exec_path} {
   include <abstractions/base>
   include <abstractions/consoles>
@@ -18,8 +18,6 @@ profile mdevctl @{exec_path} {
   @{sys}/bus/mdev/devices/ r,
   @{sys}/class/mdev_bus/ r,
   @{sys}/devices/@{pci}/mdev_supported_types/{,**} r,
-
-  @{PROC}/@{pids}/maps r,
 
   include if exists <local/mdevctl>
 }

@@ -11,26 +11,32 @@ include <tunables/global>
 profile drkonqi @{exec_path} {
   include <abstractions/base>
   include <abstractions/graphics>
+  include <abstractions/nameservice-strict>
+  include <abstractions/ssl_certs>
   include <abstractions/kde-strict>
 
+  network inet dgram,
   network inet stream,
+  network inet6 dgram,
   network inet6 stream,
   network netlink raw,
 
   signal send set=(cont, stop) peer=/usr/bin/akonadiserver,
 
+  ptrace read peer=@{p_systemd_user},
   ptrace read peer=/usr/bin/akonadiserver,
 
   @{exec_path} mr,
 
-  @{bin}/plasmashell r,
-  @{bin}/lsb_release    rPx -> lsb_release,
+  @{bin}/lsb_release Px,
 
   /usr/share/drkonqi/{,**} r,
 
-  /etc/machine-id r,
+  /etc/sysconfig/proxy r,
 
   / r,
+  @{bin}/* r,
+  @{sbin}/* r,
 
   owner @{user_cache_dirs}/drkonqi/ rw,
   owner @{user_cache_dirs}/drkonqi/** rwlk -> @{user_cache_dirs}/drkonqi/**,
@@ -38,6 +44,7 @@ profile drkonqi @{exec_path} {
 
   owner @{user_config_dirs}/breezerc r,
   owner @{user_config_dirs}/drkonqirc r,
+  owner @{user_config_dirs}/kioslaverc r,
 
   /{run,var}/log/journal/ r,
   /{run,var}/log/journal/@{hex32}/ r,
@@ -47,11 +54,11 @@ profile drkonqi @{exec_path} {
   /{run,var}/log/journal/@{hex32}/user-@{uid}@@{hex32}-@{hex16}-@{hex16}.journal* r,
   /{run,var}/log/journal/remote/ r,
 
-  /dev/tty r,
-
   owner @{PROC}/@{pid}/cmdline r,
   owner @{PROC}/@{pid}/mountinfo r,
   owner @{PROC}/@{pid}/stat r,
+
+  /dev/tty r,
 
   include if exists <local/drkonqi>
 }

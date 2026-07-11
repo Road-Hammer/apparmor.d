@@ -16,7 +16,7 @@ profile aa-enforce @{exec_path} {
 
   @{exec_path} mr,
 
-  @{bin}/ r,
+  @{sbin}/ r,
   @{sbin}/apparmor_parser    rPx,
 
   /usr/share/terminfo/** r,
@@ -31,7 +31,7 @@ profile aa-enforce @{exec_path} {
   owner /var/lib/snapd/apparmor/{,**} rw,
 
   owner @{tmp}/@{rand8} rw,
-  owner @{tmp}/apparmor-bugreport-@{rand8}.txt rw,
+  owner @{tmp}/apparmor-bugreport-@{word8}.txt rw,
 
   @{PROC}/@{pid}/fd/ r,
 

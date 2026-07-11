@@ -2,7 +2,10 @@
 # Copyright (C) 2021-2024 Alexandre Pujol <alexandre@pujol.io>
 # SPDX-License-Identifier: GPL-2.0-only
 
-# Base variables, upstreamed in apparmor 4.1
+# !!! warning
+# 
+#     The tunables presented in this page have upstream in apparmor 4.1
+#
 
 # Any digit
 @{d}=[0-9]
@@ -91,3 +94,7 @@
 @{word16}=@{word8}@{word8}
 @{word32}=@{word16}@{word16}
 @{word64}=@{word32}@{word32}
+
+# Shortcut for PCI device
+@{pci_bus}=pci@{hex4}:@{hex2}
+

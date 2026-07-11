@@ -1,9 +1,7 @@
 ---
 
-include:
-  - template: Security/SAST.gitlab-ci.yml
-
 variables:
+  PKGNAME: apparmor.d
   PKGDEST: $CI_PROJECT_DIR/.pkg
   PACKAGER: 'Alexandre Pujol <alexandre@pujol.io>'
 
@@ -23,8 +21,9 @@ bash:
   image: koalaman/shellcheck-alpine
   script:
     - shellcheck --shell=bash
-        PKGBUILD dists/build.sh dists/docker.sh tests/check.sh
-        tests/packer/init.sh tests/packer/src/aa-update tests/packer/clean.sh
+        PKGBUILD dists/*.sh tests/check.sh
+        tests/packer/*.sh tests/packer/src/aa-update
+        tests/autopkgtest/autopkgtest.sh debian/common.postinst debian/common.postrm
 
 golangci-lint:
   stage: lint
@@ -38,12 +37,8 @@ packer:
     name: hashicorp/packer:latest
     entrypoint: [""]
   script:
-    - cd tests &&
-      packer fmt --check packer/ &&
-      packer validate --syntax-only packer/
-
-sast:
-  stage: lint
+    - packer fmt tests/packer/
+    - packer validate --syntax-only tests/packer/
 
 
 # Code test
@@ -62,11 +57,13 @@ tests:
     - go test $(go list ./pkg/... | grep -v /pkg/paths) -v -cover -coverprofile=coverage.out
     - go tool cover -func=coverage.out
 
-check:
+# Disabled as it is long and we reach the limit of GitLab CI minutes
+# Enabled in Github Actions CI
+.check:
   stage: test
   image: registry.gitlab.com/roddhjav/builders/archlinux
   script:
-    - make check
+    - just check
 
 # Package Build
 # -------------
@@ -84,14 +81,13 @@ archlinux:
 
 debian:
   stage: build
-  image: registry.gitlab.com/roddhjav/builders/debian:12
+  image: registry.gitlab.com/roddhjav/builders/debian:13
   script:
     - sudo chown -R build:build /builds/
     - git config --global --add safe.directory $CI_PROJECT_DIR
     - mkdir -p "$PKGDEST"
-    - sudo apt-get update -q && sudo apt-get install -y config-package-dev lsb-release
-    - sudo apt-get install -y -t bookworm-backports golang-go
-    - bash dists/build.sh dpkg
+    - sudo apt-get update -q && sudo apt-get install -y config-package-dev golang-go lsb-release libdistro-info-perl
+    - just build-dpkg
   artifacts:
     expire_in: 1 day
     paths:
@@ -99,25 +95,18 @@ debian:
 
 ubuntu:
   stage: build
-  image: registry.gitlab.com/roddhjav/builders/ubuntu:24.04
+  image: registry.gitlab.com/roddhjav/builders/ubuntu:26.04
   variables:
     GOFLAGS: "-buildvcs=false"
   script:
     - git config --global --add safe.directory $CI_PROJECT_DIR
     - mkdir -p "$PKGDEST"
-    - sudo apt-get update -q && sudo apt-get install -y config-package-dev golang-go lsb-release
-    - bash dists/build.sh dpkg
+    - sudo apt-get update -q && sudo apt-get install -y config-package-dev golang-go lsb-release libdistro-info-perl
+    - just build-dpkg
   artifacts:
     expire_in: 1 day
     paths:
       - $PKGDEST/*.deb
-
-whonix:
-  extends: debian
-  variables:
-    DISTRIBUTION: whonix
-  before_script:
-    - echo "\noverride_dh_auto_build:\n\tmake full" >> debian/rules
 
 opensuse:
   stage: build
@@ -125,7 +114,7 @@ opensuse:
   script:
     - mkdir -p "$PKGDEST"
     - sudo zypper install -y distribution-release golang-packaging apparmor-profiles
-    - bash dists/build.sh rpm
+    - just build-rpm
   artifacts:
     expire_in: 1 day
     paths:
@@ -142,35 +131,30 @@ preprocess-archlinux:
     - archlinux
   script:
     - pacman -Syu --noconfirm --noprogressbar apparmor
-    - pacman -U --noconfirm --noprogressbar $PKGDEST/*
+    - pacman -U --noconfirm --noprogressbar $PKGDEST/${PKGNAME}-*
     - apparmor_parser --preprocess /etc/apparmor.d 1> /dev/null
 
 preprocess-debian:
   stage: preprocess
-  image: debian
+  image: debian:13
   dependencies:
     - debian
   script:
     - apt-get update -q
     - apt-get install -y apparmor apparmor-profiles
-    - dpkg --install $PKGDEST/*
+    - dpkg --install $PKGDEST/${PKGNAME}_*
     - apparmor_parser --preprocess /etc/apparmor.d 1> /dev/null
 
 preprocess-ubuntu:
   stage: preprocess
-  image: ubuntu
+  image: ubuntu:26.04
   dependencies:
     - ubuntu
   script:
     - apt-get update -q
     - apt-get install -y apparmor apparmor-profiles
-    - dpkg --install $PKGDEST/*
+    - dpkg --install $PKGDEST/${PKGNAME}_*
     - apparmor_parser --preprocess /etc/apparmor.d 1> /dev/null
-
-preprocess-whonix:
-  extends: preprocess-debian
-  dependencies:
-    - whonix
 
 preprocess-opensuse:
   stage: preprocess
@@ -180,10 +164,11 @@ preprocess-opensuse:
   script:
     - zypper install -y apparmor-profiles
     - rpm -i $PKGDEST/*
+    - rm -f /etc/apparmor.d/hostname
     - apparmor_parser --preprocess /etc/apparmor.d 1> /dev/null
 
 
-# Deploy the documentation 
+# Deploy the documentation
 # ------------------------
 
 pages:
@@ -195,7 +180,9 @@ pages:
     GIT_DEPTH: 0
   script:
     - pip install -r requirements.txt
-    - mkdocs build --site-dir public
+    - bash dists/docstring.sh
+    - zensical build --strict
+    - mv site public
   artifacts:
     paths:
       - public

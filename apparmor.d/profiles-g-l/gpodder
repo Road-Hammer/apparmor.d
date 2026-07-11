@@ -14,6 +14,7 @@ profile gpodder @{exec_path} {
   include <abstractions/fontconfig-cache-read>
   include <abstractions/nameservice-strict>
   include <abstractions/python>
+  include <abstractions/sqlite>
   include <abstractions/ssl_certs>
   include <abstractions/user-download-strict>
 
@@ -41,20 +42,16 @@ profile gpodder @{exec_path} {
   /usr/share/gpodder/{,**} r,
 
   /etc/fstab r,
-  /etc/mime.types r,
 
   owner @{HOME}/ r,
   owner @{HOME}/gPodder/ rw,
   owner @{HOME}/gPodder/** rwk,
 
-  owner @{tmp}/etilqs_@{sqlhex} rw,
-  owner /var/tmp/etilqs_@{sqlhex} rw,
-
   owner @{PROC}/@{pid}/fd/ r,
   owner @{PROC}/@{pid}/mounts r,
   owner @{PROC}/@{pid}/mountinfo r,
 
-  owner /dev/tty@{int} rw,
+  owner /dev/tty@{u8} rw,
 
   include if exists <local/gpodder>
 }

@@ -5,7 +5,7 @@
 
 # Dependencies for the bats integration tests
 
-set -eu
+set -eu -o pipefail
 
 # shellcheck source=/dev/null
 _lsb_release() {
@@ -16,12 +16,16 @@ DISTRIBUTION="$(_lsb_release)"
 
 case "$DISTRIBUTION" in
 arch)
-	;;
-debian | ubuntu | whonix)
-	sudo apt update -y
-	sudo apt install -y \
+	sudo pacman -Syu --noconfirm \
 		bats bats-support \
-		cpuid dfc systemd-userdbd systemd-homed tlp network-manager flatpak
+		pacman-contrib tlp flatpak networkmanager
+	;;
+debian | ubuntu)
+	sudo apt-get update -y
+	sudo apt-get install -y \
+		bats bats-support \
+		cpuid dfc systemd-boot systemd-userdbd systemd-homed systemd-container tlp \
+		network-manager systemd-container flatpak util-linux-extra
 	;;
 opensuse*)
 	;;

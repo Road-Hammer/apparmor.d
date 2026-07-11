@@ -7,6 +7,7 @@ users:
   - name: ${username}
     plain_text_passwd: ${password}
     shell: /bin/bash
+    groups: ["${group}"]
     ssh_authorized_keys:
       - ${ssh_key}
     lock_passwd: false
@@ -37,3 +38,19 @@ systemd-netword: &systemd-netword
 
     [DHCPv4]
     RouteMetric=10
+
+# Disable printk rate limiting
+disable-printk-ratelimit: &disable-printk-ratelimit
+  path: /etc/sysctl.d/99-ratelimit.conf
+  permissions: "0644"
+  content: |
+    kernel.printk_ratelimit=0
+    kernel.printk_ratelimit_burst=1000
+
+# Autopkgtest setup-testbed script
+setup-testbed: &setup-testbed
+  source:
+    uri: https://salsa.debian.org/ci-team/autopkgtest/-/raw/master/setup-commands/setup-testbed
+  path: /usr/bin/setup-testbed
+  permissions: '0755'
+

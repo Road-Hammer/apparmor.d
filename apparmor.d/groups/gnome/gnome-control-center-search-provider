@@ -9,9 +9,8 @@ include <tunables/global>
 @{exec_path} = @{lib}/gnome-control-center-search-provider
 profile gnome-control-center-search-provider @{exec_path} {
   include <abstractions/base>
-  include <abstractions/bus-session>
-  include <abstractions/bus/org.gtk.vfs.MountTracker>
   include <abstractions/dconf-write>
+  include <abstractions/fontconfig-cache-write>
   include <abstractions/gnome-strict>
   include <abstractions/graphics>
 

@@ -11,13 +11,16 @@ include <tunables/global>
 profile kwalletd @{exec_path} {
   include <abstractions/base>
   include <abstractions/audio-client>
+  include <abstractions/bus-session>
   include <abstractions/consoles>
   include <abstractions/fontconfig-cache-read>
   include <abstractions/graphics>
-  include <abstractions/gtk>
   include <abstractions/kde-strict>
   include <abstractions/nameservice-strict>
   include <abstractions/qt5-compose-cache-write>
+
+  #aa:dbus own bus=session name=org.freedesktop.secrets
+  #aa:dbus own bus=session name=org.kde.kwalletd{,5,6}
 
   @{exec_path} mr,
 
@@ -30,14 +33,16 @@ profile kwalletd @{exec_path} {
   /etc/machine-id r,
   /var/lib/dbus/machine-id r,
 
-  owner @{user_config_dirs}/#@{int} rw,
   owner @{user_config_dirs}/breezerc r,
   owner @{user_config_dirs}/kwalletrc r,
   owner @{user_config_dirs}/kwalletrc rwl -> @{user_config_dirs}/#@{int},
   owner @{user_config_dirs}/kwalletrc.lock rwk,
+  owner @{user_config_dirs}/Kvantum/{,**} r,
 
   owner @{user_share_dirs}/kwalletd/ rw,
   owner @{user_share_dirs}/kwalletd/** rwkl -> @{user_share_dirs}/kwalletd/#@{int},
+
+  owner @{run}/user/@{uid}/kwallet{5,6}.socket rw,
 
   owner @{tmp}/kwalletd5.* rw,
 

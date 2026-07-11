@@ -2,8 +2,6 @@
 # Copyright (C) 2023-2024 Alexandre Pujol <alexandre@pujol.io>
 # SPDX-License-Identifier: GPL-2.0-only
 
-# TODO: Similar with virtqemud. Could be merged?
-
 abi <abi/4.0>,
 
 include <tunables/global>
@@ -11,6 +9,8 @@ include <tunables/global>
 @{exec_path} = @{bin}/virtstoraged
 profile virtstoraged @{exec_path} flags=(attach_disconnected) {
   include <abstractions/base>
+  include <abstractions/bus-session>
+  include <abstractions/bus-system>
   include <abstractions/nameservice-strict>
 
   capability dac_read_search,
@@ -19,6 +19,11 @@ profile virtstoraged @{exec_path} flags=(attach_disconnected) {
 
   ptrace (read) peer=virtqemud,
   ptrace (read) peer=unconfined,
+
+  dbus receive bus=system path=/org/freedesktop/login1
+       interface=org.freedesktop.login1.Manager
+       member=PrepareForShutdown
+       peer=(name=@{busname}, label=systemd-logind),
 
   @{exec_path} mr,
 
@@ -30,6 +35,7 @@ profile virtstoraged @{exec_path} flags=(attach_disconnected) {
   # For disk images
   @{MOUNTS}/ r,
   @{user_img_dirs}/{,**} r,
+  @{user_vm_dirs}/{,**} r,
 
   # System VM images
   /var/lib/libvirt/images/{,**} rw,
@@ -46,15 +52,16 @@ profile virtstoraged @{exec_path} flags=(attach_disconnected) {
 
   owner @{run}/user/@{uid}/libvirt/common/ rw,
   owner @{run}/user/@{uid}/libvirt/common/system.token rwk,
-  owner @{run}/user/@{uid}/libvirt/virtstoraged* w,
-  owner @{run}/user/@{uid}/libvirt/virtstoraged.pid rwk,
   owner @{run}/user/@{uid}/libvirt/storage/{,**} rwk,
+  owner @{run}/user/@{uid}/libvirt/virtstoraged-sock rw,
+  owner @{run}/user/@{uid}/libvirt/virtstoraged.pid rwk,
+  owner @{run}/user/@{uid}/libvirt/virtstoraged* w,
 
   owner @{run}/libvirt/common/system.token rwk,
   owner @{run}/libvirt/storage/{,**} rwk,
   owner @{run}/virtstoraged.pid rwk,
 
-  @{att}/@{run}/systemd/inhibit/@{int}.ref rw,
+  @{att}@{run}/systemd/inhibit/@{int}.ref rw,
 
   @{run}/utmp rwk,
 

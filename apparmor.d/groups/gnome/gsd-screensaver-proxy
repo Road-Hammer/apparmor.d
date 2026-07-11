@@ -9,19 +9,20 @@ include <tunables/global>
 @{exec_path} = @{lib}/gsd-screensaver-proxy
 profile gsd-screensaver-proxy @{exec_path} flags=(attach_disconnected) {
   include <abstractions/base>
-  include <abstractions/consoles>
   include <abstractions/bus-session>
-  include <abstractions/bus/org.gnome.SessionManager>
+  include <abstractions/consoles>
+  include <abstractions/screen-inhibit>
+  include <abstractions/session-manager>
 
   signal (receive) set=(term, hup) peer=gdm*,
 
-  #aa:dbus own bus=session name=org.freedesktop.ScreenSaver
+  #aa:dbus own bus=session name=org.freedesktop.ScreenSaver path=/{,org/freedesktop/}ScreenSaver
   #aa:dbus own bus=session name=org.gnome.SettingsDaemon.ScreensaverProxy
 
   dbus receive bus=session
        interface=org.freedesktop.DBus.Introspectable
        member=Introspect
-       peer=(name=:*, label=gnome-shell),
+       peer=(name=@{busname}, label="{gnome-shell,gnome-extension}"),
 
   @{exec_path} mr,
 

@@ -10,6 +10,7 @@ include <tunables/global>
 profile xdm-xsession @{exec_path} {
   include <abstractions/base>
   include <abstractions/dconf-write>
+  include <abstractions/gschemas>
   include <abstractions/nameservice-strict>
   include <abstractions/shells>
   include <abstractions/X-strict>
@@ -18,14 +19,15 @@ profile xdm-xsession @{exec_path} {
 
   @{shells_path}            rix,
 
+  @{bin}/{,e}grep           rix,
+  @{bin}/alts               rix,
   @{bin}/basename           rix,
   @{bin}/cat                rix,
-  @{sbin}/checkproc         rix,
   @{bin}/dirname            rix,
+  @{bin}/find               rix,
   @{bin}/fortune           rPUx,
   @{bin}/gpg-agent          rPx,
   @{bin}/gpg-connect-agent  rPx,
-  @{bin}/grep               rix,
   @{bin}/locale             rix,
   @{bin}/manpath            rix,
   @{bin}/readlink           rix,
@@ -37,7 +39,9 @@ profile xdm-xsession @{exec_path} {
   @{bin}/tty                rix,
   @{bin}/uname              rix,
   @{bin}/whoami             rix,
+  @{bin}/xargs              rix,
   @{bin}/xmodmap           rPUx,
+  @{sbin}/checkproc         rix,
 
   @{bin}/dbus-update-activation-environment rCx -> dbus,
   @{bin}/flatpak                            rPx,
@@ -55,10 +59,12 @@ profile xdm-xsession @{exec_path} {
   @{etc_ro}/X11/xdm/sys.xsession                    rix,
   @{etc_ro}/X11/xinit/xinitrc.d/50-systemd-user.sh  rix,
   @{etc_ro}/X11/xinit/xinitrc.d/xdg-user-dirs.sh    rix,
-  @{HOME}/.xinitrc                                 rPix, # TODO: rCx
   @{lib}/xinit/xinitrc                          rix,
 
-  /usr/share/glib-2.0/schemas/gschemas.compiled r,
+  #aa:lint ignore=transition
+  # FIXME: Pix is a bad idea here, it **will** lead to breakage.
+  @{HOME}/.xinitrc                                 rPix,
+
   /usr/share/mc/mc.sh r,
   /usr/share/terminfo/{,**} r,
 
@@ -76,6 +82,8 @@ profile xdm-xsession @{exec_path} {
 
   owner @{HOME}/ r,
   owner @{HOME}/@{XDG_GPG_DIR}/gpg-agent.conf r,
+  owner @{HOME}/@{XDG_SSH_DIR}/agent/ r,
+  owner @{HOME}/@{XDG_SSH_DIR}/agent/s.@{word10}.agent.@{word10} w,
 
   owner @{user_share_dirs}/sddm/xorg-session.log rw,
 
@@ -90,7 +98,7 @@ profile xdm-xsession @{exec_path} {
   owner @{PROC}/@{pid}/fd/ r,
 
         /dev/tty rw,
-  owner /dev/tty@{int} rw,
+  owner /dev/tty@{u8} rw,
 
   profile dbus {
     include <abstractions/base>

@@ -10,6 +10,7 @@ include <tunables/global>
 profile yay @{exec_path} {
   include <abstractions/base>
   include <abstractions/consoles>
+  include <abstractions/golang-strict>
   include <abstractions/nameservice-strict>
   include <abstractions/ssl_certs>
 
@@ -18,6 +19,9 @@ profile yay @{exec_path} {
   network inet stream,
   network inet6 stream,
   network netlink raw,
+
+  signal send set=term peer=pkttyagent,
+  signal send set=term peer=systemd-tty-ask-password-agent,
 
   @{exec_path} mr,
 
@@ -28,6 +32,8 @@ profile yay @{exec_path} {
   @{bin}/pacman       Px,
   @{bin}/pacman-conf  Px,
   @{bin}/sudo         Cx -> sudo,
+  @{bin}/pkttyagent   Px,
+  @{bin}/systemd-tty-ask-password-agent Px,
 
   /var/lib/pacman/** r,
 
@@ -35,6 +41,8 @@ profile yay @{exec_path} {
   owner @{user_cache_dirs}/yay/** rwkl -> @{user_cache_dirs}/yay/**,
 
   owner @{user_config_dirs}/yay/{,**} rw,
+
+  owner @{PROC}/@{pid}/stat r,
 
   profile git {
     include <abstractions/base>
@@ -90,10 +98,15 @@ profile yay @{exec_path} {
     owner @{HOME}/@{XDG_GPG_DIR}/ rw,
     owner @{HOME}/@{XDG_GPG_DIR}/** rwkl -> @{HOME}/@{XDG_GPG_DIR}/**,
 
+    owner @{run}/user/@{uid}/gnupg/d.@{hex}/S.dirmngr rw,
+    owner @{run}/user/@{uid}/gnupg/d.@{hex}/S.gpg-agent rw,
+
+    owner @{PROC}/@{pid}/fd/ r,
+
     include if exists <local/yay_gpg>
   }
 
-  profile sudo {
+  profile sudo flags=(attach_disconnected) {
     include <abstractions/base>
     include <abstractions/app/sudo>
 

@@ -6,7 +6,7 @@ abi <abi/4.0>,
 
 include <tunables/global>
 
-@{name} = firefox{,.sh,-esr,-bin}
+@{name} = firefox{,.sh,-esr,-bin,-nightly}
 @{lib_dirs} = @{lib}/@{name} /opt/@{name}
 @{config_dirs} = @{HOME}/.mozilla/
 
@@ -17,6 +17,9 @@ profile firefox-vaapitest @{exec_path} flags=(attach_disconnected) {
   include <abstractions/nameservice-strict>
 
   network netlink raw,
+
+  unix type=seqpacket peer=(label=firefox),
+  unix (send receive) type=seqpacket peer=(label=firefox-crashhelper),
 
   @{exec_path} mr,
 

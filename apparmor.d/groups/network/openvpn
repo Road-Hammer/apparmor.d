@@ -4,17 +4,19 @@
 # SPDX-License-Identifier: GPL-2.0-only
 #
 # The following profile assumes that:
-#   openvpn is started as root with dropping privileges
-#   iptables is used
-#   config files can be stored in:
-#     - /etc/openvpn/*.{conf,ovpn}
-#     - /etc/openvpn/{client,server}/*.{conf,ovpn}
-#   certs/keys can be are stored in:
-#     - /etc/openvpn/certs/*.{key,crt}
-#     - $HOME/.cert/**/*.pem
-#   auth credentials are stored in:   /etc/openvpn/auth/*.auth
-#   logs are redirected to:           /var/log/openvpn/*.log
-#   DNS/resolver script is stored in: /etc/openvpn/update-resolv-conf{,.sh}
+#
+#   - openvpn is started as root with dropping privileges
+#   - iptables is used
+#   - config files can be stored in:
+#     - `/etc/openvpn/*.{conf,ovpn}`
+#     - `/etc/openvpn/{client,server}/*.{conf,ovpn}`
+#   - certs/keys can be are stored in:
+#     - `/etc/openvpn/certs/*.{key,crt}`
+#     - `$HOME/.cert/**/*.pem`
+#   - auth credentials are stored in:   `/etc/openvpn/auth/*.auth`
+#   - logs are redirected to:           `/var/log/openvpn/*.log`
+#   - DNS/resolver script is stored in: `/etc/openvpn/update-resolv-conf{,.sh}`
+#
 # If a user wants to type user/pass interactively, systemd-ask-password is
 # invoked for that.
 
@@ -27,17 +29,12 @@ profile openvpn @{exec_path} flags=(attach_disconnected) {
   include <abstractions/base>
   include <abstractions/nameservice-strict>
 
-  # Needed to remove the following errors:
-  #  ERROR: Cannot ioctl TUNSETIFF tun: Operation not permitted (errno=1)
-  #  Exiting due to fatal error
-  capability net_admin,
-
-  # These are needed when user/group are set in a OpenVPN config file
-  capability setuid,
-  capability setgid,
-
-  capability dac_read_search,
   capability dac_override,
+  capability dac_read_search,
+  capability net_admin, # create tun
+  capability setgid, # when user/group are set in a OpenVPN config file
+  capability setuid,
+  capability sys_module,
 
   network inet dgram,
   network inet6 dgram,
@@ -45,13 +42,23 @@ profile openvpn @{exec_path} flags=(attach_disconnected) {
   network inet6 stream,
   network netlink raw,
 
-  signal (receive) set=(term) peer=nm-openvpn-service,
+  signal receive set=term peer=nm-openvpn-service,
+  signal receive set=term peer=pgrep,
 
   @{exec_path} mr,
 
-  @{lib}/{,NetworkManager/}nm-openvpn-service-openvpn-helper rPx,
+  @{bin}/ip                                rix, #aa:lint ignore=sbin
+  @{sbin}/ip                               rix,
+  @{bin}/systemd-ask-password              rPx,
+
+  @{lib}/nm-openvpn-service-openvpn-helper                    rPx,
+  @{lib}/{,NetworkManager/}nm-openvpn-service-openvpn-helper  rPx,
+
+  /etc/openvpn/force-user-traffic-via-vpn.sh    rCx -> force-user-traffic-via-vpn,
+  /etc/openvpn/update-resolv-conf{,.sh}         rCx -> update-resolv,
 
   /etc/openvpn/{,**} r,
+  /etc/openvpn/static.key w,
 
   @{HOME}/.cert/{,**} r,
 
@@ -61,15 +68,12 @@ profile openvpn @{exec_path} flags=(attach_disconnected) {
   @{run}/openvpn/*.{pid,status} rw,
   @{run}/systemd/journal/dev-log r,
 
-  @{sbin}/ip                               rix,
-  @{bin}/systemd-ask-password              rPx,
-  @{lib}/nm-openvpn-service-openvpn-helper rPx,
-  /etc/openvpn/force-user-traffic-via-vpn.sh    rCx -> force-user-traffic-via-vpn,
-  /etc/openvpn/update-resolv-conf{,.sh}         rCx -> update-resolv,
-
-  /dev/net/tun rw,
+  owner /tmp/openvpn.log w,
+  owner /tmp/openvpn/{,**} r,
 
   owner @{PROC}/@{pid}/net/route r,
+
+  /dev/net/tun rw,
 
   profile update-resolv {
     include <abstractions/base>
@@ -83,9 +87,10 @@ profile openvpn @{exec_path} flags=(attach_disconnected) {
 
     @{sh_path}                rix,
     @{bin}/cut                rix,
+    @{bin}/ip                 rix, #aa:lint ignore=sbin
     @{sbin}/ip                rix,
-    @{bin}/which              rix,
-    @{sbin}/xtables-nft-multi rix,
+    @{bin}/which{,.debianutils}  rix,
+    @{sbin}/xtables-{nft,legacy}-multi  rix,
 
     /etc/iproute2/rt_tables r,
     /etc/iproute2/rt_tables.d/{,*} r,
@@ -110,6 +115,7 @@ profile openvpn @{exec_path} flags=(attach_disconnected) {
     @{bin}/{,e}grep   rix,
     @{bin}/cut        rix,
     @{bin}/env        rix,
+    @{bin}/ip         rix, #aa:lint ignore=sbin
     @{sbin}/ip        rix,
     @{sbin}/nft       rix,
     @{bin}/sed        rix,

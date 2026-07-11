@@ -6,8 +6,8 @@ abi <abi/4.0>,
 
 include <tunables/global>
 
-@{bin_dirs} = @{bin}/ /snap/{snapd,core}/@{int}@{bin}
-@{lib_dirs} = @{lib}/ /snap/{snapd,core}/@{int}@{lib}
+@{bin_dirs} = @{bin}/ /snap/{snapd,core}/{,x}@{int}@{bin}
+@{lib_dirs} = @{lib}/ /snap/{snapd,core}/{,x}@{int}@{lib}
 
 @{exec_path} = @{bin_dirs}/snap
 profile snap @{exec_path} flags=(attach_disconnected) {
@@ -17,11 +17,19 @@ profile snap @{exec_path} flags=(attach_disconnected) {
   include <abstractions/consoles>
   include <abstractions/disks-read>
   include <abstractions/nameservice-strict>
+  include <abstractions/ssl_certs>
 
+  capability chown,
+  capability dac_override,
   capability dac_read_search,
   capability setuid,
   capability sys_admin,
+  capability sys_ptrace,
 
+  network inet dgram,
+  network inet stream,
+  network inet6 dgram,
+  network inet6 stream,
   network netlink raw,
 
   ptrace read peer=snap.*,
@@ -34,7 +42,8 @@ profile snap @{exec_path} flags=(attach_disconnected) {
   #aa:dbus own bus=session name=io.snapcraft.SessionAgent
   #aa:dbus own bus=session name=io.snapcraft.Settings
 
-  #aa:dbus talk bus=session name=io.snapcraft.PrivilegedDesktopLauncher label=snap.snap-store.snap-store
+  #aa:dbus talk bus=session name=io.snapcraft.PrivilegedDesktopLauncher label=snap.snap-store.*
+  #aa:dbus talk bus=session name=io.snapcraft.PrivilegedDesktopLauncher label=snap.snapd-desktop-integration.snapd-desktop-integration
   #aa:dbus talk bus=session name=org.freedesktop.systemd1 label="@{p_systemd_user}"
   #aa:dbus talk bus=system name=org.freedesktop.systemd1 label="@{p_systemd}"
 
@@ -46,17 +55,23 @@ profile snap @{exec_path} flags=(attach_disconnected) {
   dbus receive bus=session
        interface=org.freedesktop.DBus.Introspectable
        member=Introspect
-       peer=(name=@{busname}, label=gnome-shell),
+       peer=(name=@{busname}, label="{gnome-shell,gnome-extension}"),
 
   @{exec_path} mrix,
 
-  @{bin}/mount rix,
+  @{sh_path} mr,
   @{bin}/getent rix,
+  @{bin}/mount rix,
+  @{bin}/zenity rix,
 
   @{bin}/gpg{,2}          rCx -> gpg,
   @{bin}/systemctl        rCx -> systemctl,
+  @{bin}/systemd-run      rCx -> run, # Start snap from the cli
+  @{bin}/unsquashfs       rCx -> unsquashfs,
+  @{bin}/xdg-settings     rCx -> xdg-settings,
 
-  @{lib_dirs}/**          mr,
+  @{bin_dirs}/xdelta3                 ix,
+  @{lib_dirs}/**                      mr,
   @{lib_dirs}/snapd/snap-confine     rPx,
   @{lib_dirs}/snapd/snap-seccomp     rPx,
   @{lib_dirs}/snapd/snapd            rPx,
@@ -68,14 +83,23 @@ profile snap @{exec_path} flags=(attach_disconnected) {
   /var/cache/snapd/names r,
 
   @{DESKTOP_HOME}/snap/{,**} rw,
-  @{HOME}/snap/{,**} rw,
   /snap/{,**} rw,
 
+  @{HOME}/ r,
+  @{HOME}/.snap.mkdir-new/ rw,
+  @{HOME}/.snap/{,**} rw,
+  @{HOME}/snap/{,**} rw,
+
+  @{user_pkg_dirs}/** r,
+
+        @{tmp}/ r,
+  owner @{tmp}/read-file@{int}/{,**} w,
   owner @{tmp}/snapd-auto-import-mount-@{int}/ rw,
 
         @{run}/user/@{uid}/bus rw,
   owner @{run}/user/@{uid}/.mutter-Xwaylandauth.@{rand6} r,
   owner @{run}/user/@{uid}/gdm/Xauthority r,
+  owner @{run}/user/@{uid}/snap.*/ w,
   owner @{run}/user/@{uid}/snapd-session-agent.socket rw,
   owner @{run}/user/@{uid}/systemd/notify rw,
 
@@ -83,23 +107,27 @@ profile snap @{exec_path} flags=(attach_disconnected) {
   @{run}/snapd.socket rw,
 
   @{sys}/fs/cgroup/cgroup.controllers r,
+  @{sys}/fs/cgroup/system.slice/snapd.seeded.service/cpu.max r,
   @{sys}/kernel/security/apparmor/features/{,**} r,
 
         @{PROC}/@{pid}/cgroup r,
-        @{PROC}/@{pid}/maps r,
         @{PROC}/@{pid}/mountinfo r,
         @{PROC}/cgroups r,
         @{PROC}/cmdline r,
         @{PROC}/sys/kernel/random/uuid r,
         @{PROC}/sys/kernel/seccomp/actions_avail r,
         @{PROC}/version r,
-  owner @{PROC}/@{pid}/attr/apparmor/current r,
+        @{PROC}/@{pid}/attr/apparmor/current r,
   owner @{PROC}/@{pid}/mounts r,
 
-  /dev/tty@{int} rw,
+  /dev/tty@{u8} rw,
   /dev/ttyS@{int} rw,
 
-  deny @{user_share_dirs}/gvfs-metadata/* r,
+  /apparmor/.null rw,
+
+  # file_inherit, safe to deny
+  deny owner @{user_share_dirs}/gvfs-metadata/* r,
+  deny owner @{user_share_dirs}/gnome-shell/session.gvdb rw,
 
   profile gpg {
     include <abstractions/base>
@@ -116,17 +144,77 @@ profile snap @{exec_path} flags=(attach_disconnected) {
     include if exists <local/snap_gpg>
   }
 
+  profile xdg-settings {
+    include <abstractions/base>
+    include <abstractions/desktop-files>
+
+    @{bin}/xdg-settings mr,
+
+    @{sh_path}       r,
+    @{bin}/{,e}grep  rix,
+    @{bin}/basename  rix,
+    @{bin}/cat        ix,
+    @{bin}/cut       rix,
+    @{bin}/head       ix,
+    @{bin}/mkdir      ix,
+    @{bin}/mktemp     ix,
+    @{bin}/mv         ix,
+    @{bin}/readlink   ix,
+    @{bin}/realpath  rix,
+    @{bin}/rm         ix,
+    @{bin}/sed        ix,
+    @{bin}/sleep      ix,
+    @{bin}/sort       ix,
+    @{bin}/touch      ix,
+    @{bin}/tr         ix,
+    @{bin}/uname      ix,
+    @{bin}/wc         ix,
+
+    @{bin}/xdg-mime   Px,
+
+    / r,
+
+    include if exists <local/snap_xdg-settings>
+  }
+
+  profile run {
+    include <abstractions/base>
+
+    unix bind type=stream addr=@@{udbus}/bus/systemd-run/,
+
+    @{bin}/systemd-run mr,
+
+    owner @{run}/user/@{uid}/systemd/private rw,
+
+    include if exists <local/snap_run>
+  }
+
   profile systemctl {
     include <abstractions/base>
     include <abstractions/app/systemctl>
-    include <abstractions/bus/org.freedesktop.systemd1>
+    include <abstractions/bus/system/org.freedesktop.systemd1>
+
+    capability net_admin,
 
     network unix stream,
+    network (send receive) netlink raw,
 
     owner @{run}/user/@{uid}/systemd/notify rw,
     owner @{run}/user/@{uid}/systemd/private rw,
 
     include if exists <local/snap_systemctl>
+  }
+
+  profile unsquashfs {
+    include <abstractions/base>
+
+    @{bin}/unsquashfs mr,
+
+    /**.snap r,
+
+    owner /tmp/read-file@{int}/unpack/{,**} w,
+
+    include if exists <local/snap_unsquashfs>
   }
 
   include if exists <local/snap>

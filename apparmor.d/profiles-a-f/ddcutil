@@ -7,7 +7,7 @@ abi <abi/4.0>,
 include <tunables/global>
 
 @{exec_path} = @{bin}/ddcutil
-profile ddcutil @{exec_path} {
+profile ddcutil @{exec_path} flags=(attach_disconnected) {
   include <abstractions/base>
   include <abstractions/consoles>
   include <abstractions/dri>
@@ -18,17 +18,19 @@ profile ddcutil @{exec_path} {
   @{exec_path} mr,
 
   @{sh_path}               rix,
+  @{bin}/{,e}grep          rix,
   @{bin}/find              rix,
   @{bin}/sed               rix,
+  @{bin}/uname             rix,
   @{bin}/xargs             rix,
-  @{bin}/grep              rix,
 
   / r,
 
   owner @{user_cache_dirs}/ddcutil/ rw,
   owner @{user_cache_dirs}/ddcutil/** rwlk,
 
-  @{run}/udev/data/* r,
+  @{run}/udev/data/+*:* r,                # Identifies all subsystems
+  @{run}/udev/data/c@{int}:@{int} r,      # Identifies all character devices
 
   @{sys}/ r,
   @{sys}/bus/ r,

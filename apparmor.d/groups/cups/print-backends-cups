@@ -1,0 +1,43 @@
+# apparmor.d - Full set of apparmor profiles
+# Copyright (C) 2025 Alexandre Pujol <alexandre@pujol.io>
+# SPDX-License-Identifier: GPL-2.0-only
+
+abi <abi/4.0>,
+
+include <tunables/global>
+
+@{exec_path} = @{lib}/@{multiarch}/print-backends/cups
+profile print-backends-cups @{exec_path} {
+  include <abstractions/base>
+  include <abstractions/avahi-observe>
+  include <abstractions/bus-session>
+  include <abstractions/bus-system>
+  include <abstractions/bus/system/org.cups.cupsd.Notifier>
+  include <abstractions/cups-client>
+  include <abstractions/nameservice-strict>
+
+  network inet stream,
+  network inet6 stream,
+
+  #aa:dbus own bus=session name=org.openprinting.Backend.CUPS
+  #aa:dbus own bus=session name=org.openprinting.PrintBackend path=/{,**}
+
+  @{exec_path} mr,
+
+  @{sh_path} rix,
+  @{bin}/mkdir ix,
+
+  /usr/share/cups/locale/{,**} r,
+
+        /home/ r,
+  owner @{HOME}/ r,
+  owner @{HOME}/cpdb/ rw,
+  owner @{HOME}/cpdb/sockets/ rw,
+  owner @{HOME}/cpdb/sockets/cups-@{int}.sock rw,
+
+  owner /tmp/@{rand} rw,
+
+  include if exists <local/print-backends-cups>
+}
+
+# vim:syntax=apparmor

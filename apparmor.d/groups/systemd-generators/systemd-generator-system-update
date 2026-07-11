@@ -1,0 +1,24 @@
+# apparmor.d - Full set of apparmor profiles
+# Copyright (C) 2023-2024 Alexandre Pujol <alexandre@pujol.io>
+# SPDX-License-Identifier: GPL-2.0-only
+
+abi <abi/4.0>,
+
+include <tunables/global>
+
+@{exec_path} = @{lib}/systemd/system-generators/systemd-system-update-generator
+profile systemd-generator-system-update @{exec_path} flags=(attach_disconnected) {
+  include <abstractions/base>
+  include <abstractions/common/systemd>
+
+  ptrace read peer=@{p_systemd},
+
+  @{exec_path} mr,
+
+  @{PROC}/@{pids}/cgroup r,
+  @{PROC}/@{pids}/status r,
+
+  include if exists <local/systemd-generator-system-update>
+}
+
+# vim:syntax=apparmor

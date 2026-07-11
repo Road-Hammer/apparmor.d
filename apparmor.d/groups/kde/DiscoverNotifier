@@ -8,12 +8,13 @@ include <tunables/global>
 
 @{exec_path}  = @{lib}/DiscoverNotifier
 @{exec_path} += @{lib}/@{multiarch}/{,libexec/}DiscoverNotifier
-profile DiscoverNotifier @{exec_path} {
+profile DiscoverNotifier @{exec_path} flags=(attach_disconnected,mediate_deleted) {
   include <abstractions/base>
   include <abstractions/dconf-write>
   include <abstractions/graphics>
   include <abstractions/kde-strict>
   include <abstractions/nameservice-strict>
+  include <abstractions/network-manager-observe>
   include <abstractions/ssl_certs>
 
   network inet dgram,
@@ -23,35 +24,46 @@ profile DiscoverNotifier @{exec_path} {
   network netlink dgram,
   network netlink raw,
 
+  #aa:dbus own bus=session name=org.kde.discover.notifier
+
+  #aa:dbus talk bus=system name=org.freedesktop.PackageKit path=/{,**} label=packagekitd
+
   @{exec_path} mr,
 
   @{bin}/apt-config          rPx,
+  @{bin}/plasma-discover     rPx,
 
   @{bin}/gpg{,2}             rCx -> gpg,
   @{bin}/gpgconf             rCx -> gpg,
   @{bin}/gpgsm               rCx -> gpg,
 
+  /usr/share/flatpak/remotes.d/{,**} r,
   /usr/share/metainfo/{,**} r,
 
   /etc/machine-id r,
   /etc/flatpak/remotes.d/{,**} r,
 
+  /var/lib/apt/lists/* r,
   /var/lib/flatpak/{,**} r,
 
-  /var/cache/swcatalog/cache/ w,
-  /var/cache/swcatalog/xml/{,**} r,
+  /var/cache/swcatalog/cache/{,**} rw,
+  /var/cache/swcatalog/{,**} r,
 
   owner @{user_cache_dirs}/appstream/ rw,
   owner @{user_cache_dirs}/appstream/** rw,
   owner @{user_cache_dirs}/flatpak/{,**} rw,
 
-  owner @{user_config_dirs}/@{int} rw,
   owner @{user_config_dirs}/breezerc r,
   owner @{user_config_dirs}/PlasmaDiscoverUpdates rw,
-  owner @{user_config_dirs}/PlasmaDiscoverUpdates.@{rand6} rwl -> @{user_config_dirs}/@{int},
+  owner @{user_config_dirs}/PlasmaDiscoverUpdates.@{rand6} rwl -> @{user_config_dirs}/#@{int},
   owner @{user_config_dirs}/PlasmaDiscoverUpdates.lock rwk,
 
   owner @{user_share_dirs}/flatpak/{,**} rw,
+  owner @{user_state_dirs}/discovernotifierstaterc r,
+  owner @{user_state_dirs}/discovernotifierstaterc.@{rand6} rwlk,
+
+  owner @{user_state_dirs}/discovernotifierstaterc rw,
+  owner @{user_state_dirs}/discovernotifierstaterc.@{rand6} rwlk,
 
   owner @{tmp}/ostree-gpg-@{rand6}/ rw,
   owner @{tmp}/ostree-gpg-@{rand6}/pubring.gpg rw,

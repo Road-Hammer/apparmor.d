@@ -11,6 +11,7 @@ profile sshd-auth @{exec_path} {
   include <abstractions/base>
   include <abstractions/nameservice-strict>
 
+  capability dac_override,
   capability setgid,
   capability setuid,
   capability sys_chroot,
@@ -21,8 +22,12 @@ profile sshd-auth @{exec_path} {
   network inet6 stream,
   network netlink raw,
 
+  unix type=stream peer=(label=sshd-session),
+
   @{exec_path} mr,
   @{sbin}/sshd.hmac r,
+
+  /etc/gss/mech.d/{,*} r,
 
   include if exists <local/sshd-auth>
 }

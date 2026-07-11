@@ -12,21 +12,31 @@ include <tunables/global>
 profile virt-manager @{exec_path} flags=(attach_disconnected) {
   include <abstractions/base>
   include <abstractions/audio-client>
+  include <abstractions/camera>
   include <abstractions/dconf-write>
   include <abstractions/desktop>
   include <abstractions/devices-usb>
   include <abstractions/fontconfig-cache-read>
   include <abstractions/graphics>
   include <abstractions/gstreamer>
+  include <abstractions/gvfs>
+  include <abstractions/media-control>
   include <abstractions/nameservice-strict>
   include <abstractions/python>
   include <abstractions/ssl_certs>
+  include <abstractions/sys/hwmon-fan>
+  include <abstractions/sys/hwmon-temp>
   include <abstractions/thumbnails-cache-read>
   include <abstractions/user-download-strict>
 
   network inet stream,
   network inet6 stream,
   network netlink raw,
+
+  unix type=stream peer=(label=libvirt-*),
+  unix type=stream peer=(label=libvirtd),
+
+  #aa:dbus own bus=session name=org.virt-manager.virt-manager
 
   @{exec_path} rix,
 
@@ -39,13 +49,13 @@ profile virt-manager @{exec_path} flags=(attach_disconnected) {
   @{bin}/getfacl   rix,
   @{bin}/setfacl   rix,
 
-  @{sbin}/libvirtd                         rPx,
   @{bin}/ssh                               rPx,
+  @{bin}/virtqemud                        rPUx,
   @{lib}/spice-client-glib-usb-acl-helper  rPx,
+  @{sbin}/libvirtd                         rPx,
 
   @{open_path}     rPx -> child-open,
 
-  /usr/share/gtksourceview-4/{,**} r,
   /usr/share/ladspa/rdf/{,ladspa.rdfs} r,
   /usr/share/misc/*.ids r,
   /usr/share/osinfo/{,**} r,
@@ -71,20 +81,22 @@ profile virt-manager @{exec_path} flags=(attach_disconnected) {
   owner @{user_cache_dirs}/virt-manager/{,**} rw,
 
   # User VM images
+        @{user_vm_dirs}/{,**} rw,
   owner @{user_share_dirs}/ r,
   owner @{user_share_dirs}/libvirt/{,**} rw,
-  owner @{user_vm_dirs}/{,**} rw,
+
+  owner /tmp/#@{int} rw,
 
   owner @{run}/user/@{uid}/libvirt/libvirtd.lock rwk,
   owner @{run}/user/@{uid}/libvirt/virtqemud.lock rwk,
+  owner @{run}/user/@{uid}/libvirt/virtqemud-sock rw,
 
+  @{run}/libvirt/libvirt-sock rw,
   @{run}/mount/utab r,
   @{run}/udev/data/c@{dynamic}:@{int} r,  # For dynamic assignment range 234 to 254, 384 to 511
 
-  @{sys}/devices/**/hwmon/**/{,name,temp*,fan*} r,
+  @{sys}/devices/@{pci_bus}/uevent r,
   @{sys}/devices/virtual/drm/ttm/uevent r,
-  @{sys}/fs/cgroup/user.slice/cpu.max r,
-  @{sys}/fs/cgroup/user.slice/user-@{uid}.slice/cpu.max r,
   @{sys}/fs/cgroup/user.slice/user-@{uid}.slice/session-@{word}.scope/cpu.max r,
 
         @{PROC}/@{pids}/net/route r,
@@ -95,12 +107,8 @@ profile virt-manager @{exec_path} flags=(attach_disconnected) {
   owner @{PROC}/@{pid}/mounts r,
   owner @{PROC}/@{pid}/stat r,
 
-  /dev/media@{int} r,
-  /dev/video@{int} rw,
-
   # Silence the noise
   deny /usr/share/virt-manager/{,**} w,
-  deny owner @{user_share_dirs}/gvfs-metadata/{,*} r,
 
   include if exists <local/virt-manager>
 }

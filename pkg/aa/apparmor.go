@@ -2,14 +2,64 @@
 // Copyright (C) 2021-2023 Alexandre Pujol <alexandre@pujol.io>
 // SPDX-License-Identifier: GPL-2.0-only
 
+// Package aa parses, formats, and manipulates AppArmor policy: profiles,
+// rules, includes, variables, and abstractions. It is the core data model
+// shared by the prebuild pipeline and the command-line tools.
+//
+// Each rule and profile element implements [fmt.Stringer]; serialisation
+// is delegated to per-kind Go templates under templates/ that are loaded
+// at build time via go:embed and rendered by [renderTemplate].
 package aa
 
 import (
+	"slices"
+	"strings"
+
 	"github.com/roddhjav/apparmor.d/pkg/paths"
 )
 
 // MagicRoot is the default Apparmor magic directory: /etc/apparmor.d/.
 var MagicRoot = paths.New("/etc/apparmor.d")
+
+// FileKind represents an AppArmor file kind.
+type FileKind uint8
+
+const (
+	ProfileKind FileKind = iota
+	AbstractionKind
+	TunableKind
+)
+
+var (
+	fileKinds = map[FileKind]string{
+		ProfileKind:     PROFILE.String(),
+		AbstractionKind: "abstraction",
+		TunableKind:     "tunable",
+	}
+)
+
+func KindFromPath(file *paths.Path) FileKind {
+	dirname := file.Parent().String()
+	switch {
+	case strings.Contains(dirname, "abstractions"):
+		return AbstractionKind
+	case strings.Contains(dirname, "tunables"):
+		return TunableKind
+	case strings.Contains(dirname, "local"):
+		return AbstractionKind
+	case strings.Contains(dirname, "mappings"):
+		return AbstractionKind
+	default:
+		return ProfileKind
+	}
+}
+
+func (k FileKind) String() string {
+	if res, ok := fileKinds[k]; ok {
+		return res
+	}
+	return ""
+}
 
 // AppArmorProfileFiles represents a full set of apparmor profiles
 type AppArmorProfileFiles map[string]*AppArmorProfileFile
@@ -19,8 +69,11 @@ type AppArmorProfileFiles map[string]*AppArmorProfileFile
 //   - Some rules are not supported yet (subprofile, hat...)
 //   - The structure is simplified as it only aims at writing profile, not parsing it.
 type AppArmorProfileFile struct {
-	Preamble Rules
-	Profiles []*Profile
+	Preamble   Rules
+	Profiles   []*Profile
+	Hats       []*Hat
+	Conditions []*Condition
+	Kind       FileKind
 }
 
 func NewAppArmorProfile() *AppArmorProfileFile {
@@ -49,9 +102,12 @@ func DefaultTunables() *AppArmorProfileFile {
 			&Variable{Name: "user_cache_dirs", Values: []string{"/home/*/.cache"}, Define: true},
 			&Variable{Name: "user_config_dirs", Values: []string{"/home/*/.config"}, Define: true},
 			&Variable{Name: "user_share_dirs", Values: []string{"/home/*/.local/share"}, Define: true},
+			&Variable{Name: "user_bin_dirs", Values: []string{"/home/*/.local/bin"}, Define: true},
+			&Variable{Name: "user_lib_dirs", Values: []string{"/home/*/.local/lib"}, Define: true},
 			&Variable{Name: "user", Values: []string{"[a-zA-Z_]{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}"}, Define: true},
 			&Variable{Name: "version", Values: []string{"@{int}{.@{int},}{.@{int},}{-@{rand},}"}, Define: true},
 			&Variable{Name: "w", Values: []string{"[a-zA-Z0-9_]"}, Define: true},
+			&Variable{Name: "word", Values: []string{"@{w}{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}"}, Define: true},
 		},
 	}
 }
@@ -108,5 +164,26 @@ func (f *AppArmorProfileFile) MergeRules() {
 func (f *AppArmorProfileFile) Format() {
 	for _, p := range f.Profiles {
 		p.Format()
+	}
+}
+
+// Merge merges two profiles together.
+func (f *AppArmorProfileFile) Merge(other *AppArmorProfileFile) error {
+	f.Preamble = append(f.Preamble, other.Preamble...)
+	f.Profiles = append(f.Profiles, other.Profiles...)
+	return nil
+}
+
+// Clean the profile file from comments
+func (f *AppArmorProfileFile) Clean() {
+	delete := []int{}
+	for i, r := range f.Preamble {
+		switch r.(type) {
+		case *Comment:
+			delete = append(delete, i)
+		}
+	}
+	for i := len(delete) - 1; i >= 0; i-- {
+		f.Preamble = slices.Delete(f.Preamble, delete[i], delete[i]+1)
 	}
 }

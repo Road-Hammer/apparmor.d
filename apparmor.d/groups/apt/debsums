@@ -31,13 +31,14 @@ profile debsums @{exec_path} {
   / r,
   /root/ r,
 
+  #aa:lint ignore=too-wide
   # Scanning files
   @{bin}/{,*} r,
   /usr/{,**} r,
   /etc/{,**} r,
   /var/lib/{,**} r,
   /opt/{,**} r,
-  /boot/{,**} r,
+  @{efi}/{,**} r,
   /lib*/{,**} r,
 
   include if exists <local/debsums>

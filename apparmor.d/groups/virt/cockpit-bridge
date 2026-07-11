@@ -9,9 +9,18 @@ include <tunables/global>
 @{exec_path} = @{bin}/cockpit-bridge
 profile cockpit-bridge @{exec_path} {
   include <abstractions/base>
+  include <abstractions/bus-session>
+  include <abstractions/bus-system>
+  include <abstractions/bus/system/org.freedesktop.hostname1>
+  include <abstractions/bus/system/org.freedesktop.timedate1>
+  include <abstractions/bus/system/org.freedesktop.UDisks2>
   include <abstractions/consoles>
+  include <abstractions/icons>
+  include <abstractions/login-observe>
+  include <abstractions/mime>
   include <abstractions/nameservice-strict>
   include <abstractions/python>
+  include <abstractions/sys/hwmon-temp>
 
   capability dac_read_search,
   capability net_admin,
@@ -26,6 +35,8 @@ profile cockpit-bridge @{exec_path} {
 
   ptrace read,
 
+  unix (send receive) type=stream peer=(label=cockpit-askpass),
+
   signal send set=term peer=cockpit-pcp,
   signal send set=term peer=dbus-daemon,
   signal send set=term peer=journalctl,
@@ -33,15 +44,26 @@ profile cockpit-bridge @{exec_path} {
   signal send set=term peer=unconfined,
   signal (send receive) set=term peer=cockpit-bridge//sudo,
 
+  #aa:dbus talk bus=session name=org.libvirt label=libvirt-dbus
+  #aa:dbus talk bus=system name=org.fedoraproject.FirewallD1 label=firewalld
+  #aa:dbus talk bus=system name=org.freedesktop.NetworkManager label=NetworkManager
+  #aa:dbus talk bus=system name=org.freedesktop.PackageKit path=/** label=packagekitd
+  #aa:dbus talk bus=system name=org.freedesktop.systemd1 label=@{p_systemd}
+  #aa:dbus talk bus=system name=org.libvirt label=libvirt-dbus
+
   @{exec_path} mr,
 
+  @{python_path}              ix,
   @{bin}/cat                  ix,
   @{bin}/date                 ix,
-  @{bin}/find                 ix,
-  @{sbin}/ip                  ix,
-  @{python_path}              ix,
-  @{bin}/test                 ix,
   @{bin}/file                 ix,
+  @{bin}/find                 ix,
+  @{bin}/ip                   ix, #aa:lint ignore=sbin
+  @{sbin}/ip                  ix,
+  @{bin}/test                 ix,
+
+  @{bin}/virt-xml            PUx,
+  @{bin}/virt-xml-validate   PUx,
 
   @{bin}/chage                Px,
   @{sbin}/dmidecode           Px,
@@ -69,9 +91,7 @@ profile cockpit-bridge @{exec_path} {
 
   @{etc_ro}/login.defs r,
   /etc/cockpit/{,**} r,
-  /etc/httpd/conf/mime.types r,
   /etc/machine-id r,
-  /etc/mime.types r,
   /etc/motd r,
   /etc/shadow r,
   /etc/shells r,
@@ -79,16 +99,13 @@ profile cockpit-bridge @{exec_path} {
   / r,
   @{HOME}/ r,
 
-  owner @{user_cache_dirs}/ssh-agent.[0-9A-Z]* rw,
+  audit owner @{user_cache_dirs}/ssh-agent.[0-9A-Z]* rw,
   owner @{user_share_dirs}/ r,
 
-  @{run}/user/@{uid}/ssh-agent.[0-9A-Z]* rw,
+  audit @{run}/user/@{uid}/ssh-agent.[0-9A-Z]* rw,
   @{run}/utmp r,
 
-  @{sys}/class/hwmon/ r,
   @{sys}/class/net/ r,
-  @{sys}/devices/**/hwmon@{int}/ r,
-  @{sys}/devices/**/hwmon@{int}/{name,temp*} r,
   @{sys}/fs/cgroup/ r,
   @{sys}/fs/cgroup/**/ r,
   @{sys}/fs/cgroup/**/cpu.{stat,weight} r,
@@ -110,9 +127,11 @@ profile cockpit-bridge @{exec_path} {
 
   /dev/ptmx rw,
 
-  profile sudo {
+  profile sudo flags=(attach_disconnected) {
     include <abstractions/base>
     include <abstractions/app/sudo>
+
+    unix (send receive) type=stream peer=(label=cockpit-bridge),
 
     signal (send receive) set=(cont hup term) peer=cockpit-bridge,
 
@@ -125,6 +144,9 @@ profile cockpit-bridge @{exec_path} {
   profile udevadm {
     include <abstractions/base>
     include <abstractions/app/udevadm>
+
+    @{run}/udev/data/b@{int}:* r,           # For block devices
+    @{run}/udev/data/n@{int} r,             # For network interfaces
 
     include if exists <local/cockpit-bridge_udevadm>
   }

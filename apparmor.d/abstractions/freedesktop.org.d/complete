@@ -16,11 +16,16 @@
   /opt/*/**.{desktop,png} r,
 
   /etc/gnome/defaults.list r,
-  /etc/xfce4/defaults.list r,  
+  /etc/xfce4/defaults.list r,
 
   /var/lib/snapd/desktop/applications/{,**} r,
   /var/lib/snapd/desktop/icons/{,**} r,
 
   owner @{HOME}/.icons/{,**} r,
+
+  owner @{user_share_dirs}/#@{int} rw,
+  owner @{user_share_dirs}/recently-used.xbel rw,
+  owner @{user_share_dirs}/recently-used.xbel.@{rand6} rwl,
+  owner @{user_share_dirs}/recently-used.xbel.lock rwk,
 
 # vim:syntax=apparmor

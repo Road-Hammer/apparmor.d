@@ -16,7 +16,7 @@ The directives follow the format:
 
 **`[options]`**
 
-:   A (possibly empty) list or map of arguments. Exact format depend on the directive.
+:   A (possibly empty) list or map of arguments. Exact format depends on the directive.
 
 ## Dbus
 
@@ -38,7 +38,7 @@ The `only` and `exclude` directives can be used to filter individual rule or rul
 
 :   The filter to apply. Can be:
 
-    - A supported target distribution: `arch`, `debian`, `ubuntu`, `opensuse`, `whonix`.
+    - A supported target distribution: `arch`, `debian`, `ubuntu`, `opensuse`.
     - A supported distribution family: `apt`, `pacman`, `zypper`.
     - A supported ABI: `abi3`, `abi4`.
 
@@ -114,7 +114,7 @@ The `exec` directive is useful to allow executing transitions to a profile witho
 
 **`profiles...`**
 
-:   List a profile **files** to stack at the end of the current profile.
+:   List of profile **files** to stack at the end of the current profile.
 
 **`[X]`**
 
@@ -146,7 +146,6 @@ The `exec` directive is useful to allow executing transitions to a profile witho
     /etc/systemd/oomd.conf.d/{,**} r,
             @{run}/systemd/io.system.ManagedOOM rw,
             @{run}/systemd/io.systemd.ManagedOOM rw,
-            @{run}/systemd/notify rw,
     @{sys}/fs/cgroup/cgroup.controllers r,
     @{sys}/fs/cgroup/memory.pressure r,
     @{sys}/fs/cgroup/user.slice/user-@{uid}.slice/user@@{uid}.service/memory.* r,

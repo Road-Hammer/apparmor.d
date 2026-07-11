@@ -1,0 +1,63 @@
+# apparmor.d - Full set of apparmor profiles
+# Copyright (C) 2026 Alexandre Pujol <alexandre@pujol.io>
+# SPDX-License-Identifier: GPL-2.0-only
+
+abi <abi/4.0>,
+
+include <tunables/global>
+
+@{exec_path} = @{bin}/gsr-ui
+profile gsr-ui @{exec_path} {
+  include <abstractions/base>
+  include <abstractions/dconf>
+  include <abstractions/fontconfig-cache-write>
+  include <abstractions/fonts-strict>
+  include <abstractions/graphics>
+  include <abstractions/gschemas>
+  include <abstractions/icons>
+  include <abstractions/user-dirs>
+
+  signal (send) set=(int, rtmin+5, usr1, usr2) peer=gpu-screen-recorder,
+  signal (send) set=(kill) peer=gsr-kwin-helper,
+  signal (send) set=(int) peer=gsr-game-tracker,
+
+  @{sh_path}                  cx -> shell,
+  @{bin}/cat                 rix,
+  @{bin}/gsr-game-tracker    rPx,
+  @{bin}/gsr-global-hotkeys  rPx,
+  @{bin}/gsr-kwin-helper     rPx,
+  @{bin}/gsr-notify          rix,
+  @{bin}/gpu-screen-recorder rPx,
+  @{bin}/systemctl           rPx -> child-systemctl,
+
+  owner @{user_config_dirs}/gpu-screen-recorder/{,**} rw,
+
+  /usr/share/gsr-notify/{,**} r,
+  /usr/share/gsr-ui/** r,
+
+  owner @{run}/user/@{uid}/gsr-ui rw,
+  owner @{run}/user/@{uid}/xauth_@{rand6} r,
+
+  @{PROC}/ r,
+
+  profile shell flags=(complain) {
+    include <abstractions/base>
+
+    @{sh_path}      r,
+    @{bin}/cat     ix,
+    @{bin}/mkdir   ix,
+    @{bin}/dirname ix,
+
+    /dev/tty rw,
+
+    owner @{user_config_dirs}/autostart/gpu-screen-recorder-ui.desktop rw,
+
+    deny /dev/dri/card@{int} r, # file_inherit
+
+    include if exists <local/gsr-ui_shell>
+  }
+
+  include if exists <local/gsr-ui>
+}
+
+# vim:syntax=apparmor

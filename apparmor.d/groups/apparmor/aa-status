@@ -7,7 +7,7 @@ abi <abi/4.0>,
 include <tunables/global>
 
 @{exec_path} = @{sbin}/aa-status @{sbin}/apparmor_status
-profile aa-status @{exec_path} {
+profile aa-status @{exec_path} flags=(attach_disconnected) {
   include <abstractions/base>
   include <abstractions/consoles>
 
@@ -22,11 +22,11 @@ profile aa-status @{exec_path} {
   @{sys}/module/apparmor/parameters/enabled r,
 
         @{PROC}/ r,
-        @{PROC}/@{pids}/attr/apparmor/current r,
-        @{PROC}/@{pids}/attr/current r,
+        @{PROC}/@{pid}/attr/apparmor/current r,
+        @{PROC}/@{pid}/attr/current r,
   owner @{PROC}/@{pid}/mounts r,
 
-  /dev/tty@{int} rw,
+  /dev/tty@{u8} rw,
 
   include if exists <local/aa-status>
 }

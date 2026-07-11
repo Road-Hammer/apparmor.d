@@ -15,8 +15,8 @@ profile blkdeactivate @{exec_path} flags=(complain) {
   @{exec_path} rm,
 
   @{sh_path}             rix,
-  @{sbin}/dmsetup        rPUx,
-  @{bin}/grep            rix,
+  @{sbin}/dmsetup        rPx,
+  @{bin}/{,e}grep        rix,
   @{bin}/touch           rix,
   @{bin}/lsblk           rPx,
   @{sbin}/lvm            rPx,
@@ -25,6 +25,8 @@ profile blkdeactivate @{exec_path} flags=(complain) {
   @{bin}/umount          rPx,
 
   @{sys}/devices/virtual/block/*/holders/ r,
+
+  @{PROC}/@{pid}/cgroup r,
 
   /dev/tty rw,
 

@@ -9,12 +9,12 @@ include <tunables/global>
 @{exec_path} = @{bin}/terminator
 profile terminator @{exec_path} flags=(attach_disconnected) {
   include <abstractions/base>
-  include <abstractions/bus-accessibility>
-  include <abstractions/bus-session>
-  include <abstractions/bus/org.a11y>
+  include <abstractions/audio-client>
   include <abstractions/consoles>
   include <abstractions/dconf-write>
   include <abstractions/desktop>
+  include <abstractions/gvfs>
+  include <abstractions/ibus-strict>
   include <abstractions/mesa>
   include <abstractions/nameservice-strict>
   include <abstractions/python>
@@ -25,7 +25,12 @@ profile terminator @{exec_path} flags=(attach_disconnected) {
 
   signal send set=hup peer=unconfined,
 
-  #aa:dbus own bus=session name=net.tenshu.Terminator@{hex}
+  #aa:dbus own bus=session name=net.tenshu.Terminator2
+
+  dbus send bus=session path=/org/freedesktop/systemd1
+       interface=org.freedesktop.systemd1.Manager
+       member=StartTransientUnit
+       peer=(name=org.freedesktop.systemd1, label="@{p_systemd_user}"),
 
   @{exec_path} mr,
 
@@ -62,8 +67,6 @@ profile terminator @{exec_path} flags=(attach_disconnected) {
   /dev/ r,
   /dev/dri/card@{int} rw,
   /dev/ptmx rw,
-
-  deny @{user_share_dirs}/gvfs-metadata/{,*} r,
 
   include if exists <local/terminator>
 }

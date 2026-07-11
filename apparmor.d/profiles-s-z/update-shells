@@ -9,6 +9,8 @@ include <tunables/global>
 @{exec_path} = @{sbin}/update-shells
 profile update-shells @{exec_path} {
   include <abstractions/base>
+  include <abstractions/consoles>
+  include <abstractions/nameservice-strict>
 
   @{exec_path} mr,
 
@@ -17,18 +19,22 @@ profile update-shells @{exec_path} {
   @{bin}/chmod         ix,
   @{bin}/chown         ix,
   @{bin}/dirname       ix,
-  @{bin}/dpkg-realpath ix,
+  @{bin}/dpkg-realpath rix,
   @{bin}/mv            ix,
   @{bin}/sync          ix,
+  @{bin}/readlink      ix,
 
   /usr/share/debianutils/shells r,
   /usr/share/debianutils/shells.d/{,**} r,
+  /usr/share/dpkg/sh/dpkg-error.sh r,
 
-  /etc/shells r,
-  /etc/shells.tmp w,
+  /etc/ r,
+  /etc/shells rw,
+  /etc/shells.tmp rw,
 
-  /var/lib/shells.state r,
-  /var/lib/shells.state.tmp w,
+  /var/lib/ r,
+  /var/lib/shells.state rw,
+  /var/lib/shells.state.tmp rw,
 
   include if exists <local/update-shells>
 }

@@ -7,7 +7,7 @@ abi <abi/4.0>,
 include <tunables/global>
 
 @{exec_path} = @{lib}/cups/notifier/dbus
-profile cups-notifier-dbus @{exec_path} {
+profile cups-notifier-dbus @{exec_path} flags=(attach_disconnected) {
   include <abstractions/base>
   include <abstractions/bus-session>
   include <abstractions/bus-system>
@@ -15,6 +15,8 @@ profile cups-notifier-dbus @{exec_path} {
   include <abstractions/nameservice-strict>
 
   signal (receive) set=(term) peer=cupsd,
+
+  #aa:dbus own bus=system name=org.cups.cupsd.Notifier
 
   @{exec_path} mr,
 

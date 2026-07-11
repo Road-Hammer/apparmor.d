@@ -1,12 +1,13 @@
 # apparmor.d - Full set of apparmor profiles
 # Copyright (C) 2018-2021 Mikhail Morfikov
-# Copyright (C) 2021-2024 Alexandre Pujol <alexandre@pujol.io>
+# Copyright (C) 2021-2026 Alexandre Pujol <alexandre@pujol.io>
 # SPDX-License-Identifier: GPL-2.0-only
 
-# TODO: Rethink this profile:
-# - Access to gio from a profile is handled by child-open-*
-# - Direct access should only be needed is some special context and it should not
-#   require access to that much resources.
+# !!! warning "TODO: Rethink this profile"
+#
+#     - Access to gio from a profile is handled by child-open-*
+#     - Direct access should only be needed is some special context and it
+#       should not require access to that much resources.
 
 abi <abi/4.0>,
 
@@ -18,6 +19,7 @@ include <tunables/global>
 profile gio-launch-desktop @{exec_path} flags=(attach_disconnected) {
   include <abstractions/base>
   include <abstractions/app-launcher-user>
+  include <abstractions/bus/session/org.gtk.vfs.Metadata>
   include <abstractions/consoles>
   include <abstractions/deny-sensitive-home>
   include <abstractions/gnome-strict>
@@ -30,6 +32,8 @@ profile gio-launch-desktop @{exec_path} flags=(attach_disconnected) {
 
   @{bin}/gnome-terminal     rPUx,
   @{lib}/gio-launch-desktop  rix,
+  @{lib}/*/** rPx,
+  @{lib}/* rPx,
 
   owner @{HOME}/{,**} rw,
 

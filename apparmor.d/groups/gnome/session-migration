@@ -9,8 +9,10 @@ include <tunables/global>
 @{exec_path} = @{bin}/session-migration
 profile session-migration @{exec_path} {
   include <abstractions/base>
-  include <abstractions/dconf-write>
   include <abstractions/bus-session>
+  include <abstractions/consoles>
+  include <abstractions/dconf-write>
+  include <abstractions/gschemas>
   include <abstractions/python>
 
   @{exec_path} mr,
@@ -18,17 +20,19 @@ profile session-migration @{exec_path} {
   @{sh_path}                              rix,
   @{python_path}                          rix,
   @{bin}/dconf                            rPx,
+  @{bin}/{,e}grep                         rix,
   @{bin}/gsettings                        rPx,
+  @{bin}/tr                               rix,
+  @{bin}/update-alternatives              rPx,
   /usr/share/session-migration/scripts/*  rix,
 
-  /usr/share/glib-2.0/schemas/gschemas.compiled r,
   /usr/share/session-migration/{,**} r,
 
   owner @{gdm_share_dirs}/ w,
   owner @{gdm_share_dirs}/session_migration-* rw,
   owner @{user_share_dirs}/session_migration-* rw,
 
-  /dev/tty@{int} rw,
+  /dev/tty@{u8} rw,
 
   include if exists <local/session-migration>
 }

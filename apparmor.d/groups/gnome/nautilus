@@ -9,37 +9,52 @@ include <tunables/global>
 @{exec_path} = @{bin}/nautilus
 profile nautilus @{exec_path} flags=(attach_disconnected) {
   include <abstractions/base>
-  include <abstractions/bus-accessibility>
-  include <abstractions/bus-session>
-  include <abstractions/bus-system>
-  include <abstractions/bus/com.canonical.Unity.LauncherEntry>
-  include <abstractions/bus/org.a11y>
-  include <abstractions/bus/org.freedesktop.hostname1>
-  include <abstractions/bus/org.freedesktop.portal.Desktop>
-  include <abstractions/bus/org.freedesktop.Tracker3.Miner.Files>
-  include <abstractions/bus/org.gnome.SessionManager>
-  include <abstractions/bus/org.gtk.Private.RemoteVolumeMonitor>
+  include <abstractions/bus/session/com.canonical.Unity.LauncherEntry>
+  include <abstractions/bus/session/org.freedesktop.portal.Inhibit>
+  include <abstractions/bus/session/org.freedesktop.Tracker3.Miner.Files>
+  include <abstractions/bus/session/org.gtk.Private.RemoteVolumeMonitor>
+  include <abstractions/bus/system/org.freedesktop.hostname1>
   include <abstractions/dconf-write>
   include <abstractions/deny-sensitive-home>
   include <abstractions/gnome-strict>
   include <abstractions/graphics>
   include <abstractions/nameservice-strict>
+  include <abstractions/screen-inhibit>
+  include <abstractions/sys/hwmon-fan>
+  include <abstractions/sys/hwmon-temp>
   include <abstractions/trash-strict>
 
   mqueue r type=posix /,
 
-  #aa:dbus own bus=session name=org.freedesktop.FileManager1
-  #aa:dbus own bus=session name=org.gnome.Nautilus interface+="org.gtk.{Application,Actions}"
-  #aa:dbus own bus=session name=org.gnome.Nautilus.SearchProvider interface+=org.gnome.Shell.SearchProvider2
+  unix type=stream peer=(label=gnome-shell),
 
+  signal send set=kill peer=gnome-desktop-thumbnailers,
+
+  #aa:dbus own bus=session name=org.freedesktop.FileManager1
+  #aa:dbus own bus=session name=org.gnome.Nautilus.SearchProvider interface+=org.gnome.Shell.SearchProvider2
+  #aa:dbus own bus=session name=org.gnome.Nautilus
+
+  #aa:dbus talk bus=session name=org.freedesktop.impl.portal.FileChooser path=/org/freedesktop/portal/desktop label=xdg-desktop-portal-gnome
+  #aa:dbus talk bus=session name=org.freedesktop.portal.FileTransfer path=/org/freedesktop/portal/documents label=xdg-document-portal
+  #aa:dbus talk bus=session name=org.gnome.Settings label=gnome-control-center
   #aa:dbus talk bus=session name=org.gtk.MountOperationHandler label=gnome-shell
-  #aa:dbus talk bus=session name=org.gtk.vfs label="gvfsd{,-*}"
   #aa:dbus talk bus=session name=org.gtk.Notifications label=gnome-shell
+  #aa:dbus talk bus=session name=org.gtk.vfs label="gvfsd{,-*}"
+
+  dbus send bus=session path=/org/gnome/Mutter/ServiceChannel
+       interface=org.gnome.Mutter.ServiceChannel
+       member=OpenWaylandServiceConnection
+       peer=(name=@{busname}, label=gnome-shell),
 
   dbus (send, receive) bus=session path=/org/gtk/Application/CommandLine
        interface=org.gtk.private.CommandLine
        member=Print
        peer=(name=@{busname}, label=nautilus),
+
+  dbus send bus=session path=/org/freedesktop/DBus
+       interface=org.freedesktop.DBus.Properties
+       member=GetAll
+       peer=(name=org.freedesktop.DBus, label="@{p_dbus_session}"),
 
   dbus send bus=session path=/org/freedesktop/DBus
        interface=org.freedesktop.DBus
@@ -51,6 +66,11 @@ profile nautilus @{exec_path} flags=(attach_disconnected) {
        member=NameHasOwner
        peer=(name=org.freedesktop.DBus, label="@{p_dbus_session}"),
 
+  # Server side of abstractions/bus/session/org.freedesktop.Application
+  dbus send bus=session
+       interface=org.freedesktop.Application
+       member=Open,
+
   @{exec_path} mr,
 
   @{sh_path}                 rix,
@@ -58,21 +78,25 @@ profile nautilus @{exec_path} flags=(attach_disconnected) {
   @{bin}/file-roller         rPx,
   @{bin}/firejail           rPUx,
   @{bin}/net                rPUx,
-  @{bin}/tracker3           rPUx,
 
-  @{open_path}               rPx -> child-open,
+  @{bin}/* r,
 
+  @{open_path}              mrPx -> child-open-any,
+
+  /snap/*/@{uid}/**.@{icon_ext} r,
+  /usr/share/**.@{icon_ext} r,
   /usr/share/nautilus/{,**} r,
-  /usr/share/poppler/{,**} r,
   /usr/share/sounds/freedesktop/stereo/*.oga r,
   /usr/share/terminfo/** r,
   /usr/share/thumbnailers/{,**} r,
   /usr/share/tracker*/{,**} r,
 
-  /etc/fstab r,
+  /etc/fstab      r,
+  /etc/os-release r,
 
   /var/cache/fontconfig/ rw,
 
+  #aa:lint ignore=too-wide
   # Full access to user's data
   / r,
   /*/ r,
@@ -89,7 +113,7 @@ profile nautilus @{exec_path} flags=(attach_disconnected) {
   owner @{tmp}/** rw,
 
   # Silence non user's data
-  deny /boot/{,**} r,
+  deny @{efi}/{,**} r,
   deny /opt/{,**} r,
   deny /root/{,**} r,
   deny /tmp/.* rw,
@@ -99,13 +123,10 @@ profile nautilus @{exec_path} flags=(attach_disconnected) {
 
   @{run}/mount/utab r,
 
-  @{sys}/devices/**/hwmon@{int}/{,name,temp*,fan*} r,
-  @{sys}/devices/**/hwmon@{int}/**/{,name,temp*,fan*} r,
-  @{sys}/devices/**/hwmon/{,name,temp*,fan*} r,
-  @{sys}/devices/**/hwmon/**/{,name,temp*,fan*} r,
-
+        @{PROC}/diskstats r,
         @{PROC}/@{pids}/net/wireless r,
         @{PROC}/sys/dev/i915/perf_stream_paranoid r,
+  owner @{PROC}/@{pid}/cgroup r,
   owner @{PROC}/@{pid}/cmdline r,
   owner @{PROC}/@{pid}/fd/ r,
   owner @{PROC}/@{pid}/mountinfo r,

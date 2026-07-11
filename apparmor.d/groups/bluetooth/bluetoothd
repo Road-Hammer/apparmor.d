@@ -11,7 +11,8 @@ include <tunables/global>
 profile bluetoothd @{exec_path} flags=(attach_disconnected) {
   include <abstractions/base>
   include <abstractions/bus-system>
-  include <abstractions/bus/org.freedesktop.hostname1>
+  include <abstractions/bus/system/org.freedesktop.hostname1>
+  include <abstractions/uinput>
 
   # Needed for configuring HCI interfaces
   capability net_admin,
@@ -20,20 +21,22 @@ profile bluetoothd @{exec_path} flags=(attach_disconnected) {
   network bluetooth raw,
   network bluetooth seqpacket,
   network bluetooth stream,
-  network alg seqpacket,
+  network alg seqpacket, # kernel crypto API
   network netlink raw,
 
-  #aa:dbus own bus=system name=org.bluez
+  #aa:dbus own bus=system name=org.bluez path=/{,**}
+  #aa:dbus talk bus=system name=org.mpris.MediaPlayer2.Player path=/{,**} label=mpris-proxy
 
-  dbus send bus=system path=/{,MediaEndpoint}
+  # Missing rules from the directive above as these one are not standard
+  # Part of abstractions/bus/system/org.bluez
+  dbus send bus=system
        interface=org.freedesktop.DBus.ObjectManager
        member=GetManagedObjects
        peer=(name=@{busname}),
-
-  dbus send bus=system path=/
+  dbus receive bus=system path=/
        interface=org.freedesktop.DBus.ObjectManager
-       member=InterfacesRemoved
-       peer=(name=org.freedesktop.DBus),
+       member={InterfacesAdded,InterfacesRemoved}
+       peer=(name=@{busname}, label="@{p_bluetoothd}"),
 
   @{exec_path} mr,
 
@@ -41,22 +44,26 @@ profile bluetoothd @{exec_path} flags=(attach_disconnected) {
 
   /etc/bluetooth/{,*.conf} r,
 
+  / r,
+
   /var/lib/bluetooth/{,**} rw,
 
-        @{run}/sdp rw,
-  owner @{run}/systemd/notify w,
-        @{run}/udev/data/+hid:* r,              # for HID-Compliant Keyboard
+  / r,
+
+  @{run}/sdp rw,
+
+  @{run}/udev/data/+hid:* r,              # For Human Interface Device (mice, controllers, drawing tablets, scanners)
 
   @{sys}/devices/@{pci}/rfkill@{int}/name r,
   @{sys}/devices/@{pci}/**/{uevent,name} r,
   @{sys}/devices/platform/**/rfkill/**/name r,
   @{sys}/devices/virtual/dmi/id/chassis_type r,
   @{sys}/devices/virtual/misc/uhid/**/uevent r,
+  @{sys}/devices/virtual/vc/*/uevent r,
 
   @{PROC}/sys/kernel/hostname r,
 
   /dev/uhid rw,
-  /dev/uinput rw,
   /dev/rfkill rw,
   /dev/hidraw@{int} rw,
 

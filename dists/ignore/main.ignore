@@ -2,13 +2,19 @@
 # File format: one ignore by line, it can be a profile name or a directory to ignore
 
 # Contains profiles and configuration for full system confinement, only included
-# when built with 'make full'
+# when built with 'just fsp'
 apparmor.d/groups/_full
+
+# Experimental system states
+apparmor.d/tunables/multiarch.d/state
 
 # Provided by other packages
 man
 
 # Work in progress profiles
+apparmor.d/groups/code
+apparmor.d/groups/cosmic
 apparmor.d/groups/steam
+claude
 dunst
 plasma-discover

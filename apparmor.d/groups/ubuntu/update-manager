@@ -9,23 +9,18 @@ include <tunables/global>
 @{exec_path} = @{bin}/update-manager
 profile update-manager @{exec_path} flags=(attach_disconnected) {
   include <abstractions/base>
+  include <abstractions/apt>
   include <abstractions/audio-client>
-  include <abstractions/bus-accessibility>
-  include <abstractions/bus-session>
-  include <abstractions/bus-system>
-  include <abstractions/bus/org.a11y>
-  include <abstractions/bus/org.freedesktop.login1>
-  include <abstractions/bus/org.freedesktop.NetworkManager>
-  include <abstractions/bus/org.freedesktop.portal.Desktop>
-  include <abstractions/bus/org.freedesktop.UPower>
-  include <abstractions/bus/org.gtk.vfs.MountTracker>
-  include <abstractions/common/apt>
+  include <abstractions/bus/session/com.canonical.Unity.LauncherEntry>
+  include <abstractions/bus/system/org.freedesktop.login1>
   include <abstractions/consoles>
   include <abstractions/dconf-write>
   include <abstractions/gnome-strict>
   include <abstractions/nameservice-strict>
+  include <abstractions/network-manager-observe>
   include <abstractions/python>
   include <abstractions/ssl_certs>
+  include <abstractions/upower-observe>
 
   network inet dgram,
   network inet6 dgram,
@@ -45,15 +40,15 @@ profile update-manager @{exec_path} flags=(attach_disconnected) {
   @{bin}/dpkg                     rPx -> child-dpkg,
   @{bin}/hwe-support-status       rPx,
   @{bin}/ischroot                 rPx,
-  @{bin}/lsb_release              rPx -> lsb_release,
+  @{bin}/lsb_release              rPx,
   @{bin}/snap                    rPUx,
   @{bin}/software-properties-gtk  rPx,
   @{bin}/uname                    rix,
   @{lib}/apt/methods/http{,s}     rPx,
 
-  @{lib}/@{python_name}/dist-packages/UpdateManager/{,**/}__pycache__/*.cpython-@{int}.pyc.@{int} rw,
-  @{lib}/@{python_name}/dist-packages/gi/{,**/}__pycache__/*.cpython-@{int}.pyc.@{int} rw,
-  @{lib}/@{python_name}/dist-packages/uaclient/{,**/}__pycache__/*.cpython-@{int}.pyc.@{int} rw,
+  @{lib}/@{python_name}/dist-packages/UpdateManager/{,**/}__pycache__/*.cpython-@{int}.pyc.@{u64} rw,
+  @{lib}/@{python_name}/dist-packages/gi/{,**/}__pycache__/*.cpython-@{int}.pyc.@{u64} rw,
+  @{lib}/@{python_name}/dist-packages/uaclient/{,**/}__pycache__/*.cpython-@{int}.pyc.@{u64} rw,
 
   /usr/share/distro-info/{,**} r,
   /usr/share/ubuntu-release-upgrader/{,**} r,
@@ -63,7 +58,7 @@ profile update-manager @{exec_path} flags=(attach_disconnected) {
   /etc/ubuntu-advantage/uaclient.conf r,
   /etc/update-manager/{,**} r,
 
-  /boot/ r,
+  @{efi}/ r,
 
   /var/lib/dpkg/info/*.list r,
   /var/lib/dpkg/updates/ r,
@@ -71,9 +66,14 @@ profile update-manager @{exec_path} flags=(attach_disconnected) {
 
   owner @{user_cache_dirs}/update-manager-core/{,**} rw,
 
-  @{att}/@{run}/systemd/inhibit/@{int}.ref rw,
+  owner @{run}/user/@{uid}/ubuntu-drivers*.package-list w,
+
+  @{att}@{run}/systemd/inhibit/@{int}.ref rw,
+
+  @{sys}/devices/**/ r,
 
         @{PROC}/@{pids}/mountinfo r,
+  owner @{PROC}/@{pid}/cgroup r,
   owner @{PROC}/@{pid}/fd/ r,
   owner @{PROC}/@{pid}/mounts r,
 

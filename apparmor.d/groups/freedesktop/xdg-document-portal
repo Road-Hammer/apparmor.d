@@ -10,10 +10,11 @@ include <tunables/global>
 profile xdg-document-portal @{exec_path} flags=(attach_disconnected) {
   include <abstractions/base>
   include <abstractions/bus-session>
-  include <abstractions/bus/org.freedesktop.impl.portal.PermissionStore>
+  include <abstractions/bus/session/org.freedesktop.impl.portal.PermissionStore>
   include <abstractions/consoles>
   include <abstractions/deny-sensitive-home>
-  include <abstractions/freedesktop.org>
+  include <abstractions/desktop-files>
+  include <abstractions/mime>
   include <abstractions/nameservice-strict>
 
   capability sys_admin,
@@ -30,33 +31,39 @@ profile xdg-document-portal @{exec_path} flags=(attach_disconnected) {
 
   unix (send receive) type=stream peer=(label=xdg-document-portal//fusermount),
 
-  #aa:dbus own bus=session name=org.freedesktop.portal.Documents path=/org/freedesktop/portal/documents
+  #aa:dbus own bus=session name=org.freedesktop.portal.{Documents,FileTransfer} path=/org/freedesktop/portal/documents
+  #aa:dbus talk bus=session name=org.freedesktop.impl.portal.PermissionStore label=xdg-permission-store
 
   dbus receive bus=session
        interface=org.freedesktop.DBus.Introspectable
        member=Introspect
-       peer=(name=:*, label=gnome-shell),
+       peer=(name=@{busname}, label="{gnome-shell,gnome-extension}"),
 
   @{exec_path} mr,
 
-  @{bin}/flatpak         rPUx,
+  @{bin}/flatpak         rPx,
   @{bin}/fusermount{,3}  rCx -> fusermount,
+  @{bin}/snap            rPx,
 
               / r,
-  owner @{att}/ r,
+  owner /att/**/ r,
   owner @{att}/.flatpak-info r,
 
   owner @{HOME}/ r,
-  owner @{HOME}/*/{,**} rw,
+  owner @{HOME}/** rw,
   owner @{MOUNTS}/ r,
+  owner @{MOUNTS}/** rw,
 
   owner @{user_share_dirs}/flatpak/db/documents r,
   owner @{user_share_dirs}/Trash/files/** r,
 
+  owner @{run}/user/@{uid}/.flatpak/@{int}/bwrapinfo.json r,
   owner @{run}/user/@{uid}/doc/ rw,
 
+        @{PROC}/ r,
         @{PROC}/1/cgroup r,
         @{PROC}/sys/fs/pipe-max-size r,
+  owner @{PROC}/@{pid}/ r,
   owner @{PROC}/@{pid}/cgroup r,
   owner @{PROC}/@{pid}/fd/ r,
 
@@ -64,13 +71,14 @@ profile xdg-document-portal @{exec_path} flags=(attach_disconnected) {
 
   profile fusermount flags=(attach_disconnected) {
     include <abstractions/base>
+    include <abstractions/consoles>
     include <abstractions/app/fusermount>
 
     capability dac_read_search,
     capability dac_override,
     capability setuid,
 
-    mount options=(rw, rprivate) -> /,
+    mount options=(rw, make-rprivate) /,
     mount options=(rw, rbind) @{run}/user/@{uid}/ -> /,
     mount fstype=fuse.portal -> @{run}/user/@{uid}/doc/,
 

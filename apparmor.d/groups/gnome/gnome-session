@@ -7,20 +7,37 @@ abi <abi/4.0>,
 include <tunables/global>
 
 @{exec_path} = @{bin}/gnome-session
-profile gnome-session @{exec_path} {
+profile gnome-session @{exec_path} flags=(attach_disconnected) {
   include <abstractions/base>
+  include <abstractions/bus-session>
+  include <abstractions/bus-system>
   include <abstractions/consoles>
+  include <abstractions/dconf-write>
+  include <abstractions/gschemas>
   include <abstractions/nameservice-strict>
   include <abstractions/shells>
+
+  signal receive set=term peer=gdm,
+  signal receive set=term peer=gdm-session,
+
+  dbus send bus=session path=/org/freedesktop/DBus
+       interface=org.freedesktop.DBus
+       member=UpdateActivationEnvironment
+       peer=(name=org.freedesktop.DBus label="@{p_dbus_session}"),
+
+  dbus receive bus=session
+       interface=org.freedesktop.DBus.Introspectable
+       member=Introspect
+       peer=(name=@{busname}, label="{gnome-shell,gnome-extension}"),
 
   @{exec_path} mrix,
 
   @{shells_path}               rix,
+  @{bin}/{,e}grep              rix,
   @{bin}/cat                   rix,
   @{bin}/find                  rix,
   @{bin}/gettext               rix,
   @{bin}/gettext.sh              r,
-  @{bin}/grep                  rix,
   @{bin}/head                  rix,
   @{bin}/id                    rix,
   @{bin}/locale                rix,
@@ -36,10 +53,12 @@ profile gnome-session @{exec_path} {
   @{bin}/uname                 rix,
   @{bin}/xargs                 rix,
 
-  @{bin}/dpkg-query            rpx,
-  @{bin}/flatpak               rCx -> flatpak,
-  @{bin}/gsettings             rPx,
-  @{lib}/gnome-session-binary  rPx,
+  @{bin}/dpkg-query                 px,
+  @{bin}/flatpak                    Cx -> flatpak,
+  @{bin}/systemd-cat                Px,
+  @{bin}/gsettings                  Px,
+  @{lib}/gnome-session-binary       Px,
+  @{lib}/gnome-session-init-worker  Px,
 
   /usr/share/im-config/{,**} r,
   /usr/share/libdebuginfod-common/debuginfod.sh r,
@@ -61,19 +80,21 @@ profile gnome-session @{exec_path} {
 
   owner @{HOME}/ r,
 
+  owner @{run}/user/@{uid}/gnome-session-leader-fifo rw,
+
   owner @{PROC}/@{pid}/cmdline r,
   owner @{PROC}/@{pid}/fd/ r,
   owner @{PROC}/@{pid}/loginuid r,
 
-  /dev/tty@{int} rw,
+  /dev/tty@{u8} rw,
 
-  profile flatpak {
+  profile flatpak flags=(attach_disconnected) {
     include <abstractions/base>
     include <abstractions/consoles>
 
     @{bin}/flatpak mr,
 
-    /dev/tty@{int} rw,
+    /dev/tty@{u8} rw,
 
     include if exists <local/gnome-session_flatpak>
   }

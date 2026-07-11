@@ -27,7 +27,6 @@ profile torbrowser @{exec_path} flags=(attach_disconnected) {
   @{lib_dirs}/updater            Px,
   @{lib_dirs}/vaapitest          Px -> torbrowser//&torbrowser-vaapitest,
 
-  #aa:exclude whonix
   @{lib_dirs}/TorBrowser/Tor/PluggableTransports/**  Px -> torbrowser-tor,
   @{lib_dirs}/TorBrowser/Tor/tor                     Px -> torbrowser-tor,
 
@@ -42,7 +41,7 @@ profile torbrowser @{exec_path} flags=(attach_disconnected) {
   owner "@{tmp}/Tor Project*" rwk,
   owner "@{tmp}/Tor Project*/" rw,
   owner "@{tmp}/Tor Project*/**" rwk,
-  owner @{tmp}/@{rand8}.* rw,
+  owner @{tmp}/@{word8} rw,
   owner @{tmp}/mozilla_pc@{int}/ rw,
   owner @{tmp}/mozilla_pc@{int}/* rwk,
 

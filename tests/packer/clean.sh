@@ -51,18 +51,17 @@ clean_apt() {
 	apt-get -y autoremove --purge
 	apt-get -y autoclean
 	apt-get -y clean
+	apt-get update
 }
 
 clean_pacman() {
 	_msg "Cleaning pacman cache"
-	pacman -Syu --noconfirm
 	pacman -Scc --noconfirm
 }
 
 clean_zypper() {
 	_msg "Cleaning zypper cache"
-	zypper update -y
-	zypper clean -y
+	zypper clean --all
 }
 
 # Make the image as impersonal as possible.
@@ -71,11 +70,7 @@ impersonalize() {
 
 	# Remove remaining pkg file, docs and caches
 	dirs=(
-		/usr/share/doc
-		/usr/share/man
-		/var/cache/
-		/var/lib/apt
-		/var/lib/dhcp
+		/var/cache
 		/var/tmp
 	)
 	for dir in "${dirs[@]}"; do
@@ -92,11 +87,6 @@ impersonalize() {
 	truncate --size=0 /var/lib/dbus/machine-id
 
 	remove=(
-		# Remove remaining pkg file, docs and caches
-		/usr/share/info/
-		/usr/share/lintian/
-		/usr/share/linda/
-
 		# Remove history & unique ids
 		/etc/adjtime
 		/etc/ansible/
@@ -160,9 +150,9 @@ main() {
 
 	end="$(_diskused)"
 	((res = begin - end))
-	echo "Inital used space: $(numfmt --to=iec "$begin")"
-	echo "Final space: $(numfmt --to=iec "$end")"
-	echo "Saved space: $(numfmt --to=iec "$res")"
+	echo "Inital used space: $(numfmt --to=iec -- "$begin")"
+	echo "Final space: $(numfmt --to=iec -- "$end")"
+	echo "Saved space: $(numfmt --to=iec -- "$res")"
 }
 
 main "$@"

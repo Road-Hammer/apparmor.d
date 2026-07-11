@@ -1,0 +1,32 @@
+{{- /* apparmor.d - Full set of apparmor profiles */ -}}
+{{- /* Copyright (C) 2021-2024 Alexandre Pujol <alexandre@pujol.io> */ -}}
+{{- /* SPDX-License-Identifier: GPL-2.0-only */ -}}
+
+{{- define "unix" -}}
+    {{- template "qualifier" . -}}
+    {{- "unix" -}}
+    {{- with .Access -}}
+        {{ " " }}{{ cjoin . }}
+    {{- end -}}
+    {{- with .Type -}}
+        {{ " type=" }}{{ . }}
+    {{- end -}}
+    {{- if and .Address (ne .Address "none") -}}
+        {{ " addr=" }}{{ .Address }}
+    {{- end -}}
+    {{- with .Label -}}
+        {{ " label=" }}{{ . }}
+    {{- end -}}
+    {{- if and .PeerLabel .PeerAddr (ne .PeerAddr "none") -}}
+        {{ " peer=(label=" }}{{ .PeerLabel }}{{ ", addr=" }}{{ .PeerAddr }}{{ ")" }}
+    {{- else -}}
+        {{- with .PeerLabel -}}
+            {{ " peer=(label=" }}{{ . }}{{ ")" }}
+        {{- end -}}
+        {{- if and .PeerAddr (ne .PeerAddr "none") -}}
+            {{ " peer=(addr=" }}{{ .PeerAddr }}{{ ")" }}
+        {{- end -}}
+    {{- end -}}
+    {{- "," -}}
+    {{- template "comment" . -}}
+{{- end -}}

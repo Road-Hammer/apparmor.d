@@ -7,8 +7,9 @@ abi <abi/4.0>,
 include <tunables/global>
 
 @{exec_path} = @{bin}/ksplashqml
-profile ksplashqml @{exec_path} {
+profile ksplashqml @{exec_path} flags=(attach_disconnected,mediate_deleted) {
   include <abstractions/base>
+  include <abstractions/bus-session>
   include <abstractions/graphics>
   include <abstractions/kde-strict>
   include <abstractions/nameservice-strict>
@@ -16,10 +17,13 @@ profile ksplashqml @{exec_path} {
 
   ptrace read peer=startplasma,
 
+  #aa:dbus own bus=session name=org.kde.KSplash path=/KSplash
+
   @{exec_path} mr,
 
   @{lib}/libheif/            r,
   @{lib}/libheif/*.so*      rm,
+  @{bin}/ r,
 
   /usr/share/color-schemes/* r,
   /usr/share/plasma/** r,
@@ -34,6 +38,8 @@ profile ksplashqml @{exec_path} {
   owner @{user_config_dirs}/kdedefaults/plasmarc r,
   owner @{user_config_dirs}/ksplashrc r,
   owner @{user_config_dirs}/plasmarc r,
+
+  owner @{user_share_dirs}/plasma/look-and-feel/*/metadata.json r,
 
   include if exists <local/ksplashqml>
 }

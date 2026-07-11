@@ -11,10 +11,12 @@ include <tunables/global>
 profile hardinfo @{exec_path} {
   include <abstractions/base>
   include <abstractions/consoles>
-  include <abstractions/fontconfig-cache-read>
   include <abstractions/desktop>
+  include <abstractions/fontconfig-cache-read>
   include <abstractions/nameservice-strict>
   include <abstractions/python>
+  include <abstractions/sys/hwmon-fan>
+  include <abstractions/sys/hwmon-temp>
   include <abstractions/user-download-strict>
 
   # This is needed to display some content of devices -> resources
@@ -46,7 +48,7 @@ profile hardinfo @{exec_path} {
   @{bin}/valgrind{,.bin} rix,
   @{lib}/@{multiarch}/valgrind/memcheck-*-linux rix,
 
-  @{bin}/lsb_release rPx -> lsb_release,
+  @{bin}/lsb_release rPx,
   @{open_path}       rPx -> child-open,
   @{bin}/ccache      rCx -> ccache,
   @{bin}/kmod        rCx -> kmod,
@@ -58,7 +60,7 @@ profile hardinfo @{exec_path} {
   @{bin}/netstat     rPx,
   @{bin}/qtchooser   rPx,
 
-  @{lib}/jvm/java-[0-9]*-openjdk-amd64/bin/javac rCx -> javac,
+  @{lib}/jvm/java-[0-9]*-openjdk-@{arch}/bin/javac rCx -> javac,
 
   /usr/share/gdb/python/ r,
   /usr/share/gdb/python/** r,
@@ -82,12 +84,7 @@ profile hardinfo @{exec_path} {
 
   @{sys}/devices/system/cpu/** r,
   @{sys}/devices/virtual/dmi/id/* r,
-  @{sys}/devices/virtual/thermal/thermal_zone@{int}/hwmon@{int}/temp* r,
-  @{sys}/devices/virtual/thermal/thermal_zone@{int}/temp* r,
-  @{sys}/devices/platform/**/hwmon/hwmon@{int}/temp* r,
-  @{sys}/devices/platform/**/hwmon/hwmon@{int}/fan* r,
   @{sys}/devices/@{pci}/eeprom r,
-  @{sys}/devices/@{pci}/hwmon/hwmon@{int}/temp* r,
   @{sys}/devices/**/power_supply/** r,
 
         @{PROC}/@{pid}/net/arp r,
@@ -108,7 +105,7 @@ profile hardinfo @{exec_path} {
   owner @{PROC}/@{pid}/mountinfo r,
   owner @{PROC}/@{pid}/mounts r,
 
-  owner /dev/tty@{int} rw,
+  owner /dev/tty@{u8} rw,
 
   deny /usr/share/gdb/python/** w,
 
@@ -132,9 +129,8 @@ profile hardinfo @{exec_path} {
     include <abstractions/base>
     include <abstractions/nameservice-strict>
 
-    @{lib}/jvm/java-[0-9]*-openjdk-amd64/bin/* mr,
-
-    @{lib}/jvm/java-[0-9]*-openjdk-amd64/lib/** mr,
+    @{lib}/jvm/java-[0-9]*-openjdk-@{arch}/bin/* mr,
+    @{lib}/jvm/java-[0-9]*-openjdk-@{arch}/lib/** mr,
 
     /etc/java-[0-9]*-openjdk/** r,
 

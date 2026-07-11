@@ -28,11 +28,9 @@ profile mkinitcpio @{exec_path} flags=(attach_disconnected) {
   @{bin}/bsdtar              rix,
   @{bin}/fc-match            rix,
   @{bin}/findmnt             rPx,
-  @{sbin}/fsck               rix,
   @{bin}/getent              rix,
   @{bin}/gzip                rix,
   @{bin}/hexdump             rix,
-  @{sbin}/ldconfig           rix,
   @{bin}/ldd                 rix,
   @{bin}/loadkeys            rix,
   @{bin}/objcopy             rix,
@@ -41,11 +39,11 @@ profile mkinitcpio @{exec_path} flags=(attach_disconnected) {
   @{bin}/xz                  rix,
   @{bin}/zcat                rix,
   @{bin}/zstd                rix,
+  @{bin}/zstdgrep            rix,
+  @{sbin}/fsck               rix,
+  @{sbin}/ldconfig           rix,
 
-  @{bin}/{depmod,insmod}     rPx,
-  @{bin}/{kmod,lsmod}        rPx,
-  @{bin}/{modinfo,rmmod}     rPx,
-  @{sbin}/modprobe           rPx,
+  @{bin}/kmod                rPx,
   @{bin}/plymouth            rPx,
   @{sbin}/plymouth-set-default-theme rPx,
   @{bin}/sbctl               rPx,
@@ -55,6 +53,7 @@ profile mkinitcpio @{exec_path} flags=(attach_disconnected) {
   @{lib}/initcpio/post/**    rix,
   @{lib}/ld-*.so*            rix,
 
+  /etc/cmdline.d/{,**} r,
   /etc/fstab r,
   /etc/initcpio/{,**} r,
   /etc/locale.conf r,
@@ -68,6 +67,9 @@ profile mkinitcpio @{exec_path} flags=(attach_disconnected) {
   /etc/vconsole.conf r,
 
   /usr/share/kbd/{,**} r,
+  /usr/share/xkeyboard-config-2/{,**} r,
+  /usr/share/pixmaps/archlinux-logo.png r,
+  /usr/share/X11/locale/ r,
   /usr/share/plymouth/*.png r,
   /usr/share/plymouth/plymouthd.defaults r,
   /usr/share/plymouth/themes/{,**} r,
@@ -78,6 +80,7 @@ profile mkinitcpio @{exec_path} flags=(attach_disconnected) {
   @{bin}/* mr,
   @{bin}/*/ r,
   @{lib}/ r,
+  @{lib}/modules/*/kernel/drivers/{,*,*/,**.ko.xz,**.ko.zst} r,
   @{lib}/plymouth/plymouthd-* mr,
   @{lib}/systemd/{,**} mr,
   @{lib}/udev/* mr,
@@ -85,10 +88,10 @@ profile mkinitcpio @{exec_path} flags=(attach_disconnected) {
   # Manage /boot
   / r,
   @{efi}/ r,
-  @{efi}/EFI/{,**} rw,
   @{efi}/@{hex32}/{,**} rw,
-  /boot/initramfs-*.img* rw,
-  /boot/vmlinuz-* r,
+  @{efi}/EFI/{,**} rw,
+  @{efi}/initramfs-*.img* rw,
+  @{efi}/vmlinuz-* r,
 
   /usr/share/systemd/bootctl/** r,
 
@@ -98,6 +101,7 @@ profile mkinitcpio @{exec_path} flags=(attach_disconnected) {
         /tmp/mkinitcpio.@{rand6}.tmp rw,
   owner @{tmp}/mkinitcpio.@{rand6} rw,
   owner @{tmp}/mkinitcpio.@{rand6}/{,**} rwl,
+  owner @{tmp}/staging_initramfs.img w,
 
   owner @{run}/initcpio-tmp/mkinitcpio.@{rand6}/{,**} rwl,
   owner @{run}/initramfs/{,**} rw,
@@ -106,10 +110,17 @@ profile mkinitcpio @{exec_path} flags=(attach_disconnected) {
   @{sys}/class/block/ r,
   @{sys}/devices/{,**} r,
   @{sys}/firmware/efi/fw_platform_size r,
+  @{sys}/fs/cgroup/user.slice/cpu.max r,
+  @{sys}/fs/cgroup/user.slice/user-@{uid}.slice/cpu.max r,
+  @{sys}/fs/cgroup/user.slice/user-@{uid}.slice/session-@{int}.scope/cpu.max r,
+  @{sys}/fs/cgroup/user.slice/user-@{uid}.slice/user@@{uid}.service/app.slice/cpu.max r,
+  @{sys}/fs/cgroup/user.slice/user-@{uid}.slice/user@@{uid}.service/cpu.max r,
+  @{sys}/fs/cgroup/user.slice/user-@{uid}.slice/user@@{uid}.service/session.slice/cpu.max r,
 
+        @{PROC}/@{pid}/cgroup r,
   owner @{PROC}/@{pid}/mountinfo r,
 
-  /dev/tty@{int}* rw,
+  /dev/tty@{u8}* rw,
 
   # Inherit silencer
   deny @{HOME}/** r,

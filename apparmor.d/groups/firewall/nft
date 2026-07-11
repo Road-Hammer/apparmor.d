@@ -8,7 +8,7 @@ abi <abi/4.0>,
 include <tunables/global>
 
 @{exec_path} = @{sbin}/nft
-profile nft @{exec_path} {
+profile nft @{exec_path} flags=(attach_disconnected) {
   include <abstractions/base>
   include <abstractions/nameservice-strict>
 
@@ -18,6 +18,8 @@ profile nft @{exec_path} {
 
   ptrace (read),
 
+  signal receive set=(cont term) peer=unshare,
+
   @{exec_path} mr,
 
   /usr/share/iproute2/{,**} r,
@@ -26,6 +28,9 @@ profile nft @{exec_path} {
   /etc/nftables.conf r,
   /etc/nftables/{,**} r,
 
+  @{PROC}/@{pid}/fd/ r,
+  @{PROC}/@{pid}/net/netlink r,
+  @{PROC}/@{pid}/stat r,
   @{PROC}/1/environ r,
   @{PROC}/cmdline r,
   @{PROC}/sys/kernel/osrelease r,

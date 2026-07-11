@@ -8,21 +8,18 @@ abi <abi/4.0>,
 include <tunables/global>
 
 @{exec_path} = @{bin}/mkvtoolnix-gui
-profile mkvtoolnix-gui @{exec_path} {
+profile mkvtoolnix-gui @{exec_path} flags=(attach_disconnected,mediate_deleted) {
   include <abstractions/base>
-  include <abstractions/dri-enumerate>
+  include <abstractions/desktop>
   include <abstractions/fontconfig-cache-read>
-  include <abstractions/fonts>
-  include <abstractions/freedesktop.org>
-  include <abstractions/gtk>
-  include <abstractions/mesa>
+  include <abstractions/graphics>
   include <abstractions/nameservice-strict>
-  include <abstractions/qt5>
   include <abstractions/qt5-compose-cache-write>
   include <abstractions/qt5-settings-write>
+  include <abstractions/qt5>
   include <abstractions/ssl_certs>
+  include <abstractions/sys/dmi>
   include <abstractions/user-download-strict>
-  include <abstractions/X>
 
   signal (send) set=(term, kill) peer=mkvmerge,
 
@@ -32,6 +29,7 @@ profile mkvtoolnix-gui @{exec_path} {
   @{bin}/mediainfo-gui rPx,
 
   /usr/share/hwdata/pnp.ids r,
+  /usr/share/mkvtoolnix/{,**} r,
 
   /etc/fstab r,
   /etc/machine-id r,
@@ -57,12 +55,15 @@ profile mkvtoolnix-gui @{exec_path} {
   owner @{tmp}/MKVToolNix-GUI-Instance-Communicator-* rw,
   owner /dev/shm/#@{int} rw,
 
+  @{att}@{run}/systemd/inhibit/@{int}.ref w,
+
   deny owner @{PROC}/@{pid}/cmdline r,
   deny       @{PROC}/sys/kernel/random/boot_id r,
              @{PROC}/@{pid}/mountinfo r,
              @{PROC}/@{pid}/mounts r,
+       owner @{PROC}/@{pid}/task/@{tid}/comm w,
 
-  owner /dev/tty@{int} rw,
+  owner /dev/tty@{u8} rw,
 
   include if exists <local/mkvtoolnix-gui>
 }

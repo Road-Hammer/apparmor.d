@@ -7,34 +7,25 @@ abi <abi/4.0>,
 include <tunables/global>
 
 @{exec_path} = @{lib}/{,gvfs/}gvfsd-wsdd
-profile gvfsd-wsdd @{exec_path} {
+profile gvfsd-wsdd @{exec_path} flags=(attach_disconnected) {
   include <abstractions/base>
+  include <abstractions/avahi-observe>
   include <abstractions/bus-session>
   include <abstractions/bus-system>
-  include <abstractions/bus/org.freedesktop.NetworkManager>
-  include <abstractions/bus/org.gtk.vfs.MountTracker>
+  include <abstractions/gvfs-backend>
+  include <abstractions/nameservice-strict>
+  include <abstractions/network-manager-observe>
 
+  ## network inet dgram, # ip=127.0.0.1 peer=(ip=127.0.0.*, port=53),
+  network inet dgram,
   network netlink raw,
 
   #aa:dbus own bus=session name=org.gtk.vfs.mountpoint_wsdd
 
-  dbus receive bus=session path=/org/gtk/vfs/mountable
-       interface=org.gtk.vfs.Mountable
-       member=Mount
-       peer=(name="@{busname}", label=gvfsd),
-  dbus send bus=session path=/org/gtk/gvfs/exec_spaw/@{int}
-       interface=org.gtk.vfs.Spawner
-       member=Spawned
-       peer=(name="@{busname}", label=gvfsd),
-  dbus send bus=session path=/org/gtk/vfs/mounttracker
-       interface=org.gtk.vfs.MountTracker
-       member=RegisterMount
-       peer=(name="@{busname}", label=gvfsd),
-
   @{exec_path} mr,
 
-  @{bin}/env r,
-  @{sbin}/wsdd rPx,
+  @{bin}/env mr,
+  @{bin}/wsdd rPx,
 
         @{run}/mount/utab r,
   owner @{run}/user/@{uid}/gvfsd/socket-@{rand8} rw,

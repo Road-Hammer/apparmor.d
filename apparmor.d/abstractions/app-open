@@ -2,9 +2,9 @@
 # Copyright (C) 2023-2024 Alexandre Pujol <alexandre@pujol.io>
 # SPDX-License-Identifier: GPL-2.0-only
 
-# Instead of allowing the run of all software in @{bin}/, @{lib} the purpose of
+# Instead of allowing the run of all software in `@{bin}/`, `@{lib}` the purpose of
 # this abstraction is to list all GUI program that can open resources.
-
+#
 # Ultimately, only sandbox manager such as like bwrap, snap, flatpak, firejail
 # should be present here. Until this day, this profile will be a controlled mess.
 
@@ -26,7 +26,7 @@
   @{help_path}                  Px,
   @{image_viewers_path}         PUx,
   @{offices_path}               PUx,
-  @{terminal_path}              Px,
+  @{terminal_path}              PUx,
   @{text_editors_path}          PUx,
 
   # Others
@@ -35,17 +35,20 @@
   @{bin}/discord{,-ptb}         Px,
   @{bin}/draw.io                PUx,
   @{bin}/dropbox                Px,
+  @{bin}/ebook-edit             PUx,
   @{bin}/element-desktop        Px,
   @{bin}/extension-manager      Px,
   @{bin}/filezilla              Px,
   @{bin}/flameshot              Px,
-  @{bin}/gimp{,3}               Px,
+  @{bin}/gimp{,-3.0}            Px,
   @{bin}/gnome-calculator       Px,
   @{bin}/gnome-disk-image-mounter Px,
   @{bin}/gnome-disks            Px,
   @{bin}/gnome-session-quit     Px,
   @{bin}/gnome-software         Px,
   @{bin}/gwenview               PUx,
+  @{bin}/keepassxc              Px,
+  @{bin}/mpv                    Px,
   @{bin}/qbittorrent            Px,
   @{bin}/qpdfview               Px,
   @{bin}/smplayer               Px,

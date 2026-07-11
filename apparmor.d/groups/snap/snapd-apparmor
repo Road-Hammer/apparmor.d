@@ -6,11 +6,13 @@ abi <abi/4.0>,
 
 include <tunables/global>
 
-@{lib_dirs} = @{lib}/ /snap/{snapd,core}/@{int}@{lib}
+@{lib_dirs} = @{lib}/ /snap/{snapd,core}/{,x}@{int}@{lib}
 
 @{exec_path} = @{lib_dirs}/snapd/snapd-apparmor
 profile snapd-apparmor @{exec_path} {
   include <abstractions/base>
+
+  capability dac_read_search,
 
   @{exec_path} mrix,
 
@@ -23,6 +25,11 @@ profile snapd-apparmor @{exec_path} {
 
   /var/lib/snapd/apparmor/profiles/ r,
 
+  @{sys}/fs/cgroup/system.slice/snapd.apparmor.service/cpu.max r,
+  @{sys}/fs/cgroup/system.slice/snapd.service/cpu.max r,
+
+  @{PROC}/@{pids}/cgroup r,
+  @{PROC}/@{pids}/mountinfo r,
   @{PROC}/cmdline r,
 
   include if exists <local/snapd-apparmor>

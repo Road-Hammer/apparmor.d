@@ -14,29 +14,33 @@ profile gvfsd @{exec_path} {
   include <abstractions/nameservice-strict>
 
   signal receive set=usr1 peer=pacman,
+  signal receive set=usr1 peer=pacman//pkill,
 
   #aa:dbus own bus=session name=org.gtk.vfs.Daemon
   #aa:dbus own bus=session name=org.gtk.vfs.MountTracker path=/org/gtk/vfs/mounttracker
 
+  # The server side of abstractions/bus/session/org.gtk.vfs.Mountable
   dbus send bus=session path=/org/gtk/vfs/mountable
        interface=org.gtk.vfs.Mountable
        member=Mount
-       peer=(name=:*, label=gvfsd-*),
+       peer=(name=@{busname}, label=gvfsd-*),
 
+  # The server side of abstractions/bus/session/org.gtk.vfs.Spawner
   dbus receive bus=session path=/org/gtk/gvfs/exec_spaw/@{int}
        interface=org.gtk.vfs.Spawner
        member=Spawned
-       peer=(name=:*, label=gvfsd-*),
+       peer=(name=@{busname}, label=gvfsd-*),
 
   dbus receive bus=session
        interface=org.freedesktop.DBus.Introspectable
        member=Introspect
-       peer=(name=:*, label=gnome-shell),
+       peer=(name=@{busname}, label="{gnome-shell,gnome-extension}"),
 
   @{exec_path} mr,
 
   @{sh_path}              rix,
   @{lib}/{,gvfs/}gvfsd-*  rpx,
+  @{bin}/pkexec           rCx -> pkexec,
 
   /usr/share/gvfs/{,**} r,
 
@@ -44,6 +48,17 @@ profile gvfsd @{exec_path} {
   owner @{run}/user/@{uid}/gvfsd/ rw,
 
   owner @{PROC}/@{pid}/fd/ r,
+
+  profile pkexec {
+    include <abstractions/base>
+    include <abstractions/app/pkexec>
+
+    ptrace read peer=gvfsd,
+
+    @{lib}/{,gvfs/}gvfsd-admin rPx,
+
+    include if exists <local/gvfsd_pkexec>
+  }
 
   include if exists <local/gvfsd>
 }

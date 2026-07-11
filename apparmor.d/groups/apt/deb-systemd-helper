@@ -23,6 +23,8 @@ profile deb-systemd-helper @{exec_path} {
   /var/lib/systemd/deb-systemd-helper-masked/{,**} rw,
   /var/lib/systemd/deb-systemd-user-helper-enabled/{,**} rw,
 
+  /tmp/tmp.@{rand10} rw,
+
   profile systemctl {
     include <abstractions/base>
     include <abstractions/app/systemctl>
@@ -33,6 +35,8 @@ profile deb-systemd-helper @{exec_path} {
     /etc/systemd/ r,
     /etc/systemd/system/ r,
     /etc/systemd/system/* rw,
+    /etc/systemd/system/*.requires/ rw,
+    /etc/systemd/system/*.requires/* rw,
     /etc/systemd/system/*.wants/ rw,
     /etc/systemd/system/*.wants/* rw,
     /etc/systemd/user/ r,

@@ -7,9 +7,8 @@ abi <abi/4.0>,
 include <tunables/global>
 
 @{exec_path} = @{bin}/gnome-contacts
-profile gnome-contacts @{exec_path} {
+profile gnome-contacts @{exec_path} flags=(attach_disconnected) {
   include <abstractions/base>
-  include <abstractions/bus/org.freedesktop.portal.Desktop>
   include <abstractions/common/gnome>
   include <abstractions/gstreamer>
   include <abstractions/nameservice-strict>
@@ -24,7 +23,8 @@ profile gnome-contacts @{exec_path} {
   #aa:dbus talk bus=session name=org.gnome.OnlineAccounts label=goa-daemon
 
   @{exec_path} mr,
-  @{open_path}  rPx -> child-open-help,
+
+  @{open_path}       Px -> child-open-help,
 
   owner @{user_cache_dirs}/evolution/addressbook/{,**} r,
   owner @{user_share_dirs}/folks/relationships.ini r,

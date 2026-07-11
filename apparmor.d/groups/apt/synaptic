@@ -10,7 +10,7 @@ include <tunables/global>
 @{exec_path} = @{bin}/synaptic @{bin}/synaptic-pkexec
 profile synaptic @{exec_path} {
   include <abstractions/base>
-  include <abstractions/common/apt>
+  include <abstractions/apt>
   include <abstractions/consoles>
   include <abstractions/desktop>
   include <abstractions/nameservice-strict>
@@ -47,7 +47,7 @@ profile synaptic @{exec_path} {
   @{bin}/dpkg               rPx,
   @{sbin}/dpkg-preconfigure rPx,
   @{bin}/localepurge        rPx,
-  @{bin}/lsb_release        rPx -> lsb_release,
+  @{bin}/lsb_release        rPx,
   @{bin}/pkexec             rCx -> pkexec,
   @{bin}/ps                 rPx,
   @{bin}/software-properties-gtk rPx,
@@ -103,7 +103,7 @@ profile synaptic @{exec_path} {
   owner @{PROC}/@{pid}/mountinfo r,
 
         /dev/ptmx rw,
-  owner /dev/tty@{int} rw,
+  owner /dev/tty@{u8} rw,
 
   deny @{bin}/dbus-launch x,
   deny @{bin}/dbus-send x,

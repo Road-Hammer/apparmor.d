@@ -11,9 +11,13 @@ include <tunables/global>
 profile gvfsd-http @{exec_path} {
   include <abstractions/base>
   include <abstractions/bus-session>
+  include <abstractions/bus-system>
   include <abstractions/dconf-write>
-  include <abstractions/freedesktop.org>
+  include <abstractions/gschemas>
+  include <abstractions/gvfs-backend>
+  include <abstractions/mime>
   include <abstractions/nameservice-strict>
+  include <abstractions/network-manager-observe>
   include <abstractions/p11-kit>
   include <abstractions/ssl_certs>
 
@@ -23,22 +27,18 @@ profile gvfsd-http @{exec_path} {
   network inet6 dgram,
   network netlink raw,
 
+  unix type=stream peer=(label=gnome-shell),
+  unix type=stream peer=(label=gnome-extension-gsconnect),
+
   #aa:dbus own bus=session name=org.gtk.vfs.mountpoint_http
 
-  dbus receive bus=session path=/org/gtk/vfs/mountable
-       interface=org.gtk.vfs.Mountable
-       member=Mount
-       peer=(name=:*, label=gvfsd),
-  dbus send bus=session path=/org/gtk/gvfs/exec_spaw/@{int}
-       interface=org.gtk.vfs.Spawner
-       member=Spawned
-       peer=(name=:*, label=gvfsd),
-  dbus send bus=session path=/org/gtk/vfs/mounttracker
-       interface=org.gtk.vfs.MountTracker
-       member=RegisterMount
-       peer=(name=:*, label=gvfsd),
-
   @{exec_path} mr,
+
+  /usr/share/publicsuffix/public_suffix_list.dafsa r,
+
+  /etc/sysconfig/proxy r,
+
+  owner @{user_config_dirs}/kioslaverc r,
 
   owner @{run}/user/@{uid}/gvfsd/socket-@{rand8} rw,
 

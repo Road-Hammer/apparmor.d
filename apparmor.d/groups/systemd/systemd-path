@@ -10,10 +10,16 @@ include <tunables/global>
 profile systemd-path @{exec_path} {
   include <abstractions/base>
   include <abstractions/consoles>
+  include <abstractions/user-dirs>
+
+  signal send peer=child-pager,
 
   @{exec_path} mr,
 
-  owner @{user_config_dirs}/user-dirs.dirs r,
+  @{pager_path} rPx -> child-pager,
+
+        @{PROC}/1/cgroup r,
+  owner @{PROC}/@{pid}/cgroup r,
 
   include if exists <local/systemd-path>
 }

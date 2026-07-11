@@ -6,6 +6,8 @@ package aa
 
 import (
 	"fmt"
+	"strconv"
+	"strings"
 )
 
 const SIGNAL Kind = "signal"
@@ -54,7 +56,7 @@ func newSignal(q Qualifier, rule rule) (Rule, error) {
 		Access:    accesses,
 		Set:       set,
 		Peer:      rule.GetValuesAsString("peer"),
-	}, nil
+	}, rule.ValidateMapKeys([]string{"set", "peer"})
 }
 
 func newSignalFromLog(log map[string]string) Rule {
@@ -82,6 +84,15 @@ func (r *Signal) String() string {
 func (r *Signal) Validate() error {
 	if err := validateValues(r.Kind(), "access", r.Access); err != nil {
 		return fmt.Errorf("%s: %w", r, err)
+	}
+	// Normalize signal set names (strip leading zeros from rtmin+NNN)
+	for i, s := range r.Set {
+		if after, ok := strings.CutPrefix(s, "rtmin+"); ok {
+			numStr := after
+			if n, err := strconv.Atoi(numStr); err == nil {
+				r.Set[i] = fmt.Sprintf("rtmin+%d", n)
+			}
+		}
 	}
 	if err := validateValues(r.Kind(), "set", r.Set); err != nil {
 		return fmt.Errorf("%s: %w", r, err)

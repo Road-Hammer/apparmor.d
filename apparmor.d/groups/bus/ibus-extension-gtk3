@@ -9,14 +9,11 @@ include <tunables/global>
 @{exec_path} = @{lib}/{,ibus/}ibus-extension-gtk3
 profile ibus-extension-gtk3 @{exec_path} flags=(attach_disconnected) {
   include <abstractions/base>
-  include <abstractions/bus-accessibility>
-  include <abstractions/bus-session>
-  include <abstractions/bus/org.a11y>
-  include <abstractions/bus/org.gtk.vfs.MountTracker>
+  include <abstractions/consoles>
   include <abstractions/dconf-write>
   include <abstractions/desktop>
   include <abstractions/fontconfig-cache-write>
-  include <abstractions/ibus>
+  include <abstractions/ibus-strict>
   include <abstractions/nameservice-strict>
 
   signal (receive) set=term peer=ibus-daemon,
@@ -29,27 +26,17 @@ profile ibus-extension-gtk3 @{exec_path} flags=(attach_disconnected) {
 
   #aa:dbus own bus=session name=org.freedesktop.IBus.Panel.Extension.Gtk3
 
-  dbus receive bus=session path=/org/gtk/Settings
-       interface=org.freedesktop.DBus.Properties
-       member=PropertiesChanged
-       peer=(name=:*, label=gsd-xsettings),
-
   dbus receive bus=session
        interface=org.freedesktop.DBus.Introspectable
        member=Introspect
-       peer=(name=:*, label=gnome-shell),
+       peer=(name=@{busname}, label="{gnome-shell,gnome-extension}"),
 
   @{exec_path} mr,
 
-  /usr/share/dconf/profile/gdm r,
   /usr/share/ibus/{,**} r,
 
-  owner @{GDM_HOME}/greeter-dconf-defaults r,
-  owner @{desktop_config_dirs}/dconf/user r,
   owner @{desktop_config_dirs}/ibus/bus/ r,
   owner @{desktop_config_dirs}/ibus/bus/@{hex32}-unix-{,wayland-}@{int} r,
-
-  /dev/tty@{int} rw,
 
   include if exists <local/ibus-extension-gtk3>
 }

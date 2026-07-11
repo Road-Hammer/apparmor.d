@@ -41,10 +41,11 @@ profile chromium-wrapper @{exec_path} flags=(attach_disconnected) {
 
   owner @{tmp}/chromiumargs.@{rand6} rw,
 
-  owner /dev/tty@{int} rw,
+  owner /dev/tty@{u8} rw,
 
   # Silencer
   deny @{user_share_dirs}/gvfs-metadata/* r,
+  deny @{user_share_dirs}/gnome-shell/session.gvdb rw,
 
   include if exists <local/chromium-wrapper>
 }

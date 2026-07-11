@@ -16,6 +16,8 @@ profile systemd-modules-load @{exec_path} flags=(attach_disconnected) {
   capability perfmon,
   capability sys_module,
 
+  ptrace read peer=@{p_systemd},
+
   @{exec_path} mr,
 
   /etc/modprobe.d/ r,
@@ -30,6 +32,7 @@ profile systemd-modules-load @{exec_path} flags=(attach_disconnected) {
   @{sys}/devices/@{pci}/config r,
   @{sys}/module/*/initstate r,
   @{sys}/module/compression r,
+  @{sys}/fs/cgroup/cpuset.cpus.effective r,
 
   include if exists <local/systemd-modules-load>
 }

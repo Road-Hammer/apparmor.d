@@ -5,11 +5,13 @@
 # Copyright (C) 2022-2024 Alexandre Pujol <alexandre@pujol.io>
 # SPDX-License-Identifier: GPL-2.0-only
 
-# Adapted from https://gitlab.com/apparmor/apparmor/-/blob/master/profiles/apparmor/profiles/extras/usr.sbin.sshd
-
-# As SSH is used to administrate a server this is limited.
-# If you want real protection disallow SSH access.
-
+# This profile was originally adapted from upsteam.
+#
+# As SSH is used to administrate a server this is limited. If you want real protection disallow SSH access.
+#
+# !!! example "Sources"
+#
+ #     - https://gitlab.com/apparmor/apparmor/-/blob/master/profiles/apparmor/profiles/extras/usr.sbin.sshd
 
 abi <abi/4.0>,
 
@@ -25,12 +27,14 @@ profile sshd @{exec_path} flags=(attach_disconnected) {
   include <abstractions/nameservice-strict>
   include <abstractions/ssl_certs>
   include <abstractions/wutmp>
+  include <mappings/sshd> #aa:only RBAC
 
   capability audit_write,
   capability chown,
-  capability dac_read_search,
   capability dac_override,
+  capability dac_read_search,
   capability fowner,
+  capability fsetid,
   capability kill,
   capability net_bind_service,
   capability setgid,
@@ -49,27 +53,34 @@ profile sshd @{exec_path} flags=(attach_disconnected) {
   network inet6 dgram,
   network netlink raw,
 
-  signal (receive) set=(hup) peer=@{p_systemd},
+  unix type=stream peer=(label=sshd-session),
 
-  ptrace (read,trace) peer=@{p_systemd},
+  signal receive set=hup peer=@{p_systemd},
+
+  ptrace (read trace) peer=@{p_systemd},
 
   dbus send bus=system path=/org/freedesktop/login1
        interface=org.freedesktop.login1.Manager
        member={CreateSession,ReleaseSession,CreateSessionWithPIDFD}
-       peer=(name=org.freedesktop.login1, label=systemd-logind),
+       peer=(name=org.freedesktop.login1, label="@{p_systemd_logind}"),
+
+  dbus send bus=system path=/org/freedesktop/home1
+       interface=org.freedesktop.home1.Manager
+       member=GetUserRecordByName
+       peer=(name=org.freedesktop.home1, label="@{p_systemd_homed}"),
 
   @{exec_path} mrix,
 
-  @{bin}/@{shells}                  rUx,
-  @{bin}/false                      rix,
-  @{sbin}/nologin                   rPx,
-  @{bin}/passwd                     rPx,
-  @{lib}/{openssh,ssh}/sftp-server  rPx,
-  @{lib}/{openssh,ssh}/sshd-auth    rPx,
-  @{lib}/{openssh,ssh}/sshd-session rix,
+  @{sbin}/sshd.hmac r,
 
-  @{etc_ro}/environment r,
-  @{etc_ro}/security/limits.d/{,*.conf} r,
+  @{bin}/@{shells}                   Ux, #aa:exclude RBAC
+  @{bin}/false                       ix,
+  @{sbin}/nologin                    Px,
+  @{bin}/passwd                      Px,
+  @{lib}/{openssh,ssh}/sftp-server   Px,
+  @{lib}/{openssh,ssh}/sshd-auth     Px,
+  @{lib}/{openssh,ssh}/sshd-session  Px,
+
   @{etc_rw}/motd r,
   @{etc_rw}/motd.d/{,**} r,
   /etc/default/locale r,
@@ -93,16 +104,15 @@ profile sshd @{exec_path} flags=(attach_disconnected) {
   owner @{user_download_dirs}/{,**} rwl,
   owner @{user_sync_dirs}/{,**} rwl,
 
-  @{HOME}/@{XDG_SSH_DIR}/authorized_keys{,.*} r,
+  @{HOME}/@{XDG_SSH_DIR}/authorized_keys* r,
   owner @{user_cache_dirs}/{,motd*} rw,
 
-  @{att}/@{run}/systemd/sessions/@{int}.ref rw,
+  @{att}@{run}/systemd/sessions/@{int}.ref rw,
 
         @{run}/faillock/@{user} rwk,
         @{run}/motd.d/{,*} r,
         @{run}/motd.dynamic rw,
         @{run}/motd.dynamic.new rw,
-        @{run}/systemd/notify w,
   owner @{run}/sshd{,.init}.pid wl,
 
   @{sys}/fs/cgroup/*/user/*/@{int}/ rw,
@@ -119,7 +129,7 @@ profile sshd @{exec_path} flags=(attach_disconnected) {
   owner @{PROC}/@{pid}/uid_map r,
 
   /dev/ptmx rw,
-  /dev/tty@{int} rw,
+  /dev/tty@{u8} rw,
   /dev/ttyS@{int} rw,
 
   include if exists <local/sshd>

@@ -5,7 +5,8 @@ title: Development VM
 To ensure compatibility across distribution, this project ships a wide range of development and tests VM images.
 
 The test VMs can be built locally using [cloud-init](https://cloud-init.io/), [packer](https://www.packer.io/) on Qemu/KVM using Libvirt. No other hypervisor will be targeted for these tests. The files that generate these images can be found in the **[tests/packer](https://github.com/roddhjav/apparmor.d/tree/main/tests/packer)** directory.
-The VMs are fully managed using a [justfile](https://github.com/casey/just) that provides an integration environment helper for `apparmor.d`.
+
+The VMs are fully managed using a [Justfile](https://github.com/casey/just) that provides an integration environment helper for `apparmor.d`.
 
 ```sh
 $ just
@@ -13,40 +14,45 @@ $ just
 
 ```
 Available recipes:
-    help                    # Show this help message
-    build                   # Build the go programs
-    enforce                 # Prebuild the profiles in enforced mode
-    complain                # Prebuild the profiles in complain mode
-    fsp                     # Prebuild the profiles in FSP mode
-    install                 # Install the profiles
-    pkg                     # Build & install apparmor.d on Arch based systems
-    dpkg                    # Build & install apparmor.d on Debian based systems
-    rpm                     # Build & install apparmor.d on OpenSUSE based systems
-    tests                   # Run the unit tests
-    lint                    # Run the linters
-    check                   # Run style checks on the profiles
-    man                     # Generate the man pages
-    docs                    # Build the documentation
-    serve                   # Serve the documentation
-    clean                   # Remove all build artifacts
-    package dist            # Build the package in a clean OCI container
-    img dist flavor         # Build the VM image
-    create dist flavor      # Create the machine
-    up dist flavor          # Start a machine
-    halt dist flavor        # Stops the machine
-    reboot dist flavor      # Reboot the machine
-    destroy dist flavor     # Destroy the machine
-    ssh dist flavor         # Connect to the machine
-    list                    # List the machines
-    images                  # List the VM images
-    available               # List the VM images that can be created
-    init dist flavor        # Install dependencies for the bats integration tests
-    integration dist flavor # Run the integration tests on the machine
-    get_ip dist flavor
-    get_osinfo dist
+    help                              # Show this help message
+    clean                             # Remove all build artifacts
+
+    ...
+
+    [vm]
+    img dist release flavor           # Build the VM image
+    create osinfo flavor              # Create the machine
+    up osinfo flavor                  # Start a machine
+    halt osinfo flavor                # Stops the machine
+    reboot osinfo flavor              # Reboot the machine
+    destroy osinfo flavor             # Destroy the machine
+    snapshots osinfo flavor           # List all snapshots for a machine
+    snapshot osinfo flavor snapname   # Snapshot a machine
+    restore osinfo flavor snapname    # Restore a machine to a specified snapshot
+    delete osinfo flavor snapname     # Delete a specified snapshot from a machine
+    ssh osinfo flavor                 # Connect to the machine
+    mount osinfo flavor               # Mount the shared directory on the machine
+    umount osinfo flavor              # Unmount the shared directory on the machine
+    list                              # List the machines
+    images                            # List the VM images
+    available                         # List the VM images that can be created
+
+    ...
+
+Build variables available:
+    build        # Build directory (default: .build)
+    destdir      # Installation destination (default: /)
+    pkgdest      # Package output directory (default: .pkg)
+    opt          # Prebuild option, only used for the dev install target (default: complain)
+
+Development variables available:
+    username     # VM username (default: user)
+    password     # VM password (default: user)
+    disk_size    # VM disk size (default: 40G)
+    vcpus        # VM CPU (default: 6)
+    ram          # VM RAM (default: 4096)
 
 See https://apparmor.pujol.io/development/ for more information.
-
 ```
 
 ## Requirements
@@ -72,22 +78,26 @@ $ just available
 ```
 
 ```
-Distribution       Flavor    
-archlinux          gnome
-archlinux          kde
-archlinux          server
-archlinux          xfce
-debian12           gnome
-debian12           kde
-debian12           server
-ubuntu24           server
+Distribution  Release  Flavor
+archlinux     -        gnome
+archlinux     -        kde
+debian        13       gnome
+debian        13       server
+debian        13       test
+opensuse      -        gnome
+opensuse      -        kde
+ubuntu        24.04    server
+ubuntu        25.05    desktop
+ubuntu        25.05    kubuntu
+ubuntu        25.10    test
+
 ...
 ```
 
 A VM image can be build with:
 
 ```sh
-$ just img archlinux gnome
+$ just img archlinux - gnome
 ```
 
 The image will then be showed in the list of images:
@@ -97,8 +107,8 @@ $ just images
 ```
 
 ```
-Distribution       Flavor     Size  Date
-archlinux          gnome      3.3G  Mar 1 14:49
+OsInfo       Flavor   Size   Date      
+archlinux    gnome    3.5GB  Sep   25  23:25
 ```
 
 The VM can then be created with:

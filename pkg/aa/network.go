@@ -6,7 +6,10 @@ package aa
 
 import (
 	"fmt"
+	"net"
 	"slices"
+	"strconv"
+	"strings"
 )
 
 const NETWORK Kind = "network"
@@ -24,78 +27,183 @@ func init() {
 			"netlink", "packet", "ash", "econet", "atmsvc", "rds", "sna", "irda",
 			"pppox", "wanpipe", "llc", "ib", "mpls", "can", "tipc", "bluetooth",
 			"iucv", "rxrpc", "isdn", "phonet", "ieee802154", "caif", "alg",
-			"nfc", "vsock", "kcm", "qipcrtr", "smc", "xdp", "mctp",
+			"nfc", "vsock", "kcm", "qipcrtr", "smc", "xdp", "mctp", "unspec",
 		},
 		"type": []string{
 			"stream", "dgram", "seqpacket", "rdm", "raw", "packet",
 		},
 		"protocol": []string{"tcp", "udp", "icmp"},
+		"local-only": []string{
+			"create", "bind", "listen", "getattr", "setattr", "getopt", "setopt", "shutdown",
+		},
 	}
 }
 
-type AddressExpr struct {
-	Source      string
-	Destination string
-	Port        string
+type LocalAddress struct {
+	IP   string
+	Port string
 }
 
-func newAddressExprFromLog(log map[string]string) AddressExpr {
-	return AddressExpr{
-		Source:      log["laddr"],
-		Destination: log["faddr"],
-		Port:        log["lport"],
+func newLocalAddress(rule rule) (LocalAddress, error) {
+	return LocalAddress{
+		IP:   rule.GetValuesAsString("ip"),
+		Port: rule.GetValuesAsString("port"),
+	}, nil
+}
+
+func newLocalAddressFromLog(log map[string]string) LocalAddress {
+	return LocalAddress{
+		IP:   log["laddr"],
+		Port: log["lport"],
 	}
 }
 
-func (r AddressExpr) Compare(other AddressExpr) int {
-	if res := compare(r.Source, other.Source); res != 0 {
-		return res
+// validatePortRange validates a port or port range string.
+func validatePortRange(port string) error {
+	if port == "" {
+		return nil
 	}
-	if res := compare(r.Destination, other.Destination); res != 0 {
+	if strings.Contains(port, "-") {
+		parts := strings.SplitN(port, "-", 2)
+		if len(parts) != 2 {
+			return fmt.Errorf("invalid port range: %s", port)
+		}
+		start, err1 := strconv.Atoi(parts[0])
+		end, err2 := strconv.Atoi(parts[1])
+		if err1 != nil || err2 != nil {
+			return fmt.Errorf("invalid port range: %s", port)
+		}
+		if start < 0 || start > 65535 || end < 0 || end > 65535 {
+			return fmt.Errorf("invalid port range: %s", port)
+		}
+		if start > end {
+			return fmt.Errorf("invalid port range: %s", port)
+		}
+		return nil
+	}
+	p, err := strconv.Atoi(port)
+	if err != nil || p < 0 || p > 65535 {
+		return fmt.Errorf("invalid port: %s", port)
+	}
+	return nil
+}
+
+func (r LocalAddress) Validate() error {
+	if r.IP != "" && r.IP != "none" && net.ParseIP(r.IP) == nil {
+		return fmt.Errorf("invalid IP address: %s", r.IP)
+	}
+	return validatePortRange(r.Port)
+}
+
+func (r LocalAddress) Compare(other LocalAddress) int {
+	if res := compare(r.IP, other.IP); res != 0 {
 		return res
 	}
 	return compare(r.Port, other.Port)
 }
 
+type PeerAddress struct {
+	IP   string
+	Port string
+	Src  string
+}
+
+func newPeerAddress(rule rule) (PeerAddress, error) {
+	return PeerAddress{
+		IP:   rule.GetValues("peer").GetValuesAsString("ip"),
+		Port: rule.GetValues("peer").GetValuesAsString("port"),
+	}, nil
+}
+
+func newPeerAddressFromLog(log map[string]string) PeerAddress {
+	return PeerAddress{
+		IP:   log["faddr"],
+		Port: log["fport"],
+		Src:  log["saddr"],
+	}
+}
+
+func (r PeerAddress) Validate() error {
+	if r.IP != "" && r.IP != "none" && net.ParseIP(r.IP) == nil {
+		return fmt.Errorf("invalid IP address: %s", r.IP)
+	}
+	return validatePortRange(r.Port)
+}
+
+func (r PeerAddress) Compare(other PeerAddress) int {
+	if res := compare(r.IP, other.IP); res != 0 {
+		return res
+	}
+	if res := compare(r.Port, other.Port); res != 0 {
+		return res
+	}
+	return compare(r.Src, other.Src)
+}
+
 type Network struct {
 	Base
 	Qualifier
-	AddressExpr
+	LocalAddress
+	PeerAddress
+	Access   []string
 	Domain   string
 	Type     string
 	Protocol string
 }
 
 func newNetwork(q Qualifier, rule rule) (Rule, error) {
+	var accesses []string
 	nType, protocol, domain := "", "", ""
-	r := rule.GetSlice()
-	if len(r) > 0 {
-		domain = r[0]
-	}
-	if len(r) >= 2 {
-		if slices.Contains(requirements[NETWORK]["type"], r[1]) {
-			nType = r[1]
-		} else if slices.Contains(requirements[NETWORK]["protocol"], r[1]) {
-			protocol = r[1]
+
+	// Classify each token as access, domain, type, or protocol
+	allowedMapKeys := map[string]bool{"ip": true, "port": true, "peer": true, "type": true}
+	for _, token := range rule.GetSlice() {
+		switch {
+		case slices.Contains(requirements[NETWORK]["access"], token):
+			accesses = append(accesses, token)
+		case slices.Contains(requirements[NETWORK]["domains"], token):
+			domain = token
+		case slices.Contains(requirements[NETWORK]["type"], token):
+			nType = token
+		case slices.Contains(requirements[NETWORK]["protocol"], token):
+			protocol = token
+		case allowedMapKeys[token]:
+			// Map key tokens (ip, port, peer, type) are handled separately
+		default:
+			return nil, fmt.Errorf("unrecognized network token: %s", token)
 		}
 	}
+
+	localAdress, err := newLocalAddress(rule)
+	if err != nil {
+		return nil, err
+	}
+	peerAddress, err := newPeerAddress(rule)
+	if err != nil {
+		return nil, err
+	}
 	return &Network{
-		Base:      newBase(rule),
-		Qualifier: q,
-		Domain:    domain,
-		Type:      nType,
-		Protocol:  protocol,
-	}, nil
+		Base:         newBase(rule),
+		Qualifier:    q,
+		LocalAddress: localAdress,
+		PeerAddress:  peerAddress,
+		Access:       accesses,
+		Domain:       domain,
+		Type:         nType,
+		Protocol:     protocol,
+	}, rule.ValidateMapKeys([]string{"ip", "port", "peer", "type"})
 }
 
 func newNetworkFromLog(log map[string]string) Rule {
 	return &Network{
-		Base:        newBaseFromLog(log),
-		Qualifier:   newQualifierFromLog(log),
-		AddressExpr: newAddressExprFromLog(log),
-		Domain:      log["family"],
-		Type:        log["sock_type"],
-		Protocol:    log["protocol"],
+		Base:         newBaseFromLog(log),
+		Qualifier:    newQualifierFromLog(log),
+		LocalAddress: newLocalAddressFromLog(log),
+		PeerAddress:  newPeerAddressFromLog(log),
+		Access:       Must(toAccess(NETWORK, log["requested"])),
+		Domain:       log["family"],
+		Type:         log["sock_type"],
+		Protocol:     log["protocol"],
 	}
 }
 
@@ -112,6 +220,9 @@ func (r *Network) String() string {
 }
 
 func (r *Network) Validate() error {
+	if err := validateValues(r.Kind(), "access", r.Access); err != nil {
+		return fmt.Errorf("%s: %w", r, err)
+	}
 	if err := validateValues(r.Kind(), "domains", []string{r.Domain}); err != nil {
 		return fmt.Errorf("%s: %w", r, err)
 	}
@@ -121,6 +232,17 @@ func (r *Network) Validate() error {
 	if err := validateValues(r.Kind(), "protocol", []string{r.Protocol}); err != nil {
 		return fmt.Errorf("%s: %w", r, err)
 	}
+	if err := r.LocalAddress.Validate(); err != nil {
+		return fmt.Errorf("%s: %w", r, err)
+	}
+	if err := r.PeerAddress.Validate(); err != nil {
+		return fmt.Errorf("%s: %w", r, err)
+	}
+	if r.PeerAddress.IP != "" || r.PeerAddress.Port != "" || r.Src != "" {
+		if len(r.Access) > 0 && allLocalOnly(r.Access, requirements[NETWORK]["local-only"]) {
+			return fmt.Errorf("peer modifier not allowed with local-only access types in network rule")
+		}
+	}
 	return nil
 }
 
@@ -129,13 +251,19 @@ func (r *Network) Compare(other Rule) int {
 	if res := compare(r.Domain, o.Domain); res != 0 {
 		return res
 	}
+	if res := compare(r.Access, o.Access); res != 0 {
+		return res
+	}
 	if res := compare(r.Type, o.Type); res != 0 {
 		return res
 	}
 	if res := compare(r.Protocol, o.Protocol); res != 0 {
 		return res
 	}
-	if res := r.AddressExpr.Compare(o.AddressExpr); res != 0 {
+	if res := r.LocalAddress.Compare(o.LocalAddress); res != 0 {
+		return res
+	}
+	if res := r.PeerAddress.Compare(o.PeerAddress); res != 0 {
 		return res
 	}
 	return r.Qualifier.Compare(o.Qualifier)

@@ -17,7 +17,8 @@ profile blkid @{exec_path} flags=(attach_disconnected) {
 
   @{exec_path} mr,
 
-  /etc/blkid.conf r,
+  @{etc_ro}/blkid.conf r,
+  /etc/blkid.conf.d/{,**} r,
 
   # When the system doesn't have the /run/ dir, the cache file is placed under /etc/
   @{etc_rw}/blkid.tab{,-@{rand6}} rw,
@@ -28,13 +29,13 @@ profile blkid @{exec_path} flags=(attach_disconnected) {
   # Image files
   @{user_img_dirs}/{,**} r,
 
+  /var/tmp/mkinitramfs_@{rand6}/cryptroot/crypttab w, # file_inherit
+
   # The standard location of the cache file
   # Without owner here if this tool should be used as a regular user
   @{run}/blkid/ rw,
   @{run}/blkid/blkid.tab{,-@{rand6}} rw,
   @{run}/blkid/blkid.tab.old rwl -> @{run}/blkid/blkid.tab,
-
-  @{run}/cloud-init/ds-identify.log w, # file_inherit
 
   @{PROC}/@{pid}/mounts r,
   @{PROC}/partitions r,
@@ -45,7 +46,12 @@ profile blkid @{exec_path} flags=(attach_disconnected) {
   /dev/.blkid.tab{,-@{rand6}} rw,
   /dev/blkid.tab.old rwl -> /dev/blkid.tab,
 
-  owner /dev/tty@{int} rw,
+  /tmp/tmp.@{rand10}/mkinitramfs_*/cryptroot/crypttab w,
+
+  owner /dev/tty@{u8} rw,
+
+  # file_inherit
+  deny @{run}/cloud-init/ds-identify.log w,
 
   include if exists <local/blkid>
 }

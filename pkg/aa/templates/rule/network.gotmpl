@@ -1,0 +1,39 @@
+{{- /* apparmor.d - Full set of apparmor profiles */ -}}
+{{- /* Copyright (C) 2021-2024 Alexandre Pujol <alexandre@pujol.io> */ -}}
+{{- /* SPDX-License-Identifier: GPL-2.0-only */ -}}
+
+{{- define "network" -}}
+    {{- template "qualifier" . -}}
+    {{ "network" }}
+    {{- with .Access -}}
+        {{ " " }}{{ cjoin . }}
+    {{- end -}}
+    {{- with .Domain -}}
+        {{ " " }}{{ . }}
+    {{- end -}}
+    {{- with .Type -}}
+        {{ " " }}{{ . }}
+    {{- else -}}
+        {{- with .Protocol -}}
+            {{ " " }}{{ . }}
+        {{- end -}}
+    {{- end -}}
+    {{- with .LocalAddress.IP -}}
+        {{ " ip=" }}{{ . }}
+    {{- end -}}
+    {{- with .LocalAddress.Port -}}
+        {{ " port=" }}{{ . }}
+    {{- end -}}
+    {{- if and .PeerAddress.IP .PeerAddress.Port -}}
+        {{ " peer=(ip=" }}{{ .PeerAddress.IP }}{{ ", port="}}{{ .PeerAddress.Port }}{{ ")" }}
+    {{- else -}}
+        {{- with .PeerAddress.IP -}}
+            {{ " peer=(ip=" }}{{ . }}{{ ")" }}
+        {{- end -}}
+        {{- with .PeerAddress.Port -}}
+            {{ " peer=(port=" }}{{ . }}{{ ")" }}
+        {{- end -}}
+    {{- end -}}
+    {{- "," -}}
+    {{- template "comment" . -}}
+{{- end -}}

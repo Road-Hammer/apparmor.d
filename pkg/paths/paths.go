@@ -1,31 +1,7 @@
-/*
- * This file is part of PathsHelper library.
- *
- * Copyright 2018 Arduino AG (http://www.arduino.cc/)
- *
- * PathsHelper library is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
- *
- * As a special exception, you may use this file as part of a free software
- * library without restriction.  Specifically, if other files instantiate
- * templates or use macros or inline functions from this file, or you compile
- * this file and link it with other files to produce an executable, this
- * file does not by itself cause the resulting executable to be covered by
- * the GNU General Public License.  This exception does not however
- * invalidate any other reasons why the executable file might be covered by
- * the GNU General Public License.
- */
+// This file is part of PathsHelper library.
+// Copyright (C) 2018-2025 Arduino AG (http://www.arduino.cc/)
+// Copyright (C) 2021-2026 Alexandre Pujol <alexandre@pujol.io>
+// SPDX-License-Identifier: GPL-2.0-only
 
 package paths
 
@@ -39,8 +15,6 @@ import (
 	"strings"
 	"syscall"
 	"time"
-
-	"github.com/roddhjav/apparmor.d/pkg/util"
 )
 
 // Path represents a path
@@ -210,6 +184,17 @@ func (p *Path) IsInsideDir(dir *Path) (bool, error) {
 		rel != ".", nil
 }
 
+// IsInsideAnyDir returns true if the current path is inside any of the
+// provided dirs.
+func (p *Path) IsInsideAnyDir(dirs []*Path) bool {
+	for _, d := range dirs {
+		if inside, _ := p.IsInsideDir(d); inside {
+			return true
+		}
+	}
+	return false
+}
+
 // Parent returns all but the last element of path, typically the path's
 // directory or the parent directory if the path is already a directory
 func (p *Path) Parent() *Path {
@@ -252,6 +237,14 @@ func (p *Path) Rename(newpath *Path) error {
 // and returns the path of the new directory.
 func (p *Path) MkTempDir(prefix string) (*Path, error) {
 	return MkTempDir(p.path, prefix)
+}
+
+func (p *Path) IsSymlink() (bool, error) {
+	info, err := p.Lstat()
+	if err != nil {
+		return false, err
+	}
+	return info.Mode()&os.ModeSymlink != 0, nil
 }
 
 // FollowSymLink transforms the current path to the path pointed by the
@@ -547,7 +540,7 @@ func (p *Path) MustReadFilteredFileAsLines() []string {
 	}
 	txt := string(data)
 	txt = strings.ReplaceAll(txt, "\r\n", "\n")
-	txt = util.Filter(txt)
+	txt = Filter(txt)
 	res := strings.Split(txt, "\n")
 	if slices.Contains(res, "") {
 		idx := slices.Index(res, "")
@@ -640,9 +633,7 @@ func (p *Path) String() string {
 func (p *Path) Canonical() *Path {
 	canonical := p.Clone()
 	// https://github.com/golang/go/issues/17084#issuecomment-246645354
-	if err := canonical.FollowSymLink(); err != nil {
-		return nil
-	}
+	_ = canonical.FollowSymLink()
 	if absPath, err := canonical.Abs(); err == nil {
 		canonical = absPath
 	}

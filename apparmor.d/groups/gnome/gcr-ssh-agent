@@ -7,7 +7,7 @@ abi <abi/4.0>,
 include <tunables/global>
 
 @{exec_path} = @{lib}/gcr-ssh-agent
-profile gcr-ssh-agent @{exec_path} {
+profile gcr-ssh-agent @{exec_path} flags=(attach_disconnected) {
   include <abstractions/base>
 
   @{exec_path} mr,
@@ -17,6 +17,8 @@ profile gcr-ssh-agent @{exec_path} {
 
   owner @{HOME}/@{XDG_SSH_DIR}/{,*} r,
 
+  owner @{run}/user/@{uid}/gcr/.ssh rw,
+  owner @{run}/user/@{uid}/gcr/ssh rw,
   owner @{run}/user/@{uid}/ssh-askpass.@{rand6}/{,*} rw,
 
   include if exists <local/gcr-ssh-agent>

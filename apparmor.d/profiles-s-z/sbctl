@@ -9,6 +9,9 @@ include <tunables/global>
 @{exec_path} = @{bin}/sbctl
 profile sbctl @{exec_path} {
   include <abstractions/base>
+  include <abstractions/consoles>
+  include <abstractions/golang-strict>
+  include <abstractions/tpm>
 
   capability dac_read_search,
   capability linux_immutable,
@@ -20,11 +23,11 @@ profile sbctl @{exec_path} {
   /usr/share/secureboot/{,**} rw,
   /var/lib/sbctl/{,**} rw,
 
-  /{boot,efi}/{,**} r,
-  /{boot,efi}/EFI/{,**} rw,
-  /{boot,efi}/vmlinuz-linux* rw,
+  @{efi}/{,**} rw,
   @{lib}/fwupd/efi/{,**} rw,
   @{lib}/systemd/boot/efi/systemd-boot*.efi.signed rw,
+
+  @{sys}/devices/virtual/dmi/id/* r,
 
   @{sys}/firmware/efi/efivars/db-@{uuid} rw,
   @{sys}/firmware/efi/efivars/KEK-@{uuid} rw,
@@ -32,8 +35,7 @@ profile sbctl @{exec_path} {
   @{sys}/firmware/efi/efivars/SecureBoot-@{uuid} r,
   @{sys}/firmware/efi/efivars/SetupMode-@{uuid} r,
 
-  /dev/pts/@{int} rw,
-  /dev/tpmrm@{int} rw,
+  @{PROC}/@{pid}/mountinfo r,
 
   # File Inherit
   deny network inet stream,

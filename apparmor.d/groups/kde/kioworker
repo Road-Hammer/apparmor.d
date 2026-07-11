@@ -10,6 +10,7 @@ include <tunables/global>
 @{exec_path} += @{lib}/kf5/kioslave5 @{lib}/@{multiarch}/{,libexec/}kf5/kioslave5
 profile kioworker @{exec_path} {
   include <abstractions/base>
+  include <abstractions/bus-session>
   include <abstractions/deny-sensitive-home>
   include <abstractions/fontconfig-cache-write>
   include <abstractions/graphics>
@@ -26,11 +27,9 @@ profile kioworker @{exec_path} {
   network netlink raw,
   network netlink dgram,
 
-  signal receive set=term peer=dolphin,
-  signal receive set=term peer=firefox-kmozillahelper,
-  signal receive set=term peer=plasma-discover,
-  signal receive set=term peer=plasmashell,
-  signal receive set=term peer=xdg-desktop-portal-kde,
+  signal receive set=term,
+
+  #aa:dbus talk bus=session name=org.kde.kded5 path=/kded label=kded
 
   @{exec_path} mr,
 
@@ -38,19 +37,33 @@ profile kioworker @{exec_path} {
   @{lib}/libheif/*.so* rm,
 
   @{bin}/wrestool rPUx,
-  @{bin}/gs rPUx,
+  @{bin}/kcmshell6 rPUx,
+  @{bin}/alts ix,
+  @{bin}/gs{,.bin} rCx -> gs,
 
   #aa:exec kio_http_cache_cleaner
 
   /usr/share/kio_desktop/{,**} r,
   /usr/share/kservices{5,6}/{,**} r,
   /usr/share/kservicetypes{5,6}/*.desktop r,
-  /usr/share/remoteview/* r,
+  /usr/share/libalternatives/gs/{,**} r,
+  /usr/share/org.kde.syntax-highlighting/{,**} r,
+  /usr/share/remoteview/{,*} r,
+  /usr/share/thumbnailers/{,**} r,
+  /usr/share/wallpapers/{,**} r,
+
+  @{etc_ro}/ssh/ssh_config r,
+  @{etc_ro}/ssh/ssh_config.d/{,*} r,
+  /etc/ssh/ssh_known_hosts r,
 
   /etc/fstab r,
+  /etc/sysconfig/proxy r,
   /etc/xdg/kioslaverc r,
   /etc/xdg/menus/{,**} r,
 
+  owner /var/cache/samba/gencache.tdb w,
+
+  #aa:lint ignore=too-wide
   # Full access to user's data
   / r,
   /*/ r,
@@ -66,9 +79,10 @@ profile kioworker @{exec_path} {
   owner @{run}/user/@{uid}/{,**} rw,
   owner @{tmp}/{,**} rw,
 
+  #aa:lint ignore=too-wide
   # Silence non user's data
-  deny /boot/{,**} r,
-  deny /etc/{,**} r,
+  deny @{efi}/{,**} r,
+  deny /etc/{,**} w,
   deny /opt/{,**} r,
   deny /root/{,**} r,
   deny /tmp/.* rw,
@@ -76,10 +90,17 @@ profile kioworker @{exec_path} {
 
   owner @{HOME}/@{XDG_DESKTOP_DIR}/.directory l -> @{HOME}/@{XDG_DESKTOP_DIR}/#@{int},
 
+  priority=1 owner @{HOME}/@{XDG_SSH_DIR}/{,*} r,
+  priority=1 owner @{HOME}/@{XDG_SSH_DIR}/known_hosts{,.*} rwl,
+  priority=1 owner @{HOME}/@{XDG_SSH_DIR}/ssh_control_*_*_* wl,
+
   owner @{user_cache_dirs}/kio_http/* rwl,
+  owner @{user_cache_dirs}/samba/gencache.tdb k,
 
   owner @{user_config_dirs}/kio_httprc r,
   owner @{user_config_dirs}/menus/{,**} r,
+  owner @{user_config_dirs}/libaccounts-glib/accounts.db k,
+  owner @{user_config_dirs}/libaccounts-glib/accounts.db-shm k,
 
   owner @{user_share_dirs}/baloo/index rw,
   owner @{user_share_dirs}/baloo/index-lock rwk,
@@ -91,15 +112,36 @@ profile kioworker @{exec_path} {
   owner @{tmp}/#@{int} rw,
 
         @{run}/mount/utab r,
+        @{run}/sshd.pid r,
+        @{run}/utmp r,
   owner @{run}/user/@{uid}/#@{int} rw,
   owner @{run}/user/@{uid}/kio_*.socket rwl -> @{run}/user/@{uid}/#@{int},
   owner @{run}/user/@{uid}/kioworker*.kioworker.socket rwl -> @{run}/user/@{uid}/#@{int},
 
+        @{PROC}/cmdline r,
   owner @{PROC}/@{pid}/cmdline r,
   owner @{PROC}/@{pid}/mountinfo r,
   owner @{PROC}/@{pid}/mounts r,
 
   /dev/tty r,
+
+  profile gs {
+    include <abstractions/base>
+
+    @{bin}/gs{,.bin} mr,
+    @{lib}/ghostscript/**  mr,
+
+    /usr/share/ghostscript/{,**} r,
+    /usr/share/org.kde.syntax-highlighting/{,**} r,
+
+    #aa:lint ignore=too-wide
+    @{MOUNTS}/** r,
+    owner @{HOME}/** r,
+
+    owner @{tmp}/gs_@{rand6} rw,
+
+    include if exists <local/kioworker_gs>
+  }
 
   include if exists <local/kioworker>
 }

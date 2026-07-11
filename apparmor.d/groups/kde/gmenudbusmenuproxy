@@ -7,24 +7,28 @@ abi <abi/4.0>,
 include <tunables/global>
 
 @{exec_path} = @{bin}/gmenudbusmenuproxy
-profile gmenudbusmenuproxy @{exec_path} {
+profile gmenudbusmenuproxy @{exec_path} flags=(attach_disconnected,mediate_deleted) {
   include <abstractions/base>
+  include <abstractions/bus-session>
   include <abstractions/graphics>
-  include <abstractions/gtk>
   include <abstractions/kde-strict>
   include <abstractions/nameservice-strict>
 
-  ptrace (read) peer=kded,
+  ptrace read peer=kded,
+
+  #aa:dbus own bus=session name=org.kde.gmenudbusmenuproxy
 
   @{exec_path} mr,
-
-  /etc/machine-id r,
-  /var/lib/dbus/machine-id r,
 
   owner @{HOME}/.gtkrc-2.0 rw,
   owner @{user_config_dirs}/gtk-{2,3}.0/#@{int} rw,
   owner @{user_config_dirs}/gtk-{2,3}.0/settings.ini{,.@{rand6}} rwl,
   owner @{user_config_dirs}/gtk-{2,3}.0/settings.ini.lock rwk,
+  owner @{user_config_dirs}/gtk-{2,3}.0/settings.ini.lock.rmlock rwk,
+
+  owner @{PROC}/@{pid}/mountinfo r,
+
+  /dev/tty r,
 
   include if exists <local/gmenudbusmenuproxy>
 }

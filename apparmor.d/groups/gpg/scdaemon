@@ -24,20 +24,27 @@ profile scdaemon @{exec_path} {
   owner /etc/pacman.d/gnupg/scdaemon.conf r,
   owner /etc/pacman.d/gnupg/S.scdaemon rw,
 
+  / r,
+
+  #aa:only zypper
+  /var/tmp/zypp.@{rand6}/PublicKey/S.scdaemon w,
+  /var/tmp/zypp.@{rand6}/zypp-general-kr@{rand6}/S.scdaemon w,
+  /var/tmp/zypp.@{rand6}/zypp-trusted-*/S.scdaemon w,
+  /var/tmp/zypp.tmp/zypp.@{rand6}/PublicKey/S.scdaemon w,
+  /var/tmp/zypp.tmp/zypp.@{rand6}/zypp-general-kr@{rand6}/S.scdaemon w,
+  /var/tmp/zypp.tmp/zypp.@{rand6}/zypp-trusted-*/S.scdaemon w,
+
   owner @{HOME}/@{XDG_GPG_DIR}/scdaemon.conf r,
-  owner @{HOME}/@{XDG_GPG_DIR}common.conf r,
+  owner @{HOME}/@{XDG_GPG_DIR}/common.conf r,
   owner @{HOME}/@{XDG_GPG_DIR}/reader_@{int}.status rw,
 
   owner @{run}/user/@{uid}/gnupg/S.scdaemon rw,
   owner @{run}/user/@{uid}/gnupg/d.@{rand}/S.scdaemon rw,
 
-  owner /var/tmp/zypp.*/PublicKey/S.scdaemon w,
-  owner /var/tmp/zypp.*/zypp-general-kr*/S.scdaemon w,
-  owner /var/tmp/zypp.*/zypp-trusted-*/S.scdaemon w,
+  # comm=pipe-connection ????
+  @{sys}/devices/**/uevent r,
 
   @{PROC}/@{pid}/task/@{tid}/comm rw,
-
-  @{sys}/devices/@{pci}/bConfigurationValue r,
 
   include if exists <local/scdaemon>
 }

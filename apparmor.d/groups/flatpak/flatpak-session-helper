@@ -6,53 +6,75 @@ abi <abi/4.0>,
 
 include <tunables/global>
 
+@{appid} = @{word}.@{word}.@{word}{,.@{word}}
+
 @{exec_path} = @{lib}/flatpak-session-helper
-profile flatpak-session-helper @{exec_path} flags=(attach_disconnected) {
+profile flatpak-session-helper @{exec_path} flags=(attach_disconnected,mediate_deleted) {
   include <abstractions/base>
   include <abstractions/bus-session>
   include <abstractions/consoles>
   include <abstractions/nameservice-strict>
   include <abstractions/p11-kit>
-  include <abstractions/ssl_certs>
 
   signal send set=(hup int) peer=user_unconfined,
-  signal send set=(int) peer=@{p_systemd},
-  signal send set=(int) peer=flatpak-app,
+  signal send set=int peer=@{p_systemd},
+  signal send set=int peer=flatpak-session-helper-app,
 
   #aa:dbus own bus=session name=org.freedesktop.Flatpak
 
+  dbus receive bus=session
+       interface=org.freedesktop.DBus.Introspectable
+       member=Introspect
+       peer=(name=@{busname}, label="{gnome-shell,gnome-extension}"),
+
   @{exec_path} mr,
 
-  @{shells_path}                       rUx -> user_unconfined,
+  @{shells_path}                       rUx,
+  @{coreutils_path}                    rix,
   @{bin}/dbus-monitor                 rPUx,
-  @{bin}/env                           rix,
   @{bin}/flatpak                       rPx,
   @{bin}/getent                        rix,
-  @{bin}/p11-kit                       rix,
+  @{bin}/p11-kit                       rCx -> p11-kit,
   @{bin}/pkexec                        rCx -> pkexec,
   @{bin}/printenv                      rix,
   @{bin}/ps                            rPx,
-  @{bin}/test                          rix,
-  @{bin}/touch                         rix,
-  @{lib}/p11-kit/p11-kit-remote        rix,
-  @{lib}/p11-kit/p11-kit-server        rix,
-  /var/lib/flatpak/app/*/**/@{bin}/**  rPx -> flatpak-app,
-  /var/lib/flatpak/app/*/**/@{lib}/**  rPx -> flatpak-app,
+
+  /var/lib/flatpak/app/@{appid}/**/@{bin}/**  rPx -> flatpak-session-helper-app,
+  /var/lib/flatpak/app/@{appid}/**/@{lib}/**  rPx -> flatpak-session-helper-app,
+
+  owner @{user_cache_dirs}/.flatpak-helper/{,**} rw,
 
   owner @{user_config_dirs}/mimeapps.list w,
 
   owner @{run}/user/@{uid}/.flatpak-helper/{,**} rw,
-  owner @{run}/user/@{uid}/.flatpak-helper/pkcs11-flatpak-@{int} rw,
-
-  owner @{PROC}/@{pids}/fd/ r,
 
   /dev/ptmx rw,
 
-  profile pkexec {
+  profile pkexec flags=(attach_disconnected,mediate_deleted) {
     include <abstractions/base>
     include <abstractions/app/pkexec>
 
     include if exists <local/flatpak-session-helper_pkexec>
+  }
+
+  profile p11-kit flags=(attach_disconnected,mediate_deleted) {
+    include <abstractions/base>
+    include <abstractions/ssl_certs>
+
+    signal receive set=term peer=flatpak-session-helper,
+
+    @{bin}/p11-kit mr,
+
+    @{lib}/p11-kit/p11-kit-remote  ix,
+    @{lib}/p11-kit/p11-kit-server  ix,
+
+    owner @{user_cache_dirs}/.flatpak-helper/pkcs11-flatpak-@{int} rw,
+
+    owner @{run}/user/@{uid}/.flatpak-helper/pkcs11-flatpak-@{int} rw,
+
+    owner @{PROC}/@{pids}/fd/ r,
+
+    include if exists <local/flatpak-session-helper_p11-kit>
   }
 
   include if exists <local/flatpak-session-helper>

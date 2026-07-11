@@ -31,10 +31,13 @@ profile multipathd @{exec_path} {
   /etc/systemd/system/ r,
 
   @{run}/multipathd.pid rwk,
-  @{run}/systemd/notify w,
+  @{run}/multipathd.socket rw,
 
   @{sys}/bus/ r,
   @{sys}/class/ r,
+  @{sys}/devices/**/uevent r,
+  @{sys}/devices/platform/**/recovery_tmo w,
+  @{sys}/module/*/parameters/multipath r,
 
         @{PROC}/devices r,
         @{PROC}/sys/fs/nr_open r,

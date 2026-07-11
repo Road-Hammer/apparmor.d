@@ -9,13 +9,14 @@ include <tunables/global>
 @{exec_path} = @{bin}/thunar
 profile thunar @{exec_path} flags=(attach_disconnected) {
   include <abstractions/base>
-  include <abstractions/bus-accessibility>
   include <abstractions/bus-session>
   include <abstractions/deny-sensitive-home>
   include <abstractions/fontconfig-cache-read>
   include <abstractions/nameservice-strict>
   include <abstractions/trash-strict>
   include <abstractions/xfce>
+  include <abstractions/disks-read>
+  include <abstractions/devices-usb-read>
 
   network netlink raw,
 
@@ -27,10 +28,9 @@ profile thunar @{exec_path} flags=(attach_disconnected) {
 
   @{bin}/thunar-volman  rPx,
   @{bin}/dbus-launch    rCx -> dbus,
-  @{open_path}          rPx -> child-open,
+  @{open_path}          rPx -> child-open-any,
 
   /usr/share/ r,
-  /usr/share/anon-apps-config/share/{,**} r, #aa:only whonix
   /usr/share/gvfs/{,**} r,
   /usr/share/Thunar/{,**} r,
 
@@ -38,6 +38,7 @@ profile thunar @{exec_path} flags=(attach_disconnected) {
   /etc/timezone r,
   /etc/xdg/{,xdg-xubuntu/}Thunar/{,**} r,
 
+  #aa:lint ignore=too-wide
   # Full access to user's data
   / r,
   /*/ r,
@@ -53,12 +54,13 @@ profile thunar @{exec_path} flags=(attach_disconnected) {
   @{run}/mount/utab r,
 
   @{sys}/fs/cgroup/user.slice/user-@{uid}.slice/cpu.max r,
-  @{sys}/fs/cgroup/user.slice/user-@{uid}.slice/session-@{int}.scope/cpu.max r,
+  @{sys}/fs/cgroup/user.slice/user-@{uid}.slice/session-@{word}.scope/cpu.max r,
 
   owner @{PROC}/@{pid}/mountinfo r,
+  owner @{PROC}/@{pid}/cgroup r,
 
   # Silence non user's data
-  deny /boot/{,**} r,
+  deny @{efi}/{,**} r,
   deny /opt/{,**} r,
   deny /root/{,**} r,
   deny /tmp/.* rw,

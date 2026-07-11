@@ -6,7 +6,7 @@ title: Workflow
 
 <div class="grid cards" markdown>
 
--   :material-file-document: &nbsp; **[Write a blanck profile](#add-a-blank-profile)**
+-   :material-file-document: &nbsp; **[Write a blank profile](#add-a-blank-profile)**
 
 </div>
 <div class="grid cards" markdown>
@@ -36,7 +36,7 @@ title: Workflow
    Here is the bare minimum for the program `foo`:
 ``` sh
 # apparmor.d - Full set of apparmor profiles
-# Copyright (C) 2024 You <your@email>
+# Copyright (C) 2025 You <your@email>
 # SPDX-License-Identifier: GPL-2.0-only
 
 abi <abi/4.0>,
@@ -57,34 +57,34 @@ profile foo @{exec_path} {
 
 ## Development Install
 
-It is not recommended installing the full project *"manually"* (with `make`, `sudo make install`). The distribution specific packages are intended to be used in development as they include additional rule to ensure compatibility with upstream (see `debian/`, `PKGBUILD` and `dists/apparmor.d.spec`).
+It is not recommended installing the full project *"manually"* (with `just complain`, `sudo just install`). The distribution specific packages are intended to be used in development as they include additional rule to ensure compatibility with upstream (see `debian/`, `PKGBUILD` and `dists/apparmor.d.spec`).
 
 Instead, install an individual profile or the development package, the following way.
 
 ### Development package
 
-=== ":material-arch: Archlinux"
+=== ":material-arch: Arch Linux"
 
     ```sh
-    make pkg
+    just pkg
     ```
 
 === ":material-ubuntu: Ubuntu"
 
     ```sh
-    make dpkg
+    just dpkg
     ```
 
 === ":material-debian: Debian"
 
     ```sh
-    make dpkg
+    just dpkg
     ```
 
 === ":simple-suse: openSUSE"
 
     ```sh
-    make rpm
+    just rpm
     ```
 
 === ":material-docker: Docker"
@@ -102,15 +102,15 @@ Instead, install an individual profile or the development package, the following
 **Format**
 
 ```sh
-make dev name=<profile-name>
+just dev <profile-name>
 ```
 
-**Exampe**
+**Example**
 
 :   Testing the profile `pass`
 
     ```
-    make dev name=pass
+    just dev pass
     ```
 
     This:
@@ -118,9 +118,6 @@ make dev name=<profile-name>
     - Prebuild the `pass` profile in complain mode to `.build`,
     - Install the profile to `/etc/apparmor.d/`
     - Load the profile by restarting the AppArmor service.
-
-
-More advanced development, like editing the abstractions or working over multiple profiles at the same time requires installing the full development package.
 
 For this individual profile installation to work, the full package needs to be installed, regardless of the installation method ([dev](#development-package) or [stable](../install.md)).
 
@@ -130,7 +127,7 @@ For this individual profile installation to work, the full package needs to be i
 
 To discover the access needed by a program, you can use the following tools:
 
-1. Star the program in *complain* mode, let it initialize itself, then close it.
+1. Start the program in *complain* mode, let it initialize itself, then close it.
 
 1. Run **[`aa-log -r`](../usage.md#apparmor-log)**. It will:
     - Convert the logs to AppArmor rules.
@@ -139,7 +136,7 @@ To discover the access needed by a program, you can use the following tools:
 
 1. From `aa-log` output, you can:
     - Copy the rules to the profile.
-    - Replace some rules with **[abstractions](abstractions.md)** as 80% of the rules should already be covered by an abstraction.
+    - Replace some rules with **[abstractions](../abstractions/index.md)** as 80% of the rules should already be covered by an abstraction.
 
 1. Then, [update the profile](#individual-profile) and start the program again. Use the program as you would normally do, but also try to run all the features of the program, e.g.: open the help, settings, etc.
 
@@ -151,7 +148,7 @@ After 2 or 3 iterations, you should have a working profile.
 
 <div class="grid cards" markdown>
 
--   :material-function: &nbsp; **[Use the abstractions](abstractions.md)**
+-   :material-function: &nbsp; **[Use the abstractions](../abstractions/index.md)**
 -   :simple-files: &nbsp; **[Learn how to open resources](internal.md#open-resources)**
 -   :fontawesome-solid-bus-simple: &nbsp; **[Learn how Dbus rules are handled](dbus.md)**
 -   :material-sign-direction: &nbsp; **[Learn about directives `#aa:`](directives.md)**
@@ -175,20 +172,14 @@ After 2 or 3 iterations, you should have a working profile.
 
 ## Development Settings
 
-### Profile flags
+### Profile mode
 
-Flags for all profiles in this project are tracked under the [`dists/flags`](https://github.com/roddhjav/apparmor.d/tree/main/dists/flags) directory. It is used for profile that are not considered stable. Files in this directory should respect the following format: `<profile> <flags>`, flags should be comma separated.
+Mode for all profiles (`complain`, `enforce`...) in this project are tracked under the [`dists/flags`](https://github.com/roddhjav/apparmor.d/tree/main/dists/flags) directory. It is used for profile that are not considered stable. Files in this directory should respect the following format: `<profile> <mode>`.
 
 For instance, to move `adb` in *complain* mode, edit **[`dists/flags/main.flags`](https://github.com/roddhjav/apparmor.d/blob/main/dists/flags/main.flags)** and add the following line:
 ```sh
 adb complain
 ```
-
-Beware, flags defined in this file overwrite flags in the profile. So you may need to add other flags. Example for `gnome-shell`:
-```sh
-gnome-shell attach_disconnected,mediate_deleted,complain
-```
-
 
 ### Ignore profiles
 

@@ -35,46 +35,58 @@ profile systemd-udevd @{exec_path} flags=(attach_disconnected) {
   network inet6 dgram,
   network netlink raw,
 
+  unix bind type=dgram  addr=@@{udbus},
+  unix bind type=stream addr=@@{udbus}/bus/udevadm/,
+
   @{exec_path} mrix,
 
-  @{sh_path}              rix,
-  @{coreutils_path}       rix,
-  @{pager_path}           rPx -> child-pager,
-  @{bin}/*-print-pci-ids  rix,
-  @{sbin}/alsactl         rPUx,
-  @{bin}/ddcutil          rPx,
-  @{sbin}/dmsetup         rPx,
-  @{sbin}/ethtool         rix,
-  @{sbin}/issue-generator rPx,
-  @{sbin}/kdump-config    rPUx,
-  @{bin}/kmod             rPx,
-  @{bin}/logger           rix,
-  @{bin}/ls               rix,
-  @{sbin}/lvm             rPx,
-  @{bin}/mknod            rix,
-  @{sbin}/multipath       rPx,
-  @{bin}/nfsrahead        rix,
-  @{bin}/nvidia-modprobe  rPx -> child-modprobe-nvidia,
-  @{bin}/setfacl          rix,
-  @{bin}/sg_inq           rix,
-  @{bin}/snap             rPx,
-  @{bin}/systemctl        rCx -> systemctl,
-  @{bin}/systemd-run      rix,
-  @{bin}/unshare          rix,
-  @{bin}/vmmouse_detect   rPUx,
+  @{sh_path}                               rix,
+  @{coreutils_path}                        rix,
+  @{bin}/logger                            rix,
+  @{bin}/ls                                rix,
+  @{bin}/mknod                             rix,
+  @{bin}/nfsrahead                         rix,
+  @{sbin}/partx                            rix,
+  @{bin}/setfacl                           rix,
+  @{bin}/sg_inq                            rix,
+  @{bin}/systemd-run                        Cx -> run,
+  @{bin}/unshare                           rix,
+  @{sbin}/ethtool                          rix,
+  @{sbin}/kpartx                           rix,
 
-  @{lib}/crda/*                            rPUx,
-  @{lib}/gdm-runtime-config                rPx,
-  @{lib}/nfsrahead                         rPUx,
-  @{lib}/open-iscsi/net-interface-handler  rPUx,
-  @{lib}/pm-utils/power.d/*                rPUx,
-  @{lib}/snapd/snap-device-helper          rPx,
-  @{lib}/systemd/systemd-*                 rPx,
-  @{lib}/udev/*                            rPUx,
-  /usr/share/hplip/config_usb_printer.py   rPUx,
+  @{bin}/ddcutil                            Px,
+  @{bin}/input-remapper-control            PUx,
+  @{bin}/pktsetup                          PUx,
+  @{bin}/kmod                               Cx -> kmod,
+  @{bin}/nvidia-modprobe                    Px -> child-modprobe-nvidia,
+  @{bin}/set-wireless-regdom               PUx,
+  @{bin}/snap                               Px,
+  @{bin}/systemctl                          Cx -> systemctl,
+  @{bin}/vmmouse_detect                     PUx,
+  @{pager_path}                             Px -> child-pager,
+  @{sbin}/alsactl                           Px,
+  @{sbin}/dmsetup                           Px,
+  @{sbin}/issue-generator                   Px,
+  @{sbin}/kdump-config                      Px,
+  @{sbin}/lvm                               Px,
+  @{sbin}/multipath                         Px,
+  @{sbin}/sysctl                            Px,
+  @{sbin}/tlp                               Px,
+  @{sbin}/u-d-c-print-pci-ids               Px,
 
-  /etc/console-setup/*.sh             rPUx,
-  /etc/network/cloud-ifupdown-helper  rPUx,
+  @{lib}/crda/*                             PUx,
+  @{lib}/gdm-runtime-config                 Px,
+  @{lib}/nfsrahead                          PUx,
+  @{lib}/open-iscsi/net-interface-handler   Px,
+  @{lib}/pm-utils/power.d/*                 PUx,
+  @{lib}/snapd/snap-device-helper           Px,
+  @{lib}/switcheroo-control-check-discrete-amdgpu  PUx,
+  @{lib}/systemd/systemd-*                  Px,
+  @{lib}/udev/*                             PUx,
+  /usr/share/hplip/config_usb_printer.py    PUx,
+
+  /etc/console-setup/*.sh                   PUx,
+  /etc/network/cloud-ifupdown-helper        PUx,
 
   /etc/default/* r,
   /etc/machine-id r,
@@ -90,15 +102,19 @@ profile systemd-udevd @{exec_path} flags=(attach_disconnected) {
   /etc/systemd/network/ r,
   /etc/systemd/network/@{int2}-*.link r,
 
+  / r,
+  /usr/ r,
+
   @{run}/credentials/systemd-udev-load-credentials.service/ r,
   @{run}/modprobe.d/ r,
   @{run}/systemd/network/ r,
   @{run}/systemd/network/*.link rw,
-  @{run}/systemd/notify rw,
+  @{run}/systemd/private rw,
   @{run}/systemd/seats/seat@{int} r,
+  @{run}/systemd/sessions/{,*} r,
+  @{run}/u-d-c-card@{int}-is-simpledrm w,
 
-  @{att}/@{run}/systemd/notify w,
-  @{att}/@{run}/udev/control rw,
+  @{att}@{run}/udev/control rw,
 
   @{run}/udev/ rw,
   @{run}/udev/** rwk,
@@ -107,18 +123,35 @@ profile systemd-udevd @{exec_path} flags=(attach_disconnected) {
 
         @{PROC}/@{pid}/mountinfo r,
         @{PROC}/@{pids}/cgroup r,
+        @{PROC}/asound/cards r,
         @{PROC}/devices r,
         @{PROC}/driver/nvidia/gpus/ r,
         @{PROC}/driver/nvidia/gpus/*/information r,
         @{PROC}/driver/nvidia/params r,
         @{PROC}/pressure/* r,
         @{PROC}/sys/fs/nr_open r,
+        @{PROC}/sys/vm/swappiness rw,
   owner @{PROC}/@{pid}/fd/ r,
   owner @{PROC}/@{pid}/loginuid r,
   owner @{PROC}/@{pid}/oom_score_adj rw,
 
   /dev/ rw,
   /dev/** rwk,
+
+  profile kmod flags=(attach_disconnected,complain) {
+    include <abstractions/base>
+    include <abstractions/app/kmod>
+
+    capability sys_module,
+
+    @{sh_path} rix,
+    @{bin}/kmod ix,
+
+    @{sys}/module/*/initstate r,
+    @{sys}/module/compression r,
+
+    include if exists <local/systemd-udevd_kmod>
+  }
 
   profile systemctl flags=(attach_disconnected,complain) {
     include <abstractions/base>
@@ -127,9 +160,30 @@ profile systemd-udevd @{exec_path} flags=(attach_disconnected) {
     capability net_admin,
     capability sys_ptrace,
 
-    # / r,
+    ptrace read peer=@{p_systemd},
 
     include if exists <local/systemd-udevd_systemctl>
+  }
+
+  profile run flags=(attach_disconnected,complain) {
+    include <abstractions/base>
+    include <abstractions/bus-system>
+
+    capability net_admin,
+    capability sys_ptrace,
+
+    ptrace read peer=@{p_systemd},
+
+    unix bind type=stream addr=@@{udbus}/bus/systemd-run/,
+
+    @{bin}/systemd-run  mr,
+    @{sbin}/lvm r,
+
+    @{att}@{run}/systemd/private rw,
+
+    @{PROC}/@{pid}/stat r,
+
+    include if exists <local/systemd-udevd_run>
   }
 
   include if exists <local/systemd-udevd>

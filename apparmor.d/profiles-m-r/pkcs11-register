@@ -9,13 +9,12 @@ include <tunables/global>
 @{exec_path} = @{bin}/pkcs11-register
 profile pkcs11-register @{exec_path} {
   include <abstractions/base>
+  include <abstractions/pcscd>
 
   @{exec_path} mr,
 
-  /etc/{,opensc/}opensc.conf r,
-
-  owner @{HOME}/.mozilla/firefox/*/pkcs11.txt rw,
-  owner @{HOME}/.mozilla/firefox/profiles.ini r,
+  owner @{HOME}/.mozilla/firefox{,-esr}/*/pkcs11.txt rw,
+  owner @{HOME}/.mozilla/firefox{,-esr}/profiles.ini r,
   owner @{HOME}/.pki/nssdb/pkcs11.txt r,
   owner @{HOME}/.thunderbird/*/pkcs11.txt rw,
   owner @{HOME}/.thunderbird/profiles.ini r,

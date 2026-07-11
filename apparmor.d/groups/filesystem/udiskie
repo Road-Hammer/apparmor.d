@@ -8,19 +8,15 @@ abi <abi/4.0>,
 include <tunables/global>
 
 @{exec_path} = @{bin}/udiskie
-profile udiskie @{exec_path} {
+profile udiskie @{exec_path} flags=(attach_disconnected) {
   include <abstractions/base>
   include <abstractions/dconf-write>
-  include <abstractions/X>
-  include <abstractions/fonts>
+  include <abstractions/desktop>
   include <abstractions/fontconfig-cache-read>
-  include <abstractions/freedesktop.org>
-  include <abstractions/gtk>
+  include <abstractions/graphics>
   include <abstractions/python>
-  include <abstractions/user-download-strict>
   include <abstractions/thumbnails-cache-read>
-  include <abstractions/mesa>
-  include <abstractions/dri-enumerate>
+  include <abstractions/user-download-strict>
 
   @{exec_path} r,
   @{python_path} r,
@@ -33,9 +29,10 @@ profile udiskie @{exec_path} {
   owner @{user_config_dirs}/udiskie/ r,
   owner @{user_config_dirs}/udiskie/config.yml r,
 
+  owner @{PROC}/@{pid}/cgroup r,
   owner @{PROC}/@{pid}/fd/ r,
-  owner @{PROC}/@{pid}/mounts r,
   owner @{PROC}/@{pid}/mountinfo r,
+  owner @{PROC}/@{pid}/mounts r,
 
   # Silencer
   deny @{lib}/** w,

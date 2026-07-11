@@ -15,14 +15,12 @@ include <tunables/global>
 @{exec_path} = @{bin}/dropbox
 profile dropbox @{exec_path} {
   include <abstractions/base>
-  include <abstractions/bus-session>
-  include <abstractions/bus/org.freedesktop.Notifications>
-  include <abstractions/bus/org.kde.StatusNotifierWatcher>
   include <abstractions/desktop>
   include <abstractions/fontconfig-cache-read>
   include <abstractions/nameservice-strict>
   include <abstractions/python>
   include <abstractions/qt5-settings-write>
+  include <abstractions/sqlite>
   include <abstractions/ssl_certs>
 
   @{exec_path} mr,
@@ -39,7 +37,7 @@ profile dropbox @{exec_path} {
   @{bin}/{,@{multiarch}-}objdump    rix,
 
   @{open_path}                      rPx -> child-open-strict,
-  @{bin}/lsb_release                rPx -> lsb_release,
+  @{bin}/lsb_release                rPx,
 
   owner @{HOME}/ r,
   owner @{config_dirs}/ rw,
@@ -61,8 +59,6 @@ profile dropbox @{exec_path} {
   # Dropbox first tries the /tmp/ dir, and if it's denied it uses the /var/tmp/ dir instead
   owner @{tmp}/dropbox-antifreeze-* rw,
   owner @{tmp}/#@{int} rw,
-  owner @{tmp}/etilqs_@{sqlhex} rw,
-  owner /var/tmp/etilqs_@{sqlhex} rw,
 
   @{run}/systemd/users/@{uid} r,
 

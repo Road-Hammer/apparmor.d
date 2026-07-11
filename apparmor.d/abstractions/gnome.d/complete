@@ -2,12 +2,17 @@
 # Copyright (C) 2021-2024 Alexandre Pujol <alexandre@pujol.io>
 # SPDX-License-Identifier: GPL-2.0-only
 
-  include <abstractions/gtk>
+  include <abstractions/gtk-strict>
 
   dbus receive bus=session
        interface=org.freedesktop.DBus.Introspectable
-       member=Introspect 
-       peer=(name=@{busname}, label=gnome-shell),
+       member=Introspect
+       peer=(name=@{busname}, label="{gnome-shell,gnome-extension}"),
+
+  dbus receive bus=session
+       interface=org.freedesktop.DBus.Introspectable
+       member=Introspect
+       peer=(name=@{busname}, label=gnome-extension),
 
   /var/cache/gio-@{int}.@{int}/gnome-mimeapps.list r,
 

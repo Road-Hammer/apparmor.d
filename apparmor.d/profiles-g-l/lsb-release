@@ -1,0 +1,51 @@
+# apparmor.d - Full set of apparmor profiles
+# Copyright (C) 2025 Alexandre Pujol <alexandre@pujol.io>
+# SPDX-License-Identifier: GPL-2.0-only
+
+# !!! note
+#
+#     Named `lsb-release` to not conflict with the profile upstream named
+#     `lsb_release` that does attach `@{bin}/lsb_release`.
+#
+
+abi <abi/4.0>,
+
+include <tunables/global>
+
+@{exec_path} = @{bin}/lsb_release
+profile lsb-release @{exec_path} flags=(attach_disconnected) {
+  include <abstractions/base>
+  include <abstractions/consoles>
+
+  @{exec_path} mr,
+
+  @{sh_path}        rix,
+  @{bin}/           r,
+  @{bin}/basename   rix,
+  @{bin}/cat        rix,
+  @{bin}/cut        rix,
+  @{bin}/find       rix,
+  @{bin}/getopt     rix,
+  @{bin}/head       rix,
+  @{bin}/sed        rix,
+  @{bin}/tr         rix,
+
+  #aa:only apt
+  @{bin}/dpkg-query  px,
+
+  @{etc_ro}/ r,
+  @{etc_ro}/*-release r,
+  @{etc_ro}/lsb-release r,
+  @{etc_ro}/lsb-release.d/{,*} r,
+
+  # file_inherit
+  deny /opt/*/** r,
+  deny owner @{user_config_dirs}/*/** r,
+  deny owner @{user_share_dirs}/*/ r,
+  deny owner @{tmp}/.org.chromium.Chromium.@{rand6} rw,
+  deny owner /dev/shm/.org.chromium.Chromium.@{rand6} rw,
+
+  include if exists <local/lsb-release>
+}
+
+# vim:syntax=apparmor

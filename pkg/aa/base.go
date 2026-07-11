@@ -5,6 +5,7 @@
 package aa
 
 import (
+	"fmt"
 	"strings"
 )
 
@@ -15,6 +16,15 @@ type Base struct {
 	FileInherit bool
 	Optional    bool
 	Paddings    []string
+}
+
+func extractFlag(comment, flag string) (string, bool) {
+	if !strings.Contains(comment, flag) {
+		return comment, false
+	}
+	comment = strings.ReplaceAll(comment, flag+" ", "")
+	comment = strings.ReplaceAll(comment, flag, "")
+	return comment, true
 }
 
 func newBase(rule rule) Base {
@@ -31,19 +41,11 @@ func newBase(rule rule) Base {
 			comment = rule[len(rule)-1].comment
 		}
 	}
-	switch {
-	case strings.Contains(comment, "file_inherit"):
-		fileInherit = true
-		comment = strings.Replace(comment, "file_inherit ", "", 1)
-	case strings.HasPrefix(comment, "no new privs"):
-		noNewPrivs = true
-		comment = strings.Replace(comment, "no new privs ", "", 1)
-	case strings.Contains(comment, "optional:"):
-		optional = true
-		comment = strings.Replace(comment, "optional: ", "", 1)
-	}
+	comment, fileInherit = extractFlag(comment, "file_inherit")
+	comment, noNewPrivs = extractFlag(comment, "no new privs")
+	comment, optional = extractFlag(comment, "optional:")
 	return Base{
-		Comment:     comment,
+		Comment:     strings.TrimRight(comment, " "),
 		NoNewPrivs:  noNewPrivs,
 		FileInherit: fileInherit,
 		Optional:    optional,
@@ -61,11 +63,16 @@ func newBaseFromLog(log map[string]string) Base {
 		if strings.Contains(log["info"], "optional:") {
 			optional = true
 			comment = strings.Replace(log["info"], "optional: ", "", 1)
+		} else if strings.Contains(log["info"], "no new privs") {
+			noNewPrivs = true
+			comment = strings.TrimSpace(strings.Replace(log["info"], "no new privs", "", 1))
 		} else {
 			noNewPrivs = true
+			if log["info"] != "" {
+				comment += " " + log["info"]
+			}
 		}
-	}
-	if log["info"] != "" {
+	} else if log["info"] != "" {
 		comment += " " + log["info"]
 	}
 	return Base{
@@ -88,7 +95,7 @@ func (r *Base) merge(other Base) bool {
 	r.NoNewPrivs = r.NoNewPrivs || other.NoNewPrivs
 	r.FileInherit = r.FileInherit || other.FileInherit
 	r.Optional = r.Optional || other.Optional
-	if other.Comment != "" {
+	if other.Comment != "" && other.Comment != r.Comment {
 		r.Comment += " " + other.Comment
 	}
 	return true
@@ -99,6 +106,7 @@ func (r Base) addLine(other Rule) bool {
 }
 
 type Qualifier struct {
+	Priority   int
 	Audit      bool
 	AccessType string
 }
@@ -108,7 +116,17 @@ func newQualifierFromLog(log map[string]string) Qualifier {
 	return Qualifier{Audit: audit}
 }
 
+func (r *Qualifier) Validate() error {
+	if r.Priority < -100 || r.Priority > 100 {
+		return fmt.Errorf("invalid priority: %d", r.Priority)
+	}
+	return nil
+}
+
 func (r Qualifier) Compare(o Qualifier) int {
+	if r := compare(r.Priority, o.Priority); r != 0 {
+		return r
+	}
 	if r := compare(r.Audit, o.Audit); r != 0 {
 		return r
 	}
@@ -116,7 +134,7 @@ func (r Qualifier) Compare(o Qualifier) int {
 }
 
 func (r Qualifier) Equal(o Qualifier) bool {
-	return r.Audit == o.Audit && r.AccessType == o.AccessType
+	return r.Priority == o.Priority && r.Audit == o.Audit && r.AccessType == o.AccessType
 }
 
 func (r Qualifier) getLenAudit() int {

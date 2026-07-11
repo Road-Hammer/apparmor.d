@@ -10,13 +10,14 @@ include <tunables/global>
 profile gnome-music @{exec_path} flags=(attach_disconnected) {
   include <abstractions/base>
   include <abstractions/audio-client>
-  include <abstractions/bus-system>
-  include <abstractions/bus/org.freedesktop.login1>
+  include <abstractions/avahi-observe>
+  include <abstractions/bus/system/org.freedesktop.login1>
   include <abstractions/common/gnome>
   include <abstractions/gstreamer>
   include <abstractions/nameservice-strict>
   include <abstractions/p11-kit>
   include <abstractions/python>
+  include <abstractions/sqlite>
   include <abstractions/ssl_certs>
 
   network inet stream,
@@ -48,11 +49,9 @@ profile gnome-music @{exec_path} flags=(attach_disconnected) {
   owner @{user_share_dirs}/grilo-plugins/ rwk,
   owner @{user_share_dirs}/grilo-plugins/*.db{,-shm,-journal,-wal} rwk,
 
-  @{att}/@{run}/systemd/inhibit/@{int}.ref rw,
+  @{att}@{run}/systemd/inhibit/@{int}.ref rw,
 
   owner @{tmp}/grilo-plugin-cache-[0-9A-Z]*/ rw,
-  owner @{tmp}/etilqs_@{sqlhex} rw,
-  owner /var/tmp/etilqs_@{sqlhex} rw,
 
         @{PROC}/sys/net/ipv6/conf/all/disable_ipv6 r,
   owner @{PROC}/@{pid}/mounts r,

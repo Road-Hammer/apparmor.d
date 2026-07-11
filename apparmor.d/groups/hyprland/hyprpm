@@ -11,7 +11,6 @@ profile hyprpm @{exec_path} {
   include <abstractions/base>
   include <abstractions/nameservice-strict>
   include <abstractions/ssl_certs>
-  include <abstractions/user-tmp>
 
   network inet dgram,
   network inet stream,
@@ -27,6 +26,8 @@ profile hyprpm @{exec_path} {
   /usr/include/** r,
   /usr/share/git-core/** r,
   /usr/share/pkgconfig/** r,
+
+  /var/cache/hyprpm/{,**} r,
 
   owner @{HOME}/.gitconfig r,
 

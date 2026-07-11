@@ -27,6 +27,8 @@ profile gnome-tweaks @{exec_path} flags=(attach_disconnected) {
 
   @{lib}/@{python_name}/site-packages/gtweak/{,*/,**/}__pycache__/*pyc* w,
 
+  @{system_share_dirs}/glib-2.0/schemas/org.gnome.*.gschema.xml r,
+
   /etc/xdg/autostart/{,**} r,
 
   owner @{HOME}/@{XDG_WALLPAPERS_DIR}/{,**} r,
@@ -36,7 +38,6 @@ profile gnome-tweaks @{exec_path} flags=(attach_disconnected) {
   owner @{user_config_dirs}/gtk-{3,4}.0/settings.ini* rw,
   owner @{user_share_dirs}/backgrounds/{,**} r,
   owner @{user_share_dirs}/gnome-shell/extensions/**/schemas/* r,
-  owner @{user_share_dirs}/recently-used.xbel* rw,
 
   @{run}/udev/data/+input:input@{int} r,  # for mouse, keyboard, touchpad
   @{run}/udev/data/c13:@{int}  r,         # for /dev/input/*

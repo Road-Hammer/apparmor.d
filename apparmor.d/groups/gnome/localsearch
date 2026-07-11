@@ -9,25 +9,33 @@ include <tunables/global>
 @{exec_path} = @{bin}/localsearch @{lib}/localsearch-3
 profile localsearch @{exec_path} flags=(attach_disconnected) {
   include <abstractions/base>
-  include <abstractions/bus-session>
-  include <abstractions/bus-system>
-  include <abstractions/bus/org.freedesktop.UPower>
-  include <abstractions/bus/org.gtk.Private.RemoteVolumeMonitor>
-  include <abstractions/bus/org.gtk.vfs.Daemon>
-  include <abstractions/bus/org.gtk.vfs.MountTracker>
+  include <abstractions/bus/session/org.freedesktop.systemd1>
+  include <abstractions/bus/session/org.gtk.Private.RemoteVolumeMonitor>
+  include <abstractions/bus/session/org.gtk.vfs.Daemon>
   include <abstractions/dconf-write>
   include <abstractions/deny-sensitive-home>
+  include <abstractions/devices-usb-read>
   include <abstractions/disks-read>
-  include <abstractions/freedesktop.org>
   include <abstractions/gnome-strict>
   include <abstractions/graphics>
   include <abstractions/gstreamer>
   include <abstractions/nameservice-strict>
+  include <abstractions/sqlite>
+  include <abstractions/upower-observe>
 
   network netlink raw,
 
   #aa:dbus own bus=session name=org.freedesktop.Tracker3.Miner.Files
   #aa:dbus own bus=session name=org.freedesktop.LocalSearch3
+
+  dbus receive bus=session path=/org/freedesktop/Tracker3/Endpoint
+       interface=org.freedesktop.DBus.Peer
+       member=Ping
+       peer=(name=@{busname}, label=nautilus),
+  dbus receive bus=session path=/org/freedesktop/Tracker3/Endpoint
+       interface=org.freedesktop.Tracker3.Endpoint
+       member=Query
+       peer=(name=@{busname}, label=nautilus),
 
   @{exec_path} mr,
 
@@ -35,7 +43,8 @@ profile localsearch @{exec_path} flags=(attach_disconnected) {
 
   /usr/share/localsearch3/{,**} r,
   /usr/share/osinfo/{,**} r,
-  /usr/share/poppler/{,**} r,
+
+  /etc/fstab r,
 
   # Allow to search user files
   owner @{HOME}/ r,
@@ -44,13 +53,16 @@ profile localsearch @{exec_path} flags=(attach_disconnected) {
   owner @{tmp}/*/{,**} r,
 
   owner @{user_cache_dirs}/tracker3/ rw,
-  owner @{user_cache_dirs}/tracker3/files/ rw,
-  owner @{user_cache_dirs}/tracker3/files/** rwk,
+  owner @{user_cache_dirs}/tracker3/files*/ rw,
+  owner @{user_cache_dirs}/tracker3/files*/** rwk,
 
-  owner @{tmp}/etilqs_@{sqlhex} rw,
-  owner /var/tmp/etilqs_@{sqlhex} rw,
+  owner @{GDM_HOME}/ r,
+  owner @{GDM_HOME}/*/ r,
+  owner @{gdm_cache_dirs}/tracker3/{,**} rwk,
+  owner @{gdm_config_dirs}/user-dirs.dirs r,
 
-  @{run}/mount/utab r,
+        @{run}/mount/utab r,
+  owner @{run}/user/@{uid}/systemd/notify w,
 
   @{run}/udev/data/c@{dynamic}:@{int} r,  # For dynamic assignment range 234 to 254, 384 to 511
 
@@ -61,8 +73,9 @@ profile localsearch @{exec_path} flags=(attach_disconnected) {
   owner @{PROC}/@{pid}/mounts r,
   owner @{PROC}/@{pid}/task/@{tid}/comm rw,
 
-  /dev/media@{int} rw,
-  /dev/video@{int} rw,
+  # No access to camera and microphone devices
+  deny /dev/video@{int} rw,
+  deny /dev/media@{int} rw,
 
   include if exists <local/localsearch>
 }

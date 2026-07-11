@@ -10,25 +10,41 @@ include <tunables/global>
 profile cockpit-session @{exec_path} flags=(attach_disconnected) {
   include <abstractions/base>
   include <abstractions/authentication>
+  include <abstractions/bus-system>
   include <abstractions/nameservice-strict>
   include <abstractions/shells>
 
   capability audit_write,
+  capability chown,
   capability dac_read_search,
   capability net_admin,
   capability setgid,
   capability setuid,
+  capability sys_resource,
 
   network netlink raw,
+
+  signal send set=term peer=ssh-agent,
+
+  dbus send bus=system path=/org/freedesktop/login1
+       interface=org.freedesktop.login1.Manager
+       member=CreateSessionWithPIDFD
+       peer=(name=org.freedesktop.login1, label=systemd-logind),
+
+  dbus send bus=system path=/org/freedesktop/login1
+       interface=org.freedesktop.login1.Manager
+       member=ReleaseSession
+       peer=(name=org.freedesktop.login1, label=systemd-logind),
 
   @{exec_path} mr,
 
   @{shells_path}         rix,
   @{bin}/cockpit-bridge  rPx,
   @{lib}/cockpit/cockpit-pcp  rPx,
+  @{bin}/ssh-agent       rPx,
+  @{bin}/ssh-add         rCx -> ssh-add,
 
   @{etc_ro}/environment r,
-  @{etc_ro}/security/limits.d/{,*.conf} r,
   /etc/cockpit/disallowed-users r,
   /etc/group r,
   /etc/machine-id r,
@@ -36,22 +52,41 @@ profile cockpit-session @{exec_path} flags=(attach_disconnected) {
   /etc/motd.d/ r,
   /etc/shells r,
 
-  @{att}/@{run}/systemd/sessions/*.ref rw,
+  /var/log/btmp rw,
+  /var/log/lastlog rw,
+  /var/log/wtmp rwk,
+
+  /var/lib/lastlog/ r,
+  /var/lib/lastlog/lastlog2.db rwk,
+  /var/lib/lastlog/lastlog2.db-journal rw,
+
+        @{run}/systemd/io.systemd.Login rw,
+  @{att}@{run}/systemd/sessions/*.ref rw,
 
   @{run}/cockpit/* r,
   @{run}/faillock/@{user} rwk,
   @{run}/motd.d/{,*} r,
   @{run}/utmp rwk,
 
-  /var/log/btmp rw,
-  /var/log/lastlog rw,
-  /var/log/wtmp rwk,
-
+        @{PROC}/@{pids}/fd/ r,
   owner @{PROC}/@{pid}/loginuid rw,
   owner @{PROC}/@{pid}/uid_map r,
-        @{PROC}/@{pids}/fd/ r,
 
   /dev/tty rw,
+
+  profile ssh-add flags=(attach_disconnected) {
+    include <abstractions/base>
+    include <abstractions/nameservice-strict>
+
+    @{bin}/ssh-add mr,
+
+    owner @{HOME}/@{XDG_SSH_DIR}/{,*} r,
+
+    owner @{tmp}/ssh-@{rand12}/ rw,
+    owner @{tmp}/ssh-@{rand12}/agent.@{int} rw,
+
+    include if exists <local/cockpit-session_ssh-add>
+  }
 
   include if exists <local/cockpit-session>
 }

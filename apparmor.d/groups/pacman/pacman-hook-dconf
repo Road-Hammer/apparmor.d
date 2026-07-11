@@ -7,14 +7,14 @@ abi <abi/4.0>,
 include <tunables/global>
 
 @{exec_path} = /usr/share/libalpm/scripts/dconf-update
-profile pacman-hook-dconf @{exec_path} {
+profile pacman-hook-dconf @{exec_path} flags=(attach_disconnected) {
   include <abstractions/base>
 
   capability dac_read_search,
 
   @{exec_path} mr,
 
-  @{bin}/bash  rix,
+  @{sh_path}   rix,
   @{bin}/rm    rix,
   @{bin}/dconf rPx,
 

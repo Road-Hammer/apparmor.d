@@ -7,13 +7,14 @@ abi <abi/4.0>,
 include <tunables/global>
 
 @{exec_path} = @{bin}/gimp{,-*}
-profile gimp @{exec_path} {
+profile gimp @{exec_path} flags=(attach_disconnected) {
   include <abstractions/base>
-  include <abstractions/bus-session>
-  include <abstractions/bus/org.freedesktop.FileManager1>
+  include <abstractions/audio-client>
+  include <abstractions/bus/session/org.freedesktop.FileManager1>
   include <abstractions/dconf-write>
   include <abstractions/desktop>
   include <abstractions/graphics>
+  include <abstractions/gvfs>
   include <abstractions/nameservice-strict>
   include <abstractions/python>
   include <abstractions/thumbnails-cache-write>
@@ -21,23 +22,27 @@ profile gimp @{exec_path} {
 
   signal (send) set=(term, kill) peer=xsane-gimp,
 
+  #aa:dbus own bus=session name=org.gimp
+
   #aa:dbus talk bus=session name=org.gnome.Shell.Screenshot label=gnome-shell
-  #aa:dbus talk bus=session name=org.gtk.vfs label="gvfsd{,-*}"
 
   @{exec_path} mr,
 
   @{python_path}                         rix,
   @{bin}/env                             rix,
+  @{bin}/gimp-debug-tool-3.0             rix,
   @{bin}/gimp-script-fu-interpreter-*    rix,
   @{bin}/gjs-console                     rix,
   @{bin}/lua                             rix,
   @{lib}/gimp/@{version}/extensions/*/*  rix,
   @{lib}/gimp/*/plug-ins/**              rix,
 
+  @{bin}/darktable  rPUx,
   @{bin}/xsane-gimp rPx,
   @{open_path}      rPx -> child-open-help,
 
   @{lib}/gimp/@{version}/plug-ins/python-console/__pycache__/{,*} w,
+  @{lib}/@{multiarch}/gimp/@{version}/plug-ins/** ix,
 
   /usr/share/gimp/{,**} r,
   /usr/share/mypaint-data/{,**} r,
@@ -55,23 +60,21 @@ profile gimp @{exec_path} {
 
   owner @{user_cache_dirs}//thumbnails/normal/gimp-thumb* rw,
   owner @{user_cache_dirs}/babl/{,**} rw,
-  owner @{user_cache_dirs}/gegl-*/{,**} r,
-  owner @{user_cache_dirs}/gegl-*/{,**} r,
+  owner @{user_cache_dirs}/gegl-@{version}/{,**} rw,
+  owner @{user_cache_dirs}/gegl-@{version}/{,**} rw,
   owner @{user_cache_dirs}/gimp/{,**} rw,
   owner @{user_cache_dirs}/GIMP/{,**} rw,
 
   owner @{user_config_dirs}/gimp/{,**} rw,
   owner @{user_config_dirs}/GIMP/{,**} rw,
 
-  owner @{user_share_dirs}/gegl-*/{,**} r,
+  owner @{user_share_dirs}/gegl-@{version}/{,**} r,
   owner @{user_share_dirs}/GIMP/{,**} rw,
 
+  owner @{tmp}/gimp-*/{,**} rw,
   owner @{tmp}/gimp/{,**} rw,
 
-        @{sys}/fs/cgroup/user.slice/cpu.max r,
-        @{sys}/fs/cgroup/user.slice/user-@{uid}.slice/cpu.max r,
-        @{sys}/fs/cgroup/user.slice/user-@{uid}.slice/user@@{uid}.service/cpu.max r,
-  owner @{sys}/fs/cgroup/user.slice/user-@{uid}.slice/user@@{uid}.service/app.slice/cpu.max r,
+  @{run}/mount/utab r,
 
   owner @{PROC}/@{pid}/cgroup r,
   owner @{PROC}/@{pid}/mountinfo r,

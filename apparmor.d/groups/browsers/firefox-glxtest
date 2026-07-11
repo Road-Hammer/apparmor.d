@@ -6,7 +6,7 @@ abi <abi/4.0>,
 
 include <tunables/global>
 
-@{name} = firefox{,-esr,-bin}
+@{name} = firefox{,-esr,-bin,-nightly}
 @{lib_dirs} = @{lib}/@{name} /opt/@{name}
 @{config_dirs} = @{HOME}/.mozilla/
 @{cache_dirs} = @{user_cache_dirs}/mozilla/
@@ -14,12 +14,18 @@ include <tunables/global>
 @{exec_path} = @{lib_dirs}/glxtest
 profile firefox-glxtest @{exec_path} flags=(attach_disconnected) {
   include <abstractions/base>
+  include <abstractions/bus-system>
   include <abstractions/graphics>
   include <abstractions/nameservice-strict>
+  include <abstractions/wayland-strict>
   include <abstractions/X-strict>
-  include <abstractions/wayland>
+
+  unix type=seqpacket peer=(label=firefox),
+  unix type=seqpacket peer=(label=firefox-crashhelper),
 
   @{exec_path} mr,
+
+  / r,
 
   owner @{cache_dirs}/firefox/*/startupCache/scriptCache-* r,
   owner @{cache_dirs}/firefox/*/startupCache/startupCache* r,

@@ -14,10 +14,9 @@ profile acpi-powerbtn flags=(attach_disconnected) {
   @{sh_path}          rix,
   @{bin}/{e,}grep     rix,
   @{sbin}/killall5    rix,
-  @{bin}/pgrep        rix,
+  @{bin}/pgrep        rCx -> pgrep,
   @{bin}/pinky        rix,
   @{bin}/sed          rix,
-  @{sbin}/shutdown    rix,
   /etc/acpi/powerbtn.sh    rix,
 
   @{bin}/dbus-send     Cx -> bus,
@@ -42,9 +41,16 @@ profile acpi-powerbtn flags=(attach_disconnected) {
     @{bin}/fgconsole r,
 
           /dev/tty       rw,
-    owner /dev/tty@{int} rw,
+    owner /dev/tty@{u8} rw,
 
     include if exists <local/acpi-powerbtn_fgconsole>
+  }
+
+  profile pgrep {
+    include <abstractions/base>
+    include <abstractions/app/pgrep>
+
+    include if exists <local/acpi-powerbtn_pgrep>
   }
 
   profile bus flags=(complain) {

@@ -7,40 +7,38 @@ abi <abi/4.0>,
 
 include <tunables/global>
 
-# Debugging the syslogger can be difficult if it can't write to the file
-# that the kernel is logging denials to. In these cases, you can do the
-# following:
-# watch -n 1 'dmesg | tail -5'
-
 @{exec_path} = @{sbin}/rsyslogd
 profile rsyslogd @{exec_path} {
   include <abstractions/base>
-  include <abstractions/nameservice>
+  include <abstractions/nameservice-strict>
 
-  capability chown,  # For creating new log files and changing their owner/group
-  capability net_admin,  # For remote logs
-  capability setgid,  # For downgrading privileges
+  capability dac_override,
+  capability dac_read_search,
+  capability setgid,
   capability setuid,
   capability sys_nice,
+  capability sys_tty_config,
   capability syslog,
+
+  network inet dgram,
+  network inet6 dgram,
 
   signal receive set=hup peer=@{p_systemd},
 
   @{exec_path} mr,
+  @{sh_path} mr,
 
   @{lib}/@{multiarch}/rsyslog/*.so mr,
 
   /etc/rsyslog.conf r,
   /etc/rsyslog.d/{,**} r,
 
-  /etc/CA/*.crt r,
-  /etc/CA/*.key r,
-
   /var/log/** rw,
   /var/spool/rsyslog/ r,
   /var/spool/rsyslog/** rw,
 
-        @{run}/systemd/notify rw,
+  @{run}/systemd/sessions/ r,
+
   owner @{run}/rsyslogd.pid{,.tmp} rwk,
   owner @{run}/systemd/journal/syslog w,
 
@@ -48,6 +46,7 @@ profile rsyslogd @{exec_path} {
   @{PROC}/cmdline r,
   @{PROC}/kmsg r,
   @{PROC}/sys/kernel/osrelease r,
+  @{PROC}/sys/net/ipv6/conf/all/disable_ipv6 r,
 
   include if exists <local/rsyslogd>
 }

@@ -9,6 +9,7 @@
 
   include <abstractions/consoles>
 
+  capability dac_override,
   capability sys_ptrace,
 
   ptrace read,
@@ -19,11 +20,14 @@
   @{sys}/devices/system/node/node@{int}/meminfo r,
 
   @{PROC}/ r,
+  @{PROC}/@{pids}/ r,
   @{PROC}/@{pids}/cgroup r,
   @{PROC}/@{pids}/cmdline r,
   @{PROC}/@{pids}/environ r,
   @{PROC}/@{pids}/stat r,
+  @{PROC}/@{pids}/status r,
   @{PROC}/sys/kernel/osrelease r,
+  @{PROC}/tty/drivers r,
   @{PROC}/uptime r,
 
   include if exists <abstractions/app/pgrep.d>

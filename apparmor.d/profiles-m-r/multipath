@@ -23,10 +23,13 @@ profile multipath @{exec_path} flags=(attach_disconnected) {
   /etc/multipath/* rwk,
   /etc/systemd/system/ r,
 
+  / r,
+
   @{run}/systemd/system/ r,
 
   @{sys}/bus/ r,
   @{sys}/class/ r,
+  @{sys}/devices/**/uevent r,
   @{sys}/module/*/parameters/multipath r,
 
   @{PROC}/devices r,

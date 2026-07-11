@@ -10,6 +10,7 @@ include <tunables/global>
 @{exec_path} = @{sbin}/mkswap
 profile mkswap @{exec_path} {
   include <abstractions/base>
+  include <abstractions/consoles>
   include <abstractions/disks-write>
 
   capability mknod,
@@ -18,6 +19,7 @@ profile mkswap @{exec_path} {
 
   owner /swapfile rw,
   owner /swap/swapfile rw,
+  owner /var/swapfile rw,
 
         @{PROC}/swaps r,
   owner @{PROC}/@{pid}/mounts r,

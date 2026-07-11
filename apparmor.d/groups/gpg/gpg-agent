@@ -49,9 +49,11 @@ profile gpg-agent @{exec_path} {
   owner @{run}/user/@{uid}/gnupg/*.conf r,
   owner @{run}/user/@{uid}/gnupg/d.@{rand}/ rw,
   owner @{run}/user/@{uid}/gnupg/d.@{rand}/S.gpg-agent{,.ssh,.browser,.extra} rw,
+  owner @{run}/user/@{uid}/gnupg/d.@{rand}/S.scdaemon rw,
   owner @{run}/user/@{uid}/gnupg/private-keys-v1.d/ rw,
   owner @{run}/user/@{uid}/gnupg/private-keys-v1.d/@{hex}.key{,.tmp} rw,
   owner @{run}/user/@{uid}/gnupg/S.gpg-agent{,.ssh,.browser,.extra} rw,
+  owner @{run}/user/@{uid}/gnupg/S.scdaemon rw,
   owner @{run}/user/@{uid}/gnupg/sshcontrol r,
 
   owner @{tmp}/**/{.,}gnupg/ rw,
@@ -60,6 +62,10 @@ profile gpg-agent @{exec_path} {
   owner @{tmp}/**/{.,}gnupg/private-keys-v1.d/@{hex}.key{,.tmp} rw,
   owner @{tmp}/**/{.,}gnupg/{,d.@{rand}/}S.gpg-agent{,.ssh,.browser,.extra} rw,
   owner @{tmp}/**/{.,}gnupg/sshcontrol r,
+
+  owner /tmp/ostree-gpg-@{rand6}/{,*/}private-keys-v1.d/ rw,
+  owner /tmp/ostree-gpg-@{rand6}/{,*/}private-keys-v1.d/@{hex}.key rw,
+  owner /tmp/ostree-gpg-@{rand6}/{,*/}S.gpg-agent{,.ssh,.browser,.extra} rw,
 
   #aa:only pacman
   owner /etc/pacman.d/gnupg/ rw,
@@ -82,10 +88,14 @@ profile gpg-agent @{exec_path} {
   owner /var/lib/*/gnupg/sshcontrol r,
 
   #aa:only zypper
-  owner /var/tmp/zypp.*/ rw,
-  owner /var/tmp/zypp.*/{,*/}private-keys-v1.d/ rw,
-  owner /var/tmp/zypp.*/{,*/}private-keys-v1.d/@{hex}.key rw,
-  owner /var/tmp/zypp.*/{,*/}S.gpg-agent{,.ssh,.browser,.extra} rw,
+  /var/tmp/zypp.@{rand6}/ rw,
+  /var/tmp/zypp.@{rand6}/{,*/}private-keys-v1.d/ rw,
+  /var/tmp/zypp.@{rand6}/{,*/}private-keys-v1.d/@{hex}.key rw,
+  /var/tmp/zypp.@{rand6}S.gpg-agent{,.ssh,.browser,.extra} rw,
+  /var/tmp/zypp.tmp/zypp.@{rand6} rw,
+  /var/tmp/zypp.tmp/zypp.@{rand6}/{,*/}private-keys-v1.d/ rw,
+  /var/tmp/zypp.tmp/zypp.@{rand6}/{,*/}private-keys-v1.d/@{hex}.key rw,
+  /var/tmp/zypp.tmp/zypp.@{rand6}/{,*/}S.gpg-agent{,.ssh,.browser,.extra} rw,
 
   @{PROC}/@{pid}/fd/ r,
 
@@ -93,7 +103,7 @@ profile gpg-agent @{exec_path} {
   deny @{bin}/.gnupg/ w,
 
   # file inherit
-  owner /dev/tty@{int} rw,
+  owner /dev/tty@{u8} rw,
 
   include if exists <local/gpg-agent>
 }

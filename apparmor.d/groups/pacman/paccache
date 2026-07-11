@@ -9,6 +9,7 @@ include <tunables/global>
 @{exec_path} = @{bin}/paccache
 profile paccache @{exec_path} flags=(attach_disconnected) {
   include <abstractions/base>
+  include <abstractions/consoles>
   include <abstractions/nameservice-strict>
 
   capability dac_read_search,
@@ -16,9 +17,10 @@ profile paccache @{exec_path} flags=(attach_disconnected) {
 
   @{exec_path} mr,
 
+  @{sh_path}          rix,
   @{bin}/{m,g,}awk    rix,
-  @{bin}/bash         rix,
   @{bin}/cat          rix,
+  @{bin}/date         rix,
   @{bin}/gettext      rix,
   @{bin}/gpg{,2}      rix,
   @{bin}/gpgconf      rix,
@@ -36,9 +38,13 @@ profile paccache @{exec_path} flags=(attach_disconnected) {
 
   /etc/pacman.conf r,
   /etc/pacman.d/{,**} r,
+  /etc/pacman.d/gnupg/** rwlk -> /etc/pacman.d/gnupg/**,
 
   /var/cache/pacman/pkg/{,*} rw,
   /var/lib/pacman/{,**} r,
+
+  @{HOME}/@{XDG_GPG_DIR}/gpg.conf r,
+  @{HOME}/@{XDG_GPG_DIR}/gpgsm.conf r,
 
   owner @{PROC}/@{pid}/fd/ r,
 

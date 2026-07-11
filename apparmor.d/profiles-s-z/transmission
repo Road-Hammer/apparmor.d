@@ -9,15 +9,14 @@ include <tunables/global>
 @{exec_path} = @{bin}/transmission-{gtk,qt}
 profile transmission @{exec_path} flags=(attach_disconnected) {
   include <abstractions/base>
-  include <abstractions/bus-accessibility>
-  include <abstractions/bus-session>
-  include <abstractions/bus/org.a11y>
-  include <abstractions/bus/org.freedesktop.Notifications>
-  include <abstractions/bus/org.kde.StatusNotifierWatcher>
+  include <abstractions/bus/session/org.gtk.Private.RemoteVolumeMonitor>
+  include <abstractions/bus/system/org.freedesktop.hostname1>
   include <abstractions/dconf-write>
   include <abstractions/desktop>
   include <abstractions/graphics>
+  include <abstractions/gvfs>
   include <abstractions/nameservice-strict>
+  include <abstractions/screen-inhibit>
   include <abstractions/ssl_certs>
   include <abstractions/trash-strict>
   include <abstractions/user-download-strict>
@@ -30,7 +29,6 @@ profile transmission @{exec_path} flags=(attach_disconnected) {
 
   #aa:dbus own bus=session name=com.transmissionbt.Transmission
   #aa:dbus own bus=session name=com.transmissionbt.transmission_*
-  #aa:dbus talk bus=session name=org.gtk.vfs label="gvfsd{,-*}"
 
   @{exec_path} mr,
 
@@ -61,8 +59,6 @@ profile transmission @{exec_path} flags=(attach_disconnected) {
   owner @{PROC}/@{pid}/mounts r,
   owner @{PROC}/@{pid}/stat r,
   owner @{PROC}/@{pid}/task/@{tid}/comm rw,
-
-  deny @{user_share_dirs}/gvfs-metadata/* r,
 
   include if exists <local/transmission>
 }

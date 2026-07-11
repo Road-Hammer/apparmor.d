@@ -9,6 +9,8 @@ include <tunables/global>
 @{exec_path} = @{bin}/gnome-system-monitor
 profile gnome-system-monitor @{exec_path} flags=(attach_disconnected) {
   include <abstractions/base>
+  include <abstractions/bus/session/org.gtk.Private.RemoteVolumeMonitor>
+  include <abstractions/bus/session/org.gtk.vfs.Daemon>
   include <abstractions/common/gnome>
   include <abstractions/nameservice-strict>
 
@@ -18,9 +20,9 @@ profile gnome-system-monitor @{exec_path} flags=(attach_disconnected) {
   network inet6 dgram,
   network netlink raw,
 
-  ptrace (read),
+  ptrace read,
 
-  signal (send) set=(kill term cont stop),
+  signal send set=(kill term cont stop),
 
   #aa:dbus own bus=session name=org.gnome.SystemMonitor
 
@@ -29,20 +31,25 @@ profile gnome-system-monitor @{exec_path} flags=(attach_disconnected) {
   @{sh_path}    rix,
   @{bin}/lsblk  rPx,
   @{bin}/pkexec rCx -> pkexec,
+  @{bin}/lscpu  rPx,
   @{bin}/sed    rix,
   @{bin}/tr     rix,
 
+  /usr/share/byobu/desktop/{,**} r,
   /usr/share/firefox{,-esr}/browser/chrome/icons/{,**} r,
 
+  /etc/fstab r,
+
   / r,
+
+  owner @{user_share_dirs}/gvfs-metadata/{,*} r,
 
   owner @{tmp}/gdkpixbuf-xpm-tmp.@{rand6} rw,
 
   owner @{run}/user/@{uid}/doc/ rw,
   owner @{run}/user/@{uid}/gnome-shell-disable-extensions w,
 
-  @{run}/systemd/sessions/*     r,
-  @{run}/systemd/sessions/*.ref r,
+  @{run}/systemd/sessions/* r,
   @{run}/mount/utab r,
 
   @{sys}/devices/@{pci}/net/*/statistics/collisions r,
@@ -70,11 +77,10 @@ profile gnome-system-monitor @{exec_path} flags=(attach_disconnected) {
   @{PROC}/@{pids}/smaps r,
   @{PROC}/@{pids}/stat r,
   @{PROC}/@{pids}/statm r,
+  @{PROC}/@{pids}/status r,
   @{PROC}/@{pids}/wchan r,
   @{PROC}/diskstats r,
   @{PROC}/vmstat r,
-
-  deny owner @{user_share_dirs}/gvfs-metadata/{,*} r,
 
   /dev/tty rw,
 

@@ -15,7 +15,7 @@ profile os-prober @{exec_path} flags=(attach_disconnected) {
   capability dac_read_search,
   capability sys_admin,
 
-  mount options=(rprivate, rw)      -> /,
+  mount options=(rw, make-rprivate) /,
   mount options=(rw, nosuid, nodev) -> /var/lib/os-prober/mount/,
 
   umount /var/lib/os-prober/mount/,
@@ -26,24 +26,18 @@ profile os-prober @{exec_path} flags=(attach_disconnected) {
 
   @{sh_path}               rix,
   @{bin}/{e,f,}grep        rix,
-  @{sbin}/blkid            rPx,
-  @{sbin}/btrfs            rPx,
   @{bin}/cat               rix,
   @{bin}/cut               rix,
-  @{sbin}/dmraid           rPUx,
   @{bin}/find              rix,
-  @{bin}/grub-mount        rPx,
-  @{sbin}/grub-probe       rPx,
+  @{bin}/grub{,2}-mount    rPx,
   @{bin}/head              rix,
   @{bin}/kmod              rPx,
   @{bin}/logger            rix,
   @{bin}/ls                rix,
   @{bin}/lsblk             rPx,
-  @{sbin}/lvm              rPx,
   @{bin}/mkdir             rix,
   @{bin}/mktemp            rix,
   @{bin}/mount             rix,
-  @{sbin}/multipath        rPx,
   @{bin}/readlink          rix,
   @{bin}/rm                rix,
   @{bin}/rmdir             rix,
@@ -51,10 +45,17 @@ profile os-prober @{exec_path} flags=(attach_disconnected) {
   @{bin}/udevadm           rPx,
   @{bin}/umount            rix,
   @{bin}/uname             rix,
-  @{bin}/which             rix,
+  @{bin}/which{,.debianutils}  rix,
   @{lib}/newns             rix,
   @{lib}/os-prober/*       rix,
   @{lib}/os-probes/{,**}   rix,
+  @{sbin}/blkid            rPx,
+  @{sbin}/btrfs            rPx,
+  @{sbin}/dmraid           rPUx,
+  @{sbin}/grub-probe       rPx,
+  @{sbin}/grub2-probe      rPx,
+  @{sbin}/lvm              rPx,
+  @{sbin}/multipath        rPx,
 
   /usr/share/os-prober/common.sh r,
   /usr/share/terminfo/** r,
@@ -63,9 +64,9 @@ profile os-prober @{exec_path} flags=(attach_disconnected) {
 
   @{MOUNTS}/ r,
   / r,
-  /boot/{efi/,} r,
-  /boot/{efi/,}EFI/ r,
-  /boot/{efi/,}EFI/**/ r,
+  @{efi}/ r,
+  @{efi}/EFI/ r,
+  @{efi}/EFI/**/ r,
 
   owner @{tmp}/os-prober.*/{,**} rw,
 
@@ -78,7 +79,7 @@ profile os-prober @{exec_path} flags=(attach_disconnected) {
   owner @{PROC}/@{pid}/mountinfo r,
   owner @{PROC}/@{pid}/mounts r,
 
-  /dev/tty@{int} rw,
+  /dev/tty@{u8} rw,
 
   include if exists <local/os-prober>
 }

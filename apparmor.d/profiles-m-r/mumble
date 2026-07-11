@@ -30,7 +30,7 @@ profile mumble @{exec_path} {
 
   @{exec_path} mrix,
 
-  @{bin}/lsb_release  rPx -> lsb_release,
+  @{bin}/lsb_release  rPx,
   @{browsers_path}    rPx,
   @{open_path}        rPx -> child-open,
 
@@ -60,7 +60,7 @@ profile mumble @{exec_path} {
   /dev/shm/#@{int} rw,
 
   # file_inherit
-  owner /dev/tty@{int} rw,
+  owner /dev/tty@{u8} rw,
 
   include if exists <local/mumble>
 }

@@ -7,12 +7,13 @@ abi <abi/4.0>,
 include <tunables/global>
 
 @{exec_path} = @{bin}/sync
-profile sync @{exec_path} {
+profile sync @{exec_path} flags=(attach_disconnected) {
   include <abstractions/base>
   include <abstractions/consoles>
 
   @{exec_path} mr,
 
+  #aa:lint ignore=too-wide
   # All paths where sync can be used to flush all write operations on a single file to disk
   /{,**} rw,
 

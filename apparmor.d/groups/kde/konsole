@@ -11,24 +11,27 @@ include <tunables/global>
 profile konsole @{exec_path} flags=(attach_disconnected,mediate_deleted) {
   include <abstractions/base>
   include <abstractions/audio-client>
-  include <abstractions/bus-accessibility>
   include <abstractions/bus-session>
   include <abstractions/consoles>
   include <abstractions/graphics>
   include <abstractions/kde-strict>
   include <abstractions/nameservice-strict>
 
-  ptrace (read),
+  ptrace read,
 
-  signal (send) set=(hup),
+  signal send,
+
+  #aa:dbus own bus=session name=org.kde.konsole-@{int}
 
   @{exec_path}                          mr,
-  @{bin}/@{shells}                      rUx,
   @{browsers_path}                      rPx,
 
   @{lib}/libheif/                            r,
   @{lib}/libheif/**                         mr,
   @{lib}/{,@{multiarch}/}utempter/utempter rPx,
+
+  # The shell is not confined on purpose.
+  @{bin}/@{shells}                      rUx,
 
   # Some CLI program can be launched directly from KDE
   @{bin}/btop                rPUx,
@@ -49,15 +52,18 @@ profile konsole @{exec_path} flags=(attach_disconnected,mediate_deleted) {
 
   owner @{HOME}/@{XDG_SSH_DIR}/config r,
 
-  owner @{user_config_dirs}/#@{int} rwl,
   owner @{user_config_dirs}/breezerc r,
   owner @{user_config_dirs}/kbookmarkrc r,
   owner @{user_config_dirs}/konsole.notifyrc r,
-  owner @{user_config_dirs}/konsolerc{,*} rwlk,
+  owner @{user_config_dirs}/konsolerc rwl,
+  owner @{user_config_dirs}/konsolerc.@{rand6} rwl,
+  owner @{user_config_dirs}/konsolerc.lock rwk,
   owner @{user_config_dirs}/konsolesshconfig rwl -> @{user_config_dirs}/#@{int},
   owner @{user_config_dirs}/konsolesshconfig.@{rand6} rwl -> @{user_config_dirs}/#@{int},
   owner @{user_config_dirs}/konsolesshconfig.lock rwk,
   owner @{user_config_dirs}/kservicemenurc r,
+  owner @{user_config_dirs}/kuriikwsfilterrc r,
+  owner @{user_config_dirs}/Kvantum/{,**} r,
   owner @{user_config_dirs}/menus/{,**} r,
   owner @{user_config_dirs}/session/** rwlk,
 
@@ -66,7 +72,6 @@ profile konsole @{exec_path} flags=(attach_disconnected,mediate_deleted) {
   owner @{user_share_dirs}/konsole/** rwlk,
   owner @{user_share_dirs}/kxmlgui5/konsole/{,**} r,
 
-  owner @{user_state_dirs}/#@{int} rw,
   owner @{user_state_dirs}/konsolestaterc rw,
   owner @{user_state_dirs}/konsolestaterc.@{rand6} rwl -> @{user_state_dirs}/#@{int},
   owner @{user_state_dirs}/konsolestaterc.lock rwk,
@@ -76,9 +81,12 @@ profile konsole @{exec_path} flags=(attach_disconnected,mediate_deleted) {
 
   owner @{sys}/fs/cgroup/user.slice/user-@{uid}.slice/user@@{uid}.service/app.slice/app-org.kde.konsole-@{int}.scope/** rw,
 
-        @{PROC}/@{pid}/cmdline r,
-        @{PROC}/@{pid}/stat r,
+        @{PROC}/@{pid}/task/@{tid}/children r,
+        @{PROC}/@{pids}/cmdline r,
+        @{PROC}/@{pids}/stat r,
+        @{PROC}/@{pids}/status r,
   owner @{PROC}/@{pid}/cgroup r,
+  owner @{PROC}/@{pid}/mountinfo r,
 
   /dev/ptmx rw,
 

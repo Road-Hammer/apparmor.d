@@ -9,26 +9,30 @@ include <tunables/global>
 @{exec_path} = @{bin}/kglobalaccel5 @{lib}/kglobalacceld
 profile kglobalacceld @{exec_path} {
   include <abstractions/base>
+  include <abstractions/bus-session>
   include <abstractions/kde-strict>
+
+  #aa:dbus own bus=session name=org.kde.KGlobalAccel path=/kglobalaccel
 
   @{exec_path} mr,
 
   @{bin}/kstart rPx,
 
+  /usr/share/desktop-directories/{,**} r,
   /usr/share/kglobalaccel/{,**} r,
 
-  /etc/machine-id r,
-  /etc/xdg/menus/ r,
-  /etc/xdg/menus/applications-merged/ r,
+  /etc/xdg/menus/plasma-applications.menu r,
 
-  owner @{user_config_dirs}/#@{int} rw,
   owner @{user_config_dirs}/kglobalshortcutsrc.lock rwk,
   owner @{user_config_dirs}/kglobalshortcutsrc* rwl,
   owner @{user_config_dirs}/khotkeysrc r,
-  owner @{user_config_dirs}/menus/ r,
-  owner @{user_config_dirs}/menus/applications-merged/ r,
 
-  @{PROC}/sys/kernel/random/boot_id r,
+  owner @{user_state_dirs}/kglobalshortcutsstaterc rw,
+  owner @{user_state_dirs}/kglobalshortcutsstaterc.@{rand6} rwl,
+  owner @{user_state_dirs}/kglobalshortcutsstaterc.lock rwk,
+
+        @{PROC}/sys/kernel/random/boot_id r,
+  owner @{PROC}/@{pid}/mountinfo r,
 
   /dev/tty r,
 

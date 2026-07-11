@@ -30,7 +30,7 @@ profile logrotate @{exec_path} flags=(attach_disconnected) {
 
   @{sh_path}                    rix,
   @{bin}/cat                    rix,
-  @{bin}/grep                   rix,
+  @{bin}/{,e}grep               rix,
   @{bin}/gzip                   rix,
   @{sbin}/invoke-rc.d           rix,
   @{bin}/kill                   rix,
@@ -79,6 +79,8 @@ profile logrotate @{exec_path} flags=(attach_disconnected) {
 
     capability net_admin,
     capability sys_ptrace,
+
+    ptrace read peer=@{p_systemd},
 
     dbus send bus=system path=/org/freedesktop/systemd1
          interface=org.freedesktop.systemd1.Manager

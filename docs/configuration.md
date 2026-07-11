@@ -7,16 +7,16 @@ It is mostly done by setting personalized XDG like directories in AppArmor tunab
 
 !!! danger
 
-    You need to ensure that all personal directories you are using are well-defined XDG directory. You may need to edit these variables to your own settings. 
+    You need to ensure that all personal directories you are using are well-defined XDG directories. You may need to edit these variables to your own settings. 
 
     This part is vital to ensure that the profiles are correctly configured for your system. It will lead to breakage if not done correctly.
 
 
-## Personalize Apparmor
+## Personalize AppArmor
 
 ### Tunables
 
-The profiles heavily use the **largely extended** [XDG directory variables](#xdg-variables). All the variables are list you can append with your own values.
+The profiles heavily use the **largely extended** [XDG directory variables](#xdg-variables). All the variables are lists you can append to with your own values.
 
 1. First create the directory `/etc/apparmor.d/tunables/xdg-user-dirs.d/apparmor.d.d`:
   ```sh
@@ -41,13 +41,13 @@ You can extend any profile with your own rules by creating a file in the `/etc/a
 
 **Example**
 
-By default, `nautilus` (and any file browser) only allows access to user files. Thus, your cannot browse system files such as `/etc/`, `/srv/`, `/var/`. You can change this behaviour by creating a local profile addition file for `nautilus`:
+By default, `nautilus` (and any file browser) only allows access to user files. Thus, you cannot browse system files such as `/etc/`, `/srv/`, `/var/`. You can change this behavior by creating a local profile addition file for `nautilus`:
 
 1. Create the file `/etc/apparmor.d/local/nautilus` and add the following rules in it:
   ```sh
     /** r,
   ```
-  You call also restrict this to specific directories:
+  You can also restrict this to specific directories:
   ```sh
     /etc/** r,
     /srv/** r,
@@ -77,7 +77,7 @@ Please ensure that all personal directories you are using are well-defined XDG d
       | Screenshots | `@{XDG_SCREENSHOTS_DIR}` | `@{XDG_PICTURES_DIR}/Screenshots` |
       | Wallpapers | `@{XDG_WALLPAPERS_DIR}` | `@{XDG_PICTURES_DIR}/Wallpapers` |
       | Books | `@{XDG_BOOKS_DIR}` | `Books` |
-      | Games | `@{XDG_GAMES_DIR}` | `.games` |
+      | Games | `@{XDG_GAMES_DIR}` | `Games @{XDG_DATA_DIR}/games` |
       | Templates | `@{XDG_TEMPLATES_DIR}` | `Templates` |
       | Public | `@{XDG_PUBLICSHARE_DIR}` | `Public` |
       | Projects | `@{XDG_PROJECTS_DIR}` | `Projects` |
@@ -86,10 +86,12 @@ Please ensure that all personal directories you are using are well-defined XDG d
       | Mail | `@{XDG_MAIL_DIR}` | `Mail .{m,M}ail` |
       | Sync | `@{XDG_SYNC_DIR}` | `Sync` |
       | Torrents | `@{XDG_TORRENTS_DIR}` | `Torrents` |
-      | Vm | `@{XDG_VM_DIR}` | `.vm` |
-      | Vm Shares | `@{XDG_VM_SHARES_DIR}` | `VM_Shares` |
-      | Disk images | `@{XDG_IMG_DIR}` | `images` |
-      | Games Studio | `@{XDG_GAMESSTUDIO_DIR}` | `.unity3d` |
+      | VM | `@{XDG_VM_DIR}` | `.vm` |
+      | VM Shares | `@{XDG_VMSHARE_DIR}` | `.vmshare` |
+      | Disk images | `@{XDG_IMG_DIR}` | `.img` |
+      | Build | `@{XDG_BUILD_DIR}` | `.build` |
+      | Packages | `@{XDG_PKG_DIR}` | `.pkg` |
+      | Games Studio | `@{XDG_GAMESSTUDIO_DIR}` | `unity3d` |
 
     </figure>
 
@@ -99,7 +101,7 @@ Please ensure that all personal directories you are using are well-defined XDG d
 
       | Description | Name | Default Value(s) |
       |-------------|------|------------------|
-      | Cache | ` @{XDG_CACHE_DIR}` | `.cache` |
+      | Cache | `@{XDG_CACHE_DIR}` | `.cache` |
       | Config | `@{XDG_CONFIG_DIR}` | `.config` |
       | Data | `@{XDG_DATA_DIR}` | `.local/share` |
       | State | `@{XDG_STATE_DIR}` | `.local/state` |
@@ -108,7 +110,7 @@ Please ensure that all personal directories you are using are well-defined XDG d
       | GPG | `@{XDG_GPG_DIR}` | `.gnupg` |
       | SSH | `@{XDG_SSH_DIR}` | `.ssh` |
       | Private | `@{XDG_PRIVATE_DIR}` | `.{p,P}rivate {p,P}rivate` |
-      | Passwords | `@{XDG_PASSWORD_STORE_DIR}` | `.password-store` |
+      | Passwords | `@{XDG_PASSWORDSTORE_DIR}` | `.password-store` |
 
     </figure>
 
@@ -122,10 +124,10 @@ Please ensure that all personal directories you are using are well-defined XDG d
       | Config | `@{user_config_dirs}` | `@{HOME}/@{XDG_CONFIG_DIR}` |
       | Bin | `@{user_bin_dirs}` | `@{HOME}/@{XDG_BIN_DIR}` |
       | Lib | `@{user_lib_dirs}` | `@{HOME}/@{XDG_LIB_DIR}` |
-      | Share | `@{user_share_dirs}` | ` @{HOME}/@{XDG_DATA_DIR}` |
-      | State | `@{user_state_dirs}` | ` @{HOME}/@{XDG_STATE_DIR}` |
-      | Build | `@{user_build_dirs}` | `/tmp/build/` |
-      | Packages | `@{user_pkg_dirs}` | `/tmp/pkg/` |
+      | Share | `@{user_share_dirs}` | `@{HOME}/@{XDG_DATA_DIR}` |
+      | State | `@{user_state_dirs}` | `@{HOME}/@{XDG_STATE_DIR}` |
+      | Build | `@{user_build_dirs}` | `@{HOME}/@{XDG_BUILD_DIR}` |
+      | Packages | `@{user_pkg_dirs}` | `@{HOME}/@{XDG_PKG_DIR}` |
 
     </figure>
 
@@ -143,7 +145,7 @@ Please ensure that all personal directories you are using are well-defined XDG d
       | Books | `@{user_books_dirs}` | `@{HOME}/@{XDG_BOOKS_DIR} @{MOUNTS}/@{XDG_BOOKS_DIR}` |
       | Games | `@{user_games_dirs}` | `@{HOME}/@{XDG_GAMES_DIR} @{MOUNTS}/@{XDG_GAMES_DIR}` |
       | Private | `@{user_private_dirs}` | `@{HOME}/@{XDG_PRIVATE_DIR} @{MOUNTS}/@{XDG_PRIVATE_DIR}` |
-      | Passwords | `@{user_passwordstore_dirs}` | `@{HOME}/@{XDG_PASSWORD_STORE_DIR} @{MOUNTS}/@{XDG_PASSWORD_STORE_DIR}` |
+      | Passwords | `@{user_passwordstore_dirs}` | `@{HOME}/@{XDG_PASSWORDSTORE_DIR} @{MOUNTS}/@{XDG_PASSWORDSTORE_DIR}` |
       | Work | `@{user_work_dirs}` | `@{HOME}/@{XDG_WORK_DIR} @{MOUNTS}/@{XDG_WORK_DIR}` |
       | Mail | `@{user_mail_dirs}` | `@{HOME}/@{XDG_MAIL_DIR} @{MOUNTS}/@{XDG_MAIL_DIR}` |
       | Projects | `@{user_projects_dirs}` | `@{HOME}/@{XDG_PROJECTS_DIR} @{MOUNTS}/@{XDG_PROJECTS_DIR}` |
@@ -151,8 +153,8 @@ Please ensure that all personal directories you are using are well-defined XDG d
       | Templates | `@{user_templates_dirs}` | `@{HOME}/@{XDG_TEMPLATES_DIR} @{MOUNTS}/@{XDG_TEMPLATES_DIR}` |
       | Torrents | `@{user_torrents_dirs}` | `@{HOME}/@{XDG_TORRENTS_DIR} @{MOUNTS}/@{XDG_TORRENTS_DIR}` |
       | Sync | `@{user_sync_dirs}` | `@{HOME}/@{XDG_SYNC_DIR} @{MOUNTS}/*/@{XDG_SYNC_DIR}` |
-      | Vm | `@{user_vm_dirs}` | `@{HOME}/@{XDG_VM_DIR} @{MOUNTS}/@{XDG_VM_DIR}` |
-      | Vm Shares | `@{user_vmshare_dirs}` | `@{HOME}/@{XDG_VM_SHARES_DIR} @{MOUNTS}/@{XDG_VM_SHARES_DIR}` |
+      | VM | `@{user_vm_dirs}` | `@{HOME}/@{XDG_VM_DIR} @{MOUNTS}/@{XDG_VM_DIR}` |
+      | VM Shares | `@{user_vmshare_dirs}` | `@{HOME}/@{XDG_VMSHARE_DIR} @{MOUNTS}/@{XDG_VMSHARE_DIR}` |
       | Disk images | `@{user_img_dirs}` | `@{HOME}/@{XDG_IMG_DIR} @{MOUNTS}/@{XDG_IMG_DIR}` |
 
     </figure>
@@ -171,9 +173,9 @@ All profiles use the variables defined above. Therefore, you can personalize the
     @{XDG_PROJECTS_DIR}+="go"
     ```
 
-- If you use Keepass, personalize `XDG_PASSWORD_STORE_DIR` with your password directory. Eg:
+- If you use Keepass, personalize `XDG_PASSWORDSTORE_DIR` with your password directory. Eg:
     ```sh
-    @{XDG_PASSWORD_STORE_DIR}+="@{HOME}/.keepass/"
+    @{XDG_PASSWORDSTORE_DIR}+="@{HOME}/.keepass/"
     ```
 
 - Add pacman integration with your AUR helper. Eg for `yay`:

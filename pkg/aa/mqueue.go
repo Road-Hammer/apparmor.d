@@ -53,7 +53,7 @@ func newMqueue(q Qualifier, rule rule) (Rule, error) {
 		Type:      rule.GetValuesAsString("type"),
 		Label:     rule.GetValuesAsString("label"),
 		Name:      name,
-	}, nil
+	}, rule.ValidateMapKeys([]string{"type", "label"})
 }
 
 func newMqueueFromLog(log map[string]string) Rule {
@@ -91,6 +91,18 @@ func (r *Mqueue) Validate() error {
 	}
 	if err := validateValues(r.Kind(), "type", []string{r.Type}); err != nil {
 		return fmt.Errorf("%s: %w", r, err)
+	}
+	// Only validate name if it's not an access keyword (parser may put access in Name)
+	nameIsAccess := slices.Contains(requirements[MQUEUE]["access"], r.Name)
+	if !nameIsAccess && r.Name != "" {
+		// POSIX mqueue names must start with /
+		if r.Type == "posix" && !strings.HasPrefix(r.Name, "/") && !strings.Contains(r.Name, "@{") {
+			return fmt.Errorf("mqueue: posix queue name '%s' must start with /", r.Name)
+		}
+		// SYSV mqueue names must not start with /
+		if r.Type == "sysv" && strings.HasPrefix(r.Name, "/") {
+			return fmt.Errorf("mqueue: sysv queue name '%s' must not start with /", r.Name)
+		}
 	}
 	return nil
 }

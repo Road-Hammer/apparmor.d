@@ -18,14 +18,18 @@ profile needrestart @{exec_path} flags=(attach_disconnected) {
 
   ptrace read,
 
+  mqueue (read, getattr) type=posix /att/*/,
+
   @{exec_path} mrix,
 
   @{sh_path}                               rix,
   @{bin}/dpkg-query                        rpx,
   @{bin}/fail2ban-server                   rPx,
+  @{bin}/stty                              rix,
   @{bin}/systemctl                         rCx -> systemctl,
   @{bin}/systemd-detect-virt               rPx,
   @{bin}/udevadm                           rCx -> udevadm,
+  @{bin}/which{,.debianutils}              rix,
   @{bin}/who                               rPx,
   @{lib}/needrestart/*                     rPx,
   @{python_path}                           rix,
@@ -40,13 +44,14 @@ profile needrestart @{exec_path} flags=(attach_disconnected) {
   /etc/shadow r,
 
   / r,
+  /att/**/ r,
   @{efi}/ r,
   @{efi}/* r,
   /opt/*/** r,
   @{bin}/* r,
   @{lib}/** r,
   @{sbin}/** r,
-  @{att}/@{lib}/** r,
+  @{att}@{lib}/** r,
   /usr/share/** r,
   /var/lib/*/** r,
 
@@ -55,11 +60,12 @@ profile needrestart @{exec_path} flags=(attach_disconnected) {
   /tmp/@{word10}/ rw,
 
         @{PROC}/ r,
-        @{PROC}/@{pid}/cgroup r,
-        @{PROC}/@{pid}/cmdline r,
-        @{PROC}/@{pid}/environ r,
-        @{PROC}/@{pid}/maps r,
-        @{PROC}/@{pid}/stat r,
+        @{PROC}/@{pids}/cgroup r,
+        @{PROC}/@{pids}/cmdline r,
+        @{PROC}/@{pids}/environ r,
+        @{PROC}/@{pids}/maps r,
+        @{PROC}/@{pids}/stat r,
+        @{PROC}/@{pids}/status r,
   owner @{PROC}/@{pid}/fd/ r,
 
   /dev/ r,

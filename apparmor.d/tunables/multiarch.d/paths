@@ -12,9 +12,21 @@
 
 # Coreutils programs that should not have dedicated profile
 @{coreutils_path} = @{bin}/@{coreutils}
+@{coreutils_path} += @{bin}/gnu@{coreutils} #aa:only ubuntu
+@{coreutils_path} += @{lib}/cargo/bin/coreutils/@{coreutils} #aa:only ubuntu
 
 # Python interpreters
 @{python_path} = @{bin}/@{python_name}
+
+# ldd (List Dynamic Dependencies) and dynamic linker/loader
+@{ldd_path} = @{bin}/ldd @{bin}/ld
+@{ldd_path} += @{lib}/ld-linux-@{arch}.so{,.*} @{lib}/ld-linux.so{,.*}
+@{ldd_path} += @{lib}/@{multiarch}/ld-linux-@{arch}.so{,.*} 
+
+# Gstreamer plugin scanner
+@{gstreamer_path} = @{lib}/@{multiarch}/gstreamer1.0/gstreamer-1.0/gst-plugin-scanner
+@{gstreamer_path} += @{lib}/@{multiarch}/gstreamer-1.0/gst-plugin-scanner
+@{gstreamer_path} += @{lib}/gstreamer-1.0/gst-plugin-scanner
 
 # Browsers
 @{brave_path} =  @{brave_lib_dirs}/@{brave_name}
@@ -27,11 +39,10 @@
 
 @{browsers_path}  = @{bin}/chromium @{bin}/torbrowser
 @{browsers_path} += @{brave_path} @{chrome_path} @{chromium_path} @{firefox_path} @{msedge_path} @{opera_path}
-@{browsers_path} += @{torbrowser_path} #aa:only whonix
 
 # Emails
 @{thunderbird_path} = @{bin}/@{thunderbird_name} @{thunderbird_lib_dirs}/@{thunderbird_name}
-@{emails_path} = @{thunderbird_path} @{bin}/@{emails_names}
+@{emails_path} = @{thunderbird_path} @{bin}/@{emails_names} "/opt/proton-mail/Proton Mail"
 
 # Open
 @{open_path}  = @{bin}/@{open_names}
@@ -71,5 +82,8 @@
 
 # Backup
 @{backup_path} = @{bin}/@{backup_names} @{lib}/deja-dup/deja-dup-monitor
+
+# Archives
+@{archive_path} = @{bin}/@{archive_names} @{lib}/p7zip/7z @{lib}/7zip/7z
 
 # vim:syntax=apparmor

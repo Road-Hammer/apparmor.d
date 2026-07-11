@@ -9,10 +9,23 @@ include <tunables/global>
 @{exec_path} = @{bin}/kwin_wayland_wrapper
 profile kwin_wayland_wrapper @{exec_path} {
   include <abstractions/base>
-  include <abstractions/wayland>
+  include <abstractions/bus-session>
+  include <abstractions/wayland-strict>
   include <abstractions/X-strict>
 
   signal (send) set=(term, kill) peer=kwin_wayland,
+
+  #aa:dbus own bus=session name=org.kde.KWinWrapper
+
+  dbus send bus=session path=/org/freedesktop/DBus
+      interface=org.freedesktop.DBus
+      member=UpdateActivationEnvironment
+      peer=(name=org.freedesktop.DBus, label="@{p_dbus_session}"),
+
+  dbus send bus=session path=/org/freedesktop/systemd1
+      interface=org.freedesktop.systemd1.Manager
+      member=SetEnvironment
+      peer=(name=org.freedesktop.systemd1, label="@{p_systemd_user}"),
 
   @{exec_path} mr,
 

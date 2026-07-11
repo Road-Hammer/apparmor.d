@@ -19,26 +19,23 @@ profile pacdiff @{exec_path} flags=(attach_disconnected) {
   @{exec_path} mr,
 
   @{sh_path}          rix,
-  @{bin}/{m,g,}awk    rix,
-  @{bin}/cat          rix,
-  @{bin}/cmp          rix,
-  @{bin}/find         rix,
-  @{bin}/locate       rix,
-  @{bin}/pacman       rix,
-  @{bin}/pacman-conf  rPx,
-  @{bin}/pacsort      rix,
-  @{bin}/rm           rix,
-  @{bin}/sed          rix,
-  @{bin}/tput         rix,
-  @{bin}/vim          rix,
+  @{bin}/{m,g,}awk     ix,
+  @{bin}/cat           ix,
+  @{bin}/cmp           ix,
+  @{bin}/find          ix,
+  @{bin}/locate        ix,
+  @{bin}/pacman        ix,
+  @{bin}/pacman-conf   Px,
+  @{bin}/pacsort       ix,
+  @{bin}/rm            ix,
+  @{bin}/sed           ix,
+  @{bin}/tput          ix,
+  @{editor_path}       Cx -> editor,
 
-  owner @{HOME}/.viminfo{,.tmp} rw,
-
-  owner @{user_cache_dirs}/vim/{,**} rw,
-
+  #aa:lint ignore=too-wide
   # packages files
   / r,
-  /boot/{,**} r,
+  @{efi}/{,**} r,
   /etc/{,**} rw,
   /opt/{,**} r,
   /srv/{,**} r,
@@ -46,7 +43,17 @@ profile pacdiff @{exec_path} flags=(attach_disconnected) {
   /var/{,**} r,
 
   /dev/tty rw,
-  /dev/pts/@{int} rw,
+  /dev/pts/@{u16} rw,
+
+  profile editor {
+    include <abstractions/base>
+    include <abstractions/app/editor>
+
+    #aa:lint ignore=too-wide
+    /etc/** rw,
+
+    include if exists <local/pacdiff_editor>
+  }
 
   include if exists <local/pacdiff>
 }

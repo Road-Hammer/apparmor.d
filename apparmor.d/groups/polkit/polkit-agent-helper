@@ -17,42 +17,63 @@ profile polkit-agent-helper @{exec_path} flags=(attach_disconnected) {
   include <abstractions/nameservice-strict>
 
   capability audit_write,
+  capability chown,
   capability dac_override,
+  capability fowner,
   capability net_admin,
   capability setgid,
   capability setuid,
   capability sys_nice,
+  capability sys_ptrace, # optional: no audit
 
   network netlink raw,
 
+  ptrace read peer=@{p_systemd},
+  ptrace read peer=gnome-shell,
+  ptrace read peer=pkttyagent,
+  ptrace read peer=polkit-kde-authentication-agent,
+
+  signal receive set=(term kill) peer=flatpak,
   signal receive set=(term kill) peer=gnome-shell,
   signal receive set=(term kill) peer=pkexec,
   signal receive set=(term kill) peer=pkttyagent,
   signal receive set=(term kill) peer=polkit-*-authentication-agent,
+  signal receive set=(term kill) peer=yay,
 
   unix bind type=stream addr=@@{udbus}/bus/polkit-agent-he/system,
 
   dbus send bus=system path=/org/freedesktop/PolicyKit1/Authority
        interface=org.freedesktop.DBus.Properties
        member=GetAll
-       peer=(name=:*, label=polkitd),
+       peer=(name=@{busname}, label="@{p_polkitd}"),
 
   dbus send bus=system path=/org/freedesktop/PolicyKit1/Authority
        interface=org.freedesktop.PolicyKit1.Authority
-       member=AuthenticationAgentResponse2
-       peer=(name=:*, label=polkitd),
+       member=AuthenticationAgentResponse{2,3}
+       peer=(name=@{busname}, label="@{p_polkitd}"),
+
+  dbus send bus=system path=/org/freedesktop/home1
+       interface=org.freedesktop.home1.Manager
+       member=GetUserRecordByName
+       peer=(name=org.freedesktop.home1, label=systemd-homed),
 
   @{exec_path} mr,
 
+  #aa:only apparmor>=4.1
+  priority=1 @{sbin}/unix_chkpwd Px -> polkit-agent-helper//&unix-chkpwd,
+
   owner @{HOME}/.xsession-errors w,
 
-  @{run}/faillock/@{user} rwk,
+        @{run}/faillock/@{user} rwk,
+  @{att}@{run}/systemd/home/@{user}.dont-suspend w,
 
-        @{PROC}/1/cgroup r,
+        @{PROC}/@{pid}/cgroup r,
+        @{PROC}/@{pid}/stat r,
+        @{PROC}/@{pid}/fdinfo/@{int} r,
   owner @{PROC}/@{pid}/cgroup r,
   owner @{PROC}/@{pid}/loginuid r,
 
-  owner /dev/tty@{int} rw,
+  owner /dev/tty@{u8} rw,
 
   include if exists <local/polkit-agent-helper>
 }

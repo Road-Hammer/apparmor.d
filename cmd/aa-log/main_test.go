@@ -15,58 +15,74 @@ var (
 
 func Test_app(t *testing.T) {
 	tests := []struct {
-		name    string
-		logger  string
-		path    string
-		profile string
-		rules   bool
-		wantErr bool
+		name      string
+		logger    string
+		path      string
+		profile   string
+		namespace string
+		rules     bool
+		raw       bool
+		load      bool
+		wantErr   bool
 	}{
 		{
 			name:    "Test audit.log",
 			logger:  "auditd",
 			path:    filepath.Join(testdata, "audit.log"),
-			profile: "",
 			rules:   false,
+			raw:     false,
+			load:    false,
 			wantErr: false,
 		},
 		{
 			name:    "Test audit.log to rules",
 			logger:  "auditd",
 			path:    filepath.Join(testdata, "audit.log"),
-			profile: "",
 			rules:   true,
+			raw:     false,
+			load:    false,
 			wantErr: false,
 		},
 		{
 			name:    "Test Dbus Session",
 			logger:  "systemd",
 			path:    filepath.Join(testdata, "systemd.log"),
-			profile: "",
 			rules:   false,
+			raw:     true,
+			load:    false,
 			wantErr: false,
 		},
 		{
 			name:    "No logfile",
 			logger:  "auditd",
 			path:    filepath.Join(testdata, "log"),
-			profile: "",
 			rules:   false,
+			raw:     false,
+			load:    false,
 			wantErr: true,
+		},
+		{
+			name:    "Test loading aa-log",
+			logger:  "auditd",
+			path:    filepath.Join(testdata, "aa-log"),
+			rules:   false,
+			raw:     false,
+			load:    true,
+			wantErr: false,
 		},
 		{
 			name:    "Logger not supported",
 			logger:  "raw",
 			path:    filepath.Join(testdata, "audit.log"),
-			profile: "",
 			rules:   false,
+			raw:     true,
+			load:    false,
 			wantErr: true,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			rules = tt.rules
-			if err := aaLog(tt.logger, tt.path, tt.profile); (err != nil) != tt.wantErr {
+			if err := aaLog(tt.logger, tt.path, tt.profile, tt.namespace, tt.rules, tt.raw, tt.load); (err != nil) != tt.wantErr {
 				t.Errorf("aaLog() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})

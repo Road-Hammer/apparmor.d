@@ -1,0 +1,36 @@
+# apparmor.d - Full set of apparmor profiles
+# Copyright (C) 2025 Alexandre Pujol <alexandre@pujol.io>
+# SPDX-License-Identifier: GPL-2.0-only
+
+abi <abi/4.0>,
+
+include <tunables/global>
+
+@{exec_path} = @{lib}/ubuntu-fan/fan-net
+profile ubuntu-fan-net @{exec_path} {
+  include <abstractions/base>
+
+  @{exec_path} mr,
+
+  @{sh_path}        mr,
+  @{bin}/{m,g,}awk  ix,
+  @{bin}/kmod       Cx -> kmod,
+  @{bin}/{,e}grep   ix,
+  @{bin}/networkctl Px,
+  @{sbin}/fanctl    Px,
+
+  profile kmod {
+    include <abstractions/base>
+    include <abstractions/app/kmod>
+
+    capability sys_module,
+
+    @{sys}/module/compression r,
+
+    include if exists <local/ubuntu-fan-net_kmod>
+  }
+
+  include if exists <local/ubuntu-fan-net>
+}
+
+# vim:syntax=apparmor

@@ -6,14 +6,26 @@ abi <abi/4.0>,
 
 include <tunables/global>
 
-@{exec_path} = @{bin}/grub-editenv
+@{exec_path} = @{bin}/grub{,2}-editenv
 profile grub-editenv @{exec_path} {
   include <abstractions/base>
   include <abstractions/consoles>
+  include <abstractions/disks-read>
+
+  capability sys_admin,
 
   @{exec_path} mr,
 
-  /boot/grub/grubenv rw,
+  @{efi}/grub{,2}/grubenv rw,
+  @{efi}/grub{,2}/grubenv.new rw,
+  @{efi}/grub{,2}/ r,
+
+  / r,
+
+  @{PROC}/@{pid}/mountinfo r,
+  @{PROC}/devices r,
+
+  /dev/mapper/control rw,
 
   include if exists <local/grub-editenv>
 }

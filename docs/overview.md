@@ -13,23 +13,23 @@ title: Overview
 - Confine all root processes such as all `systemd` tools, `bluetooth`, `dbus`, `polkit`, `NetworkManager`, `OpenVPN`, `GDM`, `rtkit`, `colord`
 - Confine all Desktop environments
 - Confine all user services such as `Pipewire`, `Gvfsd`, `dbus`, `xdg`, `xwayland`
-- Confine some *"special"* user applications: web browsers, file managers, etc
+- Confine some *"special"* user applications: web browsers, file managers, etc.
 - Should not break a normal usage of the confined software
 
-See the [Concepts](concepts.md)' page for more detail on the architecture.
+See the **[Security Model](security/index.md)** pages for more detail on the architecture.
 
 ### Goals
 
 - Target both desktops and servers
 - Support for all distributions that support AppArmor:
     * [:material-arch: Arch Linux](install.md#archlinux)
-    * [:material-ubuntu: Ubuntu 24.04/22.04](install.md#ubuntu)
+    * [:material-ubuntu: Ubuntu 24.04/25.10](install.md#ubuntu)
     * [:material-debian: Debian 12/13](install.md#debian)
-    * [:simple-suse: openSUSE Tumbleweed](install.md#opensuse)
+    * [:simple-suse: openSUSE Tumbleweed](install.md#suse-opensuse)
 - Support for all major desktop environments:
     - [x] :material-gnome: Gnome (GDM)
     - [x] :simple-kde: KDE (SDDM)
-    - [ ] :simple-xfce: XFCE (Lightdm) *(work in progress)*
+    - [ ] :simple-xfce: XFCE (LightDM) *(work in progress)*
 - [Fully tested](development/tests.md)
 
 ### Demo
@@ -42,6 +42,10 @@ Building the largest set of AppArmor profiles:
 
 - [Linux Security Summit North America (LSS-NA 2023)](https://events.linuxfoundation.org/linux-security-summit-north-america/) *([Slide](https://lssna2023.sched.com/event/1K7bI/building-the-largest-working-set-of-apparmor-profiles-alexandre-pujol-the-collaboratory-tudublin), [Video](https://www.youtube.com/watch?v=OzyalrOzxE8))*
 - [Ubuntu Summit 2023](https://events.canonical.com/event/31/) *([Slide](https://events.canonical.com/event/31/contributions/209/), [Video](https://www.youtube.com/watch?v=GK1J0TlxnFI))*
+
+Lessons learned while making an AppArmor Play machine:
+
+- [Linux Security Summit North America (LSS-NA 2025)](https://events.linuxfoundation.org/linux-security-summit-north-america/) *([Slide](https://lssna2025.sched.com/event/1zalf/lessons-learned-while-making-an-apparmor-play-machine-alexandre-pujol-linagora), [Video](https://www.youtube.com/watch?v=zCSl8honRI0))*
 
 ### Chat
 

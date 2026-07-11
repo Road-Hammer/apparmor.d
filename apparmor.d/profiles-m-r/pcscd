@@ -16,20 +16,24 @@ profile pcscd @{exec_path} {
 
   network netlink raw,
 
-  ptrace (read) peer=@{p_systemd_user},
-  ptrace (read) peer=gsd-smartcard,
-  ptrace (read) peer=keepassxc,
-  ptrace (read) peer=pkcs11-register,
-  ptrace (read) peer=rngd,
-  ptrace (read) peer=scdaemon,
-  ptrace (read) peer=veracrypt,
+  ptrace read peer=@{p_systemd_user},
+  ptrace read peer=gsd-smartcard,
+  ptrace read peer=keepassxc,
+  ptrace read peer=pkcs11-register,
+  ptrace read peer=rngd,
+  ptrace read peer=scdaemon,
+  ptrace read peer=veracrypt,
 
   @{exec_path} mr,
 
   /etc/libccid_Info.plist r,
   /etc/reader.conf.d/{,**} r,
 
+  / r,
+
   owner @{run}/pcscd/{,pcscd.pid} rw,
+
+  @{sys}/devices/**/uevent r,
 
   @{PROC}/@{pid}/fdinfo/@{int} r,
   @{PROC}/@{pids}/stat r,

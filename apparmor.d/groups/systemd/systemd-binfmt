@@ -13,20 +13,23 @@ profile systemd-binfmt @{exec_path} flags=(attach_disconnected) {
 
   capability net_admin,
 
+  ptrace read peer=@{p_systemd},
+
   @{exec_path} mr,
 
   @{bin}/* r,
+  @{sbin}/* r,
 
   # Config file locations
   /etc/binfmt.d/{,*.conf} r,
   @{run}/binfmt.d/{,*.conf} r,
-  /usr/lib/binfmt.d/{,*.conf} r,
+  @{lib}/binfmt.d/{,*.conf} r,
 
   @{PROC}/sys/fs/binfmt_misc/register w,
   @{PROC}/sys/fs/binfmt_misc/status w,
 
-  /dev/tty@{int} rw,
-  /dev/pts/@{int} rw,
+  /dev/tty@{u8} rw,
+  /dev/pts/@{u16} rw,
 
   include if exists <local/systemd-binfmt>
 }

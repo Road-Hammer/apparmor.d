@@ -10,14 +10,10 @@ include <tunables/global>
 profile gnome-terminal-server @{exec_path} {
   include <abstractions/base>
   include <abstractions/audio-client>
-  include <abstractions/bus-accessibility>
-  include <abstractions/bus-session>
-  include <abstractions/bus/org.a11y>
-  include <abstractions/bus/org.freedesktop.portal.Desktop>
-  include <abstractions/bus/org.gtk.vfs.MountTracker>
   include <abstractions/consoles>
   include <abstractions/dconf-write>
   include <abstractions/gnome-strict>
+  include <abstractions/nameservice-strict>
 
   signal send set=(hup) peer=htop,
   signal send set=(term hup kill) peer=unconfined,
@@ -25,11 +21,11 @@ profile gnome-terminal-server @{exec_path} {
   ptrace read peer=htop,
   ptrace read peer=unconfined,
 
-  #aa:dbus own bus=session name=org.gnome.Terminal interface+=org.gtk.Actions
+  #aa:dbus own bus=session name=org.gnome.Terminal
 
   dbus receive bus=session path=/org/gnome/Terminal/SearchProvider
        interface=org.gnome.Shell.SearchProvider2
-       peer=(name=:*, label=gnome-shell),
+       peer=(name=@{busname}, label=gnome-shell),
 
   dbus send bus=session path=/org/freedesktop/systemd1
        interface=org.freedesktop.systemd1.Manager
@@ -37,6 +33,10 @@ profile gnome-terminal-server @{exec_path} {
        peer=(name=org.freedesktop.systemd1, label="@{p_systemd_user}"),
 
   @{exec_path} mr,
+
+  @{bin}/byobu                     PUx,
+  @{bin}/env                        ix,
+  @{lib}/gnome-terminal-preferences ix,
 
   # The shell is not confined on purpose.
   @{bin}/@{shells}            Ux,
@@ -46,7 +46,7 @@ profile gnome-terminal-server @{exec_path} {
   @{bin}/micro               PUx,
   @{bin}/nvtop                Px,
 
-  @{open_path}                Px -> child-open,
+  @{open_path}                Px -> child-open-any,
 
   /etc/shells r,
 

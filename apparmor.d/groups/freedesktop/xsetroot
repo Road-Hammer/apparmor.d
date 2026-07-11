@@ -10,6 +10,7 @@ include <tunables/global>
 @{exec_path} = @{bin}/xsetroot
 profile xsetroot @{exec_path} {
   include <abstractions/base>
+  include <abstractions/icons>
   include <abstractions/X-strict>
 
   capability dac_read_search,
@@ -18,10 +19,6 @@ profile xsetroot @{exec_path} {
 
   @{exec_path} mr,
 
-  /usr/share/icons/{,**} r,
-
-  owner @{HOME}/.icons/** r,
-
   owner @{user_share_dirs}/sddm/xorg-session.log w,
   owner @{user_share_dirs}/sddm/wayland-session.log w,
 
@@ -29,7 +26,7 @@ profile xsetroot @{exec_path} {
   @{run}/user/@{uid}/xauth_@{rand6} rl,
   @{run}/sddm/xauth_@{rand6} r,
 
-  /dev/tty@{int} rw,
+  /dev/tty@{u8} rw,
 
   include if exists <local/xsetroot>
 }

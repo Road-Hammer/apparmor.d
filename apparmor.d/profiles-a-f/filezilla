@@ -10,14 +10,13 @@ include <tunables/global>
 @{exec_path} = @{bin}/filezilla
 profile filezilla @{exec_path} {
   include <abstractions/base>
-  include <abstractions/bus-session>
-  include <abstractions/bus/org.freedesktop.Notifications>
-  include <abstractions/bus/org.gnome.SessionManager>
   include <abstractions/dconf-write>
   include <abstractions/desktop>
   include <abstractions/fontconfig-cache-read>
   include <abstractions/nameservice-strict>
   include <abstractions/p11-kit>
+  include <abstractions/screen-inhibit>
+  include <abstractions/session-manager>
   include <abstractions/ssl_certs>
   include <abstractions/user-download-strict>
 
@@ -38,7 +37,7 @@ profile filezilla @{exec_path} {
 
   @{bin}/fzsftp      rPx,  # When using SFTP protocol
   @{bin}/fzputtygen rPUx,
-  @{bin}/lsb_release rPx -> lsb_release,
+  @{bin}/lsb_release rPx,
 
   /usr/share/filezilla/{,**} r,
 
@@ -69,7 +68,7 @@ profile filezilla @{exec_path} {
   owner @{PROC}/@{pid}/mounts r,
 
         /dev/tty rw,
-  owner /dev/tty@{int} rw,
+  owner /dev/tty@{u8} rw,
 
   include if exists <local/filezilla>
 }

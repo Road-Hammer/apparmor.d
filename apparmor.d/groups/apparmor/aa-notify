@@ -6,14 +6,14 @@ abi <abi/4.0>,
 
 include <tunables/global>
 
-@{exec_path} = @{sbin}/aa-notify
-profile aa-notify @{exec_path} {
+@{exec_path} = @{bin}/aa-notify
+profile aa-notify @{exec_path} flags=(attach_disconnected) {
   include <abstractions/base>
-  include <abstractions/bus-session>
   include <abstractions/consoles>
   include <abstractions/dconf-write>
   include <abstractions/desktop>
   include <abstractions/nameservice-strict>
+  include <abstractions/notifications>
   include <abstractions/python>
 
   capability setgid,
@@ -30,8 +30,10 @@ profile aa-notify @{exec_path} {
   @{open_path}       Cx -> open,
 
   @{bin}/ r,
+  @{sbin}/ r,
 
   /usr/share/apparmor/** r,
+  /usr/share/tcltk/** r,
   /usr/share/terminfo/** r,
 
   @{etc_ro}/inputrc r,
@@ -39,17 +41,23 @@ profile aa-notify @{exec_path} {
   /etc/apparmor.d/{,**} r,
   /etc/apparmor/*.conf r,
 
-  /var/log/audit/audit.log r,
+  /var/lib/snapd/apparmor/snap-confine/ r,
+  /var/lib/snapd/apparmor/snap-confine/cap-bpf r,
+
+  /var/log/audit/* r,
+  /var/log/syslog* r,
+  /var/log/kern.log r,
 
   owner @{HOME}/.inputrc r,
   owner @{HOME}/.terminfo/@{int}/dumb r,
 
   owner @{tmp}/@{word8} rw,
-  owner @{tmp}/apparmor-bugreport-@{rand8}.txt rw,
+  owner @{tmp}/apparmor-bugreport-@{word8}.txt rw,
 
-  @{PROC}/ r,
-  @{PROC}/@{pid}/stat r,
-  @{PROC}/@{pid}/cmdline r,
+        @{PROC}/ r,
+        @{PROC}/@{pid}/stat r,
+        @{PROC}/@{pid}/cmdline r,
+  owner @{PROC}/@{pid}/mounts r,
 
   profile open {
     include <abstractions/base>
@@ -63,7 +71,7 @@ profile aa-notify @{exec_path} {
   profile editor {
     include <abstractions/base>
     include <abstractions/app/open>
-    include <abstractions/bus/org.freedesktop.FileManager1>
+    include <abstractions/bus/session/org.freedesktop.FileManager1>
     include <abstractions/common/gnome>
     include <abstractions/enchant>
 

@@ -1,0 +1,29 @@
+#cloud-config
+
+packages:
+  - apparmor-profiles
+  - apparmor-utils
+  - auditd
+  - htop
+  - libpam-apparmor
+  - qemu-guest-agent
+  - vim
+
+runcmd:
+  - systemctl enable systemd-journald-audit.socket
+  - /usr/bin/setup-testbed
+
+  # Install the default kernel and remove the cloud one
+  - |
+    export DEBIAN_FRONTEND=noninteractive
+    apt-get update
+    apt install -y linux-image-amd64 linux-headers-amd64
+    echo "linux-image-$(uname -r) linux-image-$(uname -r)/prerm/removing-running-kernel boolean false" | debconf-set-selections
+    apt remove -y --purge linux-image-$(uname -r)
+    apt autoremove -y --purge
+    update-grub
+
+write_files:
+  - *systemd-netword           # Network configuration for server
+  - *disable-printk-ratelimit  # Disable printk rate limiting
+  - *setup-testbed             # Autopkgtest setup-testbed script

@@ -7,14 +7,15 @@
 # Warning: for development only, use https://build.opensuse.org/package/show/home:cboltz/apparmor.d for production use.
 
 Name:           apparmor.d
-Version:        0.0001
+Version:        0.4909.0
 Release:        1%{?dist}
-Summary:        Set of over 1500 AppArmor profiles
+Summary:        Full set of AppArmor policies
 License:        GPL-2.0-only
 URL:            https://github.com/roddhjav/apparmor.d
 Source0:        %{name}-%{version}.tar.gz
 Requires:       apparmor-profiles
 BuildRequires:  distribution-release
+BuildRequires:  just
 BuildRequires:  golang-packaging
 BuildRequires:  apparmor-profiles
 
@@ -25,32 +26,34 @@ AppArmor.d is a set of over 1500 AppArmor profiles whose aim is to confine most 
 %autosetup
 
 %build
-%make_build
+just complain
 
 %install
-%make_install
+just destdir="%{buildroot}" install-prebuilt
+just destdir="%{buildroot}" install-base
+just destdir="%{buildroot}" install-tools
 
 %posttrans
-rm -f /var/cache/apparmor/* 2>/dev/null
-systemctl is-active -q apparmor && systemctl reload apparmor ||:
+apparmor_parser --purge-cache
+%restart_on_update apparmor
 
 %files
 %license LICENSE
 %doc README.md
 %config /etc/apparmor.d/
 /usr/bin/aa-log
+/usr/bin/aa-mode
 
 %dir /usr/lib/systemd/system/*.service.d
 /usr/lib/systemd/system/*.service.d/apparmor.conf
 %dir /usr/lib/systemd/user/*.service.d
 /usr/lib/systemd/user/*.service.d/apparmor.conf
 
-/usr/share/bash-completion/completions/aa-log
-
 %dir /usr/share/zsh
 %dir /usr/share/zsh/site-functions
-/usr/share/zsh/site-functions/_aa-log.zsh
-
-%doc %{_mandir}/man8/aa-log.8.gz
+/usr/share/zsh/site-functions/_aa-*.zsh
+/usr/share/bash-completion/completions/aa-*
+%doc %{_mandir}/man1/aa-*.1.gz
+%doc %{_mandir}/man8/aa-*.8.gz
 
 %changelog

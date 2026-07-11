@@ -1,27 +1,15 @@
 // apparmor.d - Full set of apparmor profiles
-// Copyright (C) 2021-2024 Alexandre Pujol <alexandre@pujol.io>
+// Copyright (C) 2021-2026 Alexandre Pujol <alexandre@pujol.io>
 // SPDX-License-Identifier: GPL-2.0-only
 
+// Package prebuild defines the directory layout, manifest readers, and
+// shared state used by the prebuild pipeline that turns the source profiles
+// into a distribution-ready tree.
 package prebuild
 
 import "github.com/roddhjav/apparmor.d/pkg/paths"
 
 var (
-	// AppArmor ABI version
-	ABI = 0
-
-	// AppArmor version
-	Version = 4.0
-
-	// Pkgname is the name of the package
-	Pkgname = "apparmor.d"
-
-	// Root is the root directory for the build (default: .build)
-	Root *paths.Path = paths.New(".build")
-
-	// RootApparmord is the final built apparmor.d directory (default: .build/apparmor.d)
-	RootApparmord *paths.Path = Root.Join("apparmor.d")
-
 	// DistDir is the directory where the distribution specific files are stored
 	DistDir *paths.Path = paths.New("dists")
 
@@ -37,8 +25,8 @@ var (
 	// DebianDir is the directory where the debian specific files are stored
 	DebianDir *paths.Path = paths.New("debian")
 
-	// DebianHide is the path to the debian/apparmor.d.hide file
-	DebianHide = DebianHider{path: DebianDir.Join("apparmor.d.hide")}
+	// DebianHide is the path to the debian/common.hide file
+	DebianHide = DebianHider{path: DebianDir.Join("common.hide")}
 
 	Ignore = Ignorer{}
 	Flags  = Flagger{}

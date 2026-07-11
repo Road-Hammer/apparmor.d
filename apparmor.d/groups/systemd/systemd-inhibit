@@ -14,13 +14,13 @@ profile systemd-inhibit @{exec_path} flags=(attach_disconnected) {
   capability net_admin,
   capability sys_resource,
 
-  signal receive set=term peer=packagekitd,
+  signal receive set=term peer=@{p_packagekitd},
 
   @{exec_path} mr,
 
   @{bin}/cat rix,
 
-  @{att}/@{run}/systemd/inhibit/@{int}.ref rw,
+  @{att}@{run}/systemd/inhibit/@{int}.ref rw,
 
   include if exists <local/systemd-inhibit>
 }

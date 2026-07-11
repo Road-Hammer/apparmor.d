@@ -7,21 +7,21 @@ abi <abi/4.0>,
 include <tunables/global>
 
 @{exec_path} = @{bin}/nm-online
-profile nm-online @{exec_path} {
+profile nm-online @{exec_path} flags=(attach_disconnected) {
   include <abstractions/base>
   include <abstractions/bus-system>
-  include <abstractions/bus/org.freedesktop.NetworkManager>
   include <abstractions/consoles>
+  include <abstractions/network-manager-observe>
 
   dbus receive bus=system path=/org/freedesktop/NetworkManager/ActiveConnection/@{int}
        interface=org.freedesktop.NetworkManager.Connection.Active
        member=StateChanged
-       peer=(name=:*, label=NetworkManager),
+       peer=(name=@{busname}, label=NetworkManager),
 
   dbus send bus=system path=/org/freedesktop/NetworkManager/Settings/@{int}
        interface=org.freedesktop.NetworkManager.Settings.Connection
        member=GetSettings
-       peer=(name=:*, label=NetworkManager),
+       peer=(name=@{busname}, label=NetworkManager),
 
   @{exec_path} mr,
 

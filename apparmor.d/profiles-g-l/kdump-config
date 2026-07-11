@@ -12,11 +12,10 @@ profile kdump-config @{exec_path} flags=(attach_disconnected) {
 
   capability sys_admin,
 
-  ptrace readby peer=@{p_systemd_journald},
-
   @{exec_path} mr,
 
   @{sh_path}       rix,
+  @{bin}/{,e}grep   ix,
   @{bin}/basename   ix,
   @{bin}/cat        ix,
   @{bin}/cmp        ix,
@@ -25,13 +24,13 @@ profile kdump-config @{exec_path} flags=(attach_disconnected) {
   @{bin}/file       ix,
   @{bin}/find       ix,
   @{bin}/flock      ix,
-  @{bin}/grep       ix,
   @{bin}/hexdump    ix,
   @{bin}/ln         ix,
   @{bin}/logger     ix,
   @{bin}/plymouth   Px,
   @{bin}/readlink   ix,
   @{bin}/rev        ix,
+  @{bin}/rm         ix,
   @{bin}/run-parts  ix,
   @{bin}/sed        ix,
   @{bin}/systemctl  Cx -> systemctl,
@@ -48,14 +47,21 @@ profile kdump-config @{exec_path} flags=(attach_disconnected) {
   / r,
   @{efi}/ r,
 
-        /var/crash/kdump_lock wk,
-        /var/crash/kexec_cmd w,
-  owner /var/lib/kdump/{,**} rw,
+  /var/crash/kdump_lock wk,
+  /var/crash/kexec_cmd w,
+  /var/lib/kdump/{,**} rw,
+
+  owner /tmp/tmp.@{rand10}/mkinitramfs_@{rand6} rw,
+  owner /tmp/tmp.@{rand10}/mkinitramfs_@{rand6}/ rw,
+  owner /tmp/tmp.@{rand10}/mkinitramfs_@{rand6}/** rwl -> /tmp/tmp.@{rand10}/mkinitramfs_@{rand6}/**,
+  owner /tmp/tmp.@{rand10}/mkinitramfs-@{rand6} rw,
+  owner /tmp/tmp.@{rand10}/mkinitramfs-*_@{rand6} rw,
 
   @{sys}/firmware/efi/efivars/ r,
   @{sys}/firmware/efi/efivars/SecureBoot-@{uuid} r,
   @{sys}/firmware/efi/efivars/SetupMode-@{uuid} r,
   @{sys}/kernel/kexec_crash_loaded r,
+  @{sys}/kernel/kexec/crash_loaded r,
 
   @{PROC}/cmdline r,
   @{PROC}/iomem r,
@@ -66,6 +72,8 @@ profile kdump-config @{exec_path} flags=(attach_disconnected) {
 
     capability net_admin,
     capability sys_ptrace,
+
+    ptrace read peer=@{p_systemd},
 
     include if exists <local/kdump-config_systemctl>
   }

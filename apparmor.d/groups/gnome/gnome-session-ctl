@@ -7,7 +7,7 @@ abi <abi/4.0>,
 include <tunables/global>
 
 @{exec_path} = @{lib}/gnome-session-ctl
-profile gnome-session-ctl @{exec_path} {
+profile gnome-session-ctl @{exec_path} flags=(attach_disconnected) {
   include <abstractions/base>
   include <abstractions/bus-session>
 
@@ -23,7 +23,7 @@ profile gnome-session-ctl @{exec_path} {
   dbus send bus=session path=/org/gnome/SessionManager
        interface=org.gnome.SessionManager
        member=Initialized
-       peer=(name=org.gnome.SessionManager, label=gnome-session-binary),
+       peer=(name=org.gnome.SessionManager, label="@{p_gnome_session}"),
 
   @{exec_path} mr,
 

@@ -16,15 +16,15 @@ profile pacman-key @{exec_path} {
 
   @{exec_path} mr,
 
+  @{sh_path}          rix,
   @{bin}/{m,g,}awk    rix,
   @{bin}/basename     rix,
-  @{bin}/bash         rix,
   @{bin}/chmod        rix,
   @{bin}/gettext      rix,
-  @{bin}/gpg{,2}      rCx -> gpg,
-  @{bin}/grep         rix,
+  @{bin}/gpg{,2}      rCx -> &gpg,
+  @{bin}/{,e}grep     rix,
   @{bin}/ngettext     rix,
-  @{bin}/pacman-conf  rPx,
+  @{bin}/pacman-conf  rPx -> &pacman-conf,
   @{bin}/touch        rix,
   @{bin}/tput         rix,
   @{bin}/vercmp       rix,
@@ -34,7 +34,11 @@ profile pacman-key @{exec_path} {
   /usr/share/pacman/keyrings/{,*} r,
   /usr/share/terminfo/** r,
 
-  /etc/pacman.d/gnupg/* rw,
+  /etc/pacman.d/gnupg/ rw,
+  /etc/pacman.d/gnupg/** rwkl -> /etc/pacman.d/gnupg/**,
+
+  /var/lib/archbuild/extra-@{arch}/*/etc/pacman.d/gnupg/ rw,
+  /var/lib/archbuild/extra-@{arch}/*/etc/pacman.d/gnupg/** rwkl -> /etc/pacman.d/gnupg/**,
 
   /dev/tty rw,
 
@@ -59,14 +63,14 @@ profile pacman-key @{exec_path} {
     /etc/pacman.d/gnupg/ rw,
     /etc/pacman.d/gnupg/** rwkl,
 
-    @{HOME}/.gnupg/gpg.conf r,
+    @{HOME}/@{XDG_GPG_DIR}/gpg.conf r,
 
     owner @{PROC}/@{pid}/fd/ r,
     owner @{PROC}/@{pid}/task/@{tid}/comm rw,
     owner @{PROC}/@{pid}/task/@{tid}/stat rw,
 
-    /dev/pts/@{int} rw,
-    /dev/tty@{int} rw,
+    /dev/pts/@{u16} rw,
+    /dev/tty@{u8} rw,
 
     include if exists <local/pacman-key_gpg>
   }

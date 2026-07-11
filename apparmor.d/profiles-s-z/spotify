@@ -8,7 +8,8 @@ abi <abi/4.0>,
 include <tunables/global>
 
 @{name} = spotify
-@{lib_dirs} = /opt/spotify/
+@{domain} = org.chromium.Chromium
+@{lib_dirs} = /opt/@{name}/ /usr/share/@{name}/
 @{config_dirs} = @{user_config_dirs}/@{name}
 @{cache_dirs} = @{user_cache_dirs}/@{name}
 
@@ -16,8 +17,18 @@ include <tunables/global>
 profile spotify @{exec_path} flags=(attach_disconnected) {
   include <abstractions/base>
   include <abstractions/audio-client>
+  include <abstractions/bluetooth-observe>
+  include <abstractions/bus-system>
   include <abstractions/common/electron>
   include <abstractions/devices-usb-read>
+  include <abstractions/ibus-strict>
+  include <abstractions/mediakeys>
+  include <abstractions/mpris>
+  include <abstractions/network-manager-observe>
+  include <abstractions/screen-inhibit>
+  include <abstractions/screensaver>
+  include <abstractions/secrets-service>
+  include <abstractions/upower-observe>
 
   network inet dgram,
   network inet6 dgram,
@@ -25,18 +36,22 @@ profile spotify @{exec_path} flags=(attach_disconnected) {
   network inet6 stream,
   network netlink raw,
 
+  #aa:dbus talk bus=session name=org.freedesktop.portal.{d,D}esktop label=xdg-desktop-portal
+
+  dbus send bus=session path=/org/freedesktop/portal/desktop
+       interface=org.freedesktop.portal.Secret
+       member=RetrieveSecret
+       peer=(name=org.freedesktop.portal.Desktop, label=xdg-desktop-portal),
+
   @{exec_path} mrix,
 
   @{sh_path} mr,
-  @{bin}/grep rix,
 
   @{open_path}     rPx -> child-open-strict,
 
-  /etc/machine-id r,
-  /etc/spotify-adblock/* r,
-  /var/lib/dbus/machine-id r,
+  /usr/local/lib/spotify-adblock.so mr,
 
-  owner @{HOME}/.tmp rw,
+  /etc/spotify-adblock/* r,
 
   owner @{user_music_dirs}/{,**} r,
 
@@ -45,16 +60,19 @@ profile spotify @{exec_path} flags=(attach_disconnected) {
   owner @{cache_dirs}/WidevineCdm/**/libwidevinecdm.so rm,
   owner @{config_dirs}/*/WidevineCdm/**/libwidevinecdm.so rm,
 
-  owner @{tmp}/.org.chromium.Chromium.@{rand6}/** rw,
+  @{sys}/devices/@{pci_bus}/uevent r,
 
         @{PROC}/@{pid}/net/unix r,
-        @{PROC}/pressure/* r,
   owner @{PROC}/@{pid}/clear_refs w,
-  owner @{PROC}/@{pid}/task/@{tid}/comm rw,
 
   /dev/tty rw,
 
-  deny @{user_share_dirs}/gvfs-metadata/* r,
+  deny dbus bus=session interface=org.freedesktop.systemd1.Manager,
+  deny dbus bus=system interface=org.freedesktop.login1.Manager,
+  deny owner @{HOME}/.tmp* rw,
+  deny /var/tmp/ r,
+  deny @{PROC}/pressure/* r,
+  deny /dev/bus/usb/** w,
 
   include if exists <local/spotify>
 }

@@ -7,23 +7,29 @@ abi <abi/4.0>,
 include <tunables/global>
 
 @{exec_path} = @{bin}/systemsettings
-profile systemsettings @{exec_path} {
+profile systemsettings @{exec_path} flags=(attach_disconnected,mediate_deleted) {
   include <abstractions/base>
   include <abstractions/audio-client>
   include <abstractions/bus-session>
+  include <abstractions/bus/system/org.freedesktop.PolicyKit1>
   include <abstractions/cups-client>
   include <abstractions/dconf-write>
   include <abstractions/graphics>
+  include <abstractions/ibus-strict>
   include <abstractions/kde-strict>
   include <abstractions/nameservice-strict>
   include <abstractions/qt5-shader-cache>
+  include <abstractions/sys/input>
   include <abstractions/thumbnails-cache-write>
 
   network netlink raw,
 
   signal send set=term peer=kioworker,
 
-  @{exec_path} mr,
+  #aa:dbus own bus=session name=org.kde.internal.KSettingsWidget_kcm_networkmanagement
+  #aa:dbus own bus=session name=org.kde.systemsettings
+
+  @{exec_path} mrix,
 
   @{sh_path} rix,
   @{bin}/cat rix,
@@ -31,99 +37,120 @@ profile systemsettings @{exec_path} {
   @{bin}/kcminit rPx,
   @{bin}/lspci rPx,
   @{bin}/openssl rix,
+  @{bin}/orca rPUx,
+  @{bin}/rsync rix,
   @{bin}/pactl rPx,
   @{bin}/plasma-discover rPx,
   @{bin}/plasmashell rPx,
   @{bin}/xdpyinfo rPUx,
   @{lib}/qt{5,6}/bin/qdbus rPx,
+  @{lib}/bup/cmd/bup rPUx,
   #aa:exec kioworker
 
+  /usr/share/i18n/locales/{,*} r,
+  /usr/share/iso-codes/json/*.json r,
   /usr/share/kcm_networkmanagement/{,**} r,
   /usr/share/kcm_recentFiles/{,**} r,
   /usr/share/kcmkeys/{,*.kksrc} r,
   /usr/share/kglobalaccel/* r,
   /usr/share/kinfocenter/{,**} r,
-  /usr/share/solid/{,**} r,
   /usr/share/kpackage/{,**} r,
   /usr/share/kservices{5,6}/{,**} r,
   /usr/share/kservicetypes5/{,**} r,
   /usr/share/kwin/{,**} r,
   /usr/share/kxmlgui5/systemsettings/systemsettingsui.rc r,
+  /usr/share/libwacom/{,**} r,
   /usr/share/plasma/{,**} r,
   /usr/share/sddm/themes/{,**} r,
+  /usr/share/solid/{,**} r,
   /usr/share/systemsettings/{,**} r,
-  /usr/share/wallpapers/{,**} r,
   /usr/share/thumbnailers/{,**} r,
+  /usr/share/wallpapers/{,**} r,
 
+  @{etc_ro}/login.defs r,
   /etc/fstab r,
-  /etc/machine-id r,
-  /etc/xdg/menus/{,applications-merged/} r,
+  /etc/sddm.conf.d/{,**} r,
+  /etc/sysconfig/displaymanager r,
+  /etc/xdg/* r,
   /etc/xdg/plasmanotifyrc r,
   /etc/xdg/ui/ui_standards.rc r,
-  /var/lib/dbus/machine-id r,
-  /etc/xdg/* r,
+
+  / r,
+  @{bin}/ r,
+  @{sbin}/ r,
 
   /var/cache/cracklib/cracklib_dict.* r,
   /var/cache/samba/ rw,
   /var/lib/AccountsService/icons/* r,
   /var/lib/flatpak/repo/{,**} r,
 
+  owner @{HOME}/.face r,
   owner @{HOME}/@{XDG_WALLPAPERS_DIR}/{,**} r,
 
-  owner @{user_cache_dirs}/kcrash-metadata/*.ini rw,
-  owner @{user_cache_dirs}/kinfocenter/{,**} rwlk,
-  owner @{user_cache_dirs}/ksvg-elements rw,
-  owner @{user_cache_dirs}/ksvg-elements.@{rand6} rwlk -> @{user_cache_dirs}/#@{int},
-  owner @{user_cache_dirs}/ksvg-elements.lock rwlk,
-  owner @{user_cache_dirs}/plasma_theme_*.kcache rw,
+  owner @{user_cache_dirs}/[kK]* rwlk -> @{user_cache_dirs}/#@{int},
+  owner @{user_cache_dirs}/[kK]*/ rw,
+  owner @{user_cache_dirs}/[kK]*/** rwlk -> @{user_cache_dirs}/[kK]*/**,
+  owner @{user_cache_dirs}/#@{int} rwk,
+  owner @{user_cache_dirs}/plasma*/{,**} r,
+  owner @{user_cache_dirs}/plasma* rw,
   owner @{user_cache_dirs}/systemsettings/ rw,
   owner @{user_cache_dirs}/systemsettings/** rwlk -> @{user_cache_dirs}/systemsettings/**,
 
+  owner @{user_config_dirs}/[kK]* rwlk -> @{user_config_dirs}/#@{int},
+  owner @{user_config_dirs}/[kK]*/ rw,
+  owner @{user_config_dirs}/[kK]*/** rwlk -> @{user_config_dirs}/[kK]*/**,
   owner @{user_config_dirs}/{P,p}lasma* r,
   owner @{user_config_dirs}/*rc r,
-  owner @{user_config_dirs}/#@{int} rw,
+  owner @{user_config_dirs}/#@{int} rwk,
+  owner @{user_config_dirs}/autostart/ r,
   owner @{user_config_dirs}/device_automounter_kcmrc.lock rwk,
   owner @{user_config_dirs}/emaildefaults r,
-  owner @{user_config_dirs}/kde.org/{,**} rwlk,
-  owner @{user_config_dirs}/kdedefaults/kscreenlockerrc r,
-  owner @{user_config_dirs}/kdedefaults/plasmarc r,
-  owner @{user_config_dirs}/kinfocenterrc* rwlk,
   owner @{user_config_dirs}/libaccounts-glib/ rw,
   owner @{user_config_dirs}/libaccounts-glib/accounts.db{,-shm,-wal,-journal} rwk,
-  owner @{user_config_dirs}/menus/ r,
-  owner @{user_config_dirs}/menus/applications-merged/ r,
+  owner @{user_config_dirs}/plasma*/{,**} r,
+  owner @{user_config_dirs}/powerdevilrc.lock rwk,
+  owner @{user_config_dirs}/powerdevilrc{,.@{rand6}} rwl -> @{user_config_dirs}/#@{int},
   owner @{user_config_dirs}/session/ rw,
   owner @{user_config_dirs}/session/** rwlk,
   owner @{user_config_dirs}/systemsettingsrc.lock rwk,
   owner @{user_config_dirs}/systemsettingsrc{,.@{rand6}} rwl -> @{user_config_dirs}/#@{int},
-  owner @{user_share_dirs}/baloo/index r,
 
-  owner @{user_share_dirs}/kactivitymanagerd/resources/database rwk,
-  owner @{user_share_dirs}/kactivitymanagerd/resources/database-shm rwk,
-  owner @{user_share_dirs}/kactivitymanagerd/resources/database-wal rw,
-  owner @{user_share_dirs}/kinfocenter/ rw,
-  owner @{user_share_dirs}/kinfocenter/** rwlk,
-  owner @{user_share_dirs}/knotifications{5,6}/{,**} r,
-  owner @{user_share_dirs}/krdpserver/ rw,
-  owner @{user_share_dirs}/kservices{5,6}/{,ServiceMenus/} r,
+  owner @{user_share_dirs}/[kK]* rwlk -> @{user_share_dirs}/#@{int},
+  owner @{user_share_dirs}/[kK]*/ rw,
+  owner @{user_share_dirs}/[kK]*/** rwlk -> @{user_share_dirs}/[kK]*/**,
+  owner @{user_share_dirs}/#@{int} rwk,
+  owner @{user_share_dirs}/baloo/index r,
   owner @{user_share_dirs}/systemsettings/ rw,
-  owner @{user_share_dirs}/systemsettings/** rwlk,
+  owner @{user_share_dirs}/systemsettings/** rwlk -> @{user_share_dirs}/systemsettings/**,
+  owner @{user_share_dirs}/user-places.xbel r,
   owner @{user_share_dirs}/wallpapers/{,**} r,
 
-  owner @{user_state_dirs}/#@{int} rw,
-  owner @{user_state_dirs}/systemsettingsstaterc rw,
-  owner @{user_state_dirs}/systemsettingsstaterc.@{rand6} rwlk,
+  owner @{user_state_dirs}/#@{int} rwk,
+  owner @{user_state_dirs}/systemsettingsstaterc{,.@{rand6}} rwlk,
   owner @{user_state_dirs}/systemsettingsstaterc.lock rwlk,
 
-  owner @{run}/user/@{uid}/#@{int} rw,
+        @{run}/mount/utab r,
+  owner @{run}/user/@{uid}/#@{int} rwl,
   owner @{run}/user/@{uid}/systemsettings@{rand6}.@{int}.kioworker.socket rwl -> @{run}/user/@{uid}/#@{int},
 
   @{run}/udev/data/+drm:card@{int}-* r,   # For screen outputs
+  @{run}/udev/data/c13:@{int} r,          # for /dev/input/*
+  @{run}/udev/data/+dmi:* r,              # for motherboard info
+  @{run}/udev/data/+input:input@{int} r,  # for mouse, keyboard, touchpad
+  @{run}/udev/data/+pci:* r,              # Identifies all PCI devices (CPU, GPU, Network, Disks, USB, etc.)
+  @{run}/udev/data/c13:@{int} r,          # for /dev/input/*
+  @{run}/udev/data/c@{dynamic}:@{int} r,  # For dynamic assignment range 234 to 254, 384 to 511
+  @{run}/udev/data/n@{int} r,             # For network interfaces
 
   @{sys}/bus/ r,
   @{sys}/bus/acpi/devices/ r,
   @{sys}/bus/cpu/devices/ r,
   @{sys}/class/ r,
+  @{sys}/class/hidraw/ r,
+  @{sys}/class/input/ r,
+  @{sys}/class/video4linux/ r,
+  @{sys}/devices/**/uevent r,
+  @{sys}/devices/**/report_descriptor r,
   @{sys}/firmware/acpi/pm_profile r,
 
         @{PROC}/interrupts r,

@@ -28,12 +28,15 @@ func newIOUring(q Qualifier, rule rule) (Rule, error) {
 	if err != nil {
 		return nil, err
 	}
+	if err := rule.ValidateNonEmptyValues([]string{"label"}); err != nil {
+		return nil, err
+	}
 	return &IOUring{
 		Base:      newBase(rule),
 		Qualifier: q,
 		Access:    accesses,
 		Label:     rule.GetValuesAsString("label"),
-	}, nil
+	}, rule.ValidateMapKeys([]string{"label"})
 }
 
 func newIOUringFromLog(log map[string]string) Rule {

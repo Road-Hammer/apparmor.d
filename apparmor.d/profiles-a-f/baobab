@@ -7,11 +7,14 @@ abi <abi/4.0>,
 include <tunables/global>
 
 @{exec_path} = @{bin}/baobab
-profile baobab @{exec_path} {
+profile baobab @{exec_path} flags=(attach_disconnected) {
   include <abstractions/base>
-  include <abstractions/bus/org.freedesktop.hostname1>
+  include <abstractions/bus/session/org.gtk.Private.RemoteVolumeMonitor>
+  include <abstractions/bus/system/org.freedesktop.hostname1>
   include <abstractions/common/gnome>
   include <abstractions/deny-sensitive-home>
+
+  #aa:dbus own bus=session name=org.gnome.baobab
 
   #aa:dbus talk bus=session name=org.gtk.vfs label="gvfsd{,-*}"
 
@@ -19,11 +22,12 @@ profile baobab @{exec_path} {
 
   @{open_path}  rPx -> child-open-help,
 
+  #aa:lint ignore=too-wide
   # As a directory tree analyzer it needs full access to the filesystem
   / r,
   /** r,
 
-  deny /boot/{,**} r,
+  deny @{efi}/{,**} r,
 
   include if exists <local/baobab>
 }

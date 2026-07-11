@@ -13,23 +13,28 @@ profile grub-multi-install @{exec_path} {
 
   @{exec_path} mr,
 
-  @{sbin}/grub-install      rPx,
+  @{sbin}/grub{,2}-install  rPx,
   @{sh_path}                rix,
   @{bin}/{,e}grep           rix,
   @{bin}/cat                rix,
   @{bin}/cut                rix,
   @{bin}/dpkg-query         rpx,
+  @{bin}/expr               rix,
+  @{bin}/grub{,2}-mkrelpath rPx,
   @{bin}/readlink           rix,
   @{bin}/sed                rix,
   @{bin}/sort               rix,
   @{bin}/touch              rix,
   @{bin}/udevadm            rPx,
+  @{bin}/uname              rix,
+  @{bin}/which{,.debianutils} rix,
+
   /usr/share/debconf/frontend rix,
 
-  /usr/lib/terminfo/x/xterm-256color r,
+  @{lib}/terminfo/x/xterm-256color r,
   /usr/share/debconf/confmodule r,
 
-  /boot/grub/grub.cfg rw,
+  @{efi}/grub{,2}/grub.cfg rw,
 
   owner @{PROC}/@{pid}/mounts r,
 

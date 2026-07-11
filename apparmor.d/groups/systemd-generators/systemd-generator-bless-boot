@@ -1,0 +1,26 @@
+# apparmor.d - Full set of apparmor profiles
+# Copyright (C) 2023-2024 Alexandre Pujol <alexandre@pujol.io>
+# SPDX-License-Identifier: GPL-2.0-only
+
+abi <abi/4.0>,
+
+include <tunables/global>
+
+@{exec_path} = @{lib}/systemd/system-generators/systemd-bless-boot-generator
+profile systemd-generator-bless-boot @{exec_path} flags=(attach_disconnected) {
+  include <abstractions/base>
+  include <abstractions/common/systemd>
+
+  ptrace read peer=@{p_systemd},
+
+  @{exec_path} mr,
+
+  @{run}/systemd/generator.early/basic.target.wants/ w,
+  @{run}/systemd/generator.early/basic.target.wants/systemd-bless-boot.service w,
+
+  @{PROC}/@{pid}/cgroup r,
+
+  include if exists <local/systemd-generator-bless-boot>
+}
+
+# vim:syntax=apparmor

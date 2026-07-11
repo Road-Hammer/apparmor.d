@@ -12,8 +12,11 @@ profile login @{exec_path} flags=(attach_disconnected) {
   include <abstractions/authentication>
   include <abstractions/bus-system>
   include <abstractions/consoles>
+  include <abstractions/devices-u2f>
+  include <abstractions/devices-usb>
   include <abstractions/nameservice-strict>
   include <abstractions/wutmp>
+  include <mappings/login>  #aa:only RBAC
 
   capability audit_write,
   capability chown,
@@ -34,42 +37,44 @@ profile login @{exec_path} flags=(attach_disconnected) {
 
   ptrace read,
 
-  #aa:dbus talk bus=system name=org.freedesktop.login1 label=systemd-logind
+  #aa:dbus talk bus=system name=org.freedesktop.login1 label="@{p_systemd_logind}"
 
   @{exec_path} mr,
 
-  @{shells_path}     rUx,
+  @{shells_path}     Ux, #aa:exclude RBAC
 
   @{etc_ro}/environment r,
   @{etc_ro}/security/group.conf r,
-  @{etc_ro}/security/limits.conf r,
-  @{etc_ro}/security/limits.d/{,*} r,
-  @{etc_ro}/security/pam_env.conf r,
   /etc/default/locale r,
   /etc/legal r,
   /etc/machine-id r,
   /etc/motd r,
   /etc/motd.d/ r,
   /etc/shells r,
+  /etc/u2f/{,**} r,
 
   /var/lib/faillock/@{user} rwk,
+  /var/lib/lastlog/ r,
   /var/log/btmp{,.@{int}} r,
 
+  owner @{user_cache_dirs}/ w,
   owner @{user_cache_dirs}/motd.legal-displayed rw,
 
-  @{att}/@{run}/systemd/sessions/@{int}.ref w,
+  @{att}@{run}/systemd/sessions/@{int}.ref w,
 
+  @{run}/cockpit/active.issue r,
   @{run}/credentials/getty@tty@{int}.service/ r,
   @{run}/faillock/@{user} rwk,
   @{run}/motd.d/{,*} r,
   @{run}/motd.dynamic{,.new} rw,
+  @{run}/systemd/io.systemd.Login rw,
 
         @{PROC}/@{pids}/cgroup r,
         @{PROC}/1/limits r,
   owner @{PROC}/@{pid}/loginuid rw,
   owner @{PROC}/@{pid}/uid_map r,
 
-  /dev/tty@{int} rw,
+  /dev/tty@{u8} rw,
 
   include if exists <local/login>
 }

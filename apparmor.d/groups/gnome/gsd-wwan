@@ -10,9 +10,18 @@ include <tunables/global>
 profile gsd-wwan @{exec_path} {
   include <abstractions/base>
   include <abstractions/bus-session>
+  include <abstractions/bus-system>
   include <abstractions/dconf-write>
+  include <abstractions/gschemas>
+  include <abstractions/modem-manager-observe>
+  include <abstractions/session-manager>
 
   #aa:dbus own bus=session name=org.gnome.SettingsDaemon.Wwan
+
+  dbus receive bus=session
+       interface=org.freedesktop.DBus.Introspectable
+       member=Introspect
+       peer=(name=@{busname}, label="{gnome-shell,gnome-extension}"),
 
   @{exec_path} mr,
 

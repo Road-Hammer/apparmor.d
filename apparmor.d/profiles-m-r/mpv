@@ -15,8 +15,11 @@ profile mpv @{exec_path} {
   include <abstractions/desktop>
   include <abstractions/fontconfig-cache-read>
   include <abstractions/graphics>
+  include <abstractions/input>
   include <abstractions/nameservice-strict>
+  include <abstractions/p11-kit>
   include <abstractions/ssl_certs>
+  include <abstractions/sys/dmi>
   include <abstractions/user-download-strict>
 
   network inet dgram,
@@ -36,11 +39,8 @@ profile mpv @{exec_path} {
   @{bin}/youtube-dl rPx,
   @{bin}/yt-dlp     rPx,
 
-  /etc/mpv/* r,
+  /etc/mpv/** r,
   /etc/samba/smb.conf r,
-
-  /etc/machine-id r,
-  /var/lib/dbus/machine-id r,
 
   owner @{HOME}/ r,
   owner @{user_music_dirs}/{,**} rw,
@@ -61,28 +61,19 @@ profile mpv @{exec_path} {
   owner @{run}/user/@{uid}/gvfs/smb-share:server=*,share=**/ r,
   owner @{run}/user/@{uid}/gvfs/smb-share:server=*,share=** r,
 
-  owner @{PROC}/@{pid}/cmdline r,
-  owner @{PROC}/@{pid}/task/ r,
-  owner @{PROC}/@{pid}/task/@{tid}/comm rw,
-
-  @{run}/udev/data/+input:input@{int} r,  # for mouse, keyboard, touchpad
-  @{run}/udev/data/c13:@{int} r,          # for /dev/input/*
   @{run}/udev/data/c116:@{int} r,         # for ALSA
 
   @{sys}/bus/ r,
   @{sys}/class/ r,
-  @{sys}/class/input/ r,
-  @{sys}/devices/**/input/**/capabilities/* r,
-  @{sys}/devices/**/input/**/uevent r,
   @{sys}/devices/**/sound/**/capabilities/* r,
   @{sys}/devices/**/sound/**/uevent r,
-  @{sys}/devices/virtual/dmi/id/bios_vendor r,
-  @{sys}/devices/virtual/dmi/id/board_vendor r,
-  @{sys}/devices/virtual/dmi/id/product_name r,
-  @{sys}/devices/virtual/dmi/id/sys_vendor r,
 
-        /dev/input/event@{int} r,
-  owner /dev/tty@{int} rw,
+  owner @{PROC}/@{pid}/cmdline r,
+  owner @{PROC}/@{pid}/task/ r,
+  owner @{PROC}/@{pid}/stat r,
+  owner @{PROC}/@{pid}/task/@{tid}/comm rw,
+
+  owner /dev/tty@{u8} rw,
 
   include if exists <local/mpv>
 }

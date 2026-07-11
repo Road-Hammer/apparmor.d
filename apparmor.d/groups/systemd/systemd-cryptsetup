@@ -10,18 +10,20 @@ include <tunables/global>
 profile systemd-cryptsetup @{exec_path} flags=(attach_disconnected) {
   include <abstractions/base>
   include <abstractions/common/systemd>
+  include <abstractions/consoles>
   include <abstractions/disks-write>
+  include <abstractions/tpm>
 
   capability dac_read_search,
   capability ipc_lock,
   capability net_admin,
   capability sys_admin,
 
+  ptrace read peer=@{p_systemd},
+
   @{exec_path} mr,
 
   /etc/fstab r,
-
-  /var/swapfile rw,  #aa:only whonix
 
   @{run}/ r,
   @{run}/cryptsetup/ r,
@@ -32,11 +34,12 @@ profile systemd-cryptsetup @{exec_path} flags=(attach_disconnected) {
   @{sys}/fs/ r,
 
   @{run}/systemd/ask-password/ r,
+  @{run}/systemd/tpm2-pcr-signature.json r,
+
+  @{sys}/firmware@{efi}/efivars/LoaderTpm2ActivePcrBanks-@{uuid} r,
 
         @{PROC}/devices r,
   owner @{PROC}/@{pid}/mountinfo r,
-
-  /dev/loop-control r,  #aa:only whonix
 
   include if exists <local/systemd-cryptsetup>
 }

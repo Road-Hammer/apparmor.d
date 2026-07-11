@@ -9,7 +9,8 @@ include <tunables/global>
 @{exec_path} = @{bin}/kwin_x11
 profile kwin_x11 @{exec_path} {
   include <abstractions/base>
-  include <abstractions/bus-system>
+  include <abstractions/audio-client>
+  include <abstractions/bus-session>
   include <abstractions/graphics>
   include <abstractions/kde-strict>
   include <abstractions/nameservice-strict>
@@ -22,17 +23,27 @@ profile kwin_x11 @{exec_path} {
   network inet6 stream,
   network netlink raw,
 
+  #aa:dbus own bus=session name=org.kde.KWin
+  #aa:dbus own bus=session name=org.kde.NightColor path=/ColorCorrect
+
+  #aa:dbus talk bus=session name=org.kde.ActivityManager label=kactivitymanagerd
+  #aa:dbus talk bus=session name=org.kde.KGlobalAccel path=/kglobalaccel label=kglobalacceld
+
   @{exec_path} mrix,
 
   @{sh_path}                 rix,
+  @{bin}/kdialog             rix,
   @{lib}/kwin_killer_helper  rix,
+  @{bin}/ r,
 
   #aa:exec drkonqi
 
+  /usr/share/kwin-x11/{,**} r,
   /usr/share/kwin/{,**} r,
   /usr/share/plasma/desktoptheme/{,**} r,
 
   /etc/machine-id r,
+  /etc/xdg/menus/plasma-applications.menu r,
   /etc/xdg/plasmarc r,
 
   owner @{user_cache_dirs}/ r,
@@ -46,16 +57,15 @@ profile kwin_x11 @{exec_path} {
   owner @{user_cache_dirs}/plasmarc r,
   owner @{user_cache_dirs}/session/#@{int} rw,
 
-  owner @{user_config_dirs}/#@{int} rw,
+  owner @{user_config_dirs}/kaccessrc r,
   owner @{user_config_dirs}/kdedefaults/plasmarc r,
   owner @{user_config_dirs}/kwinoutputconfig.json rw,
   owner @{user_config_dirs}/kwinrc.lock rwk,
   owner @{user_config_dirs}/kwinrc{,.@{rand6}} rwl,
   owner @{user_config_dirs}/kwinrulesrc r,
   owner @{user_config_dirs}/kxkbrc r,
+  owner @{user_config_dirs}/menus/applications-kmenuedit.menu r,
   owner @{user_config_dirs}/plasmarc r,
-  owner @{user_config_dirs}/session/#@{int} rw,
-  owner @{user_config_dirs}/session/kwin_* rwk,
 
   owner @{user_share_dirs}/kwin/scripts/ r,
 

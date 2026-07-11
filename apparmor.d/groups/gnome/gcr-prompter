@@ -7,9 +7,11 @@ abi <abi/4.0>,
 include <tunables/global>
 
 @{exec_path} = @{lib}/gcr-prompter
-profile gcr-prompter @{exec_path} {
+profile gcr-prompter @{exec_path} flags=(attach_disconnected) {
   include <abstractions/base>
+  include <abstractions/dconf-write>
   include <abstractions/gnome-strict>
+  include <abstractions/nameservice-strict>
 
   @{exec_path} mr,
 

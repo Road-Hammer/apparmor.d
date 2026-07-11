@@ -21,10 +21,11 @@ const (
 
 func init() {
 	requirements[FILE] = requirement{
-		"access": {"m", "r", "w", "l", "k"},
+		"access": {"m", "r", "w", "a", "l", "k"},
 		"transition": {
 			"ix", "ux", "Ux", "px", "Px", "cx", "Cx", "pix", "Pix", "cix",
 			"Cix", "pux", "PUx", "cux", "CUx", "x",
+			"Pux", "pUx",
 		},
 	}
 }
@@ -58,6 +59,10 @@ func newFile(q Qualifier, rule rule) (Rule, error) {
 		if rule.Get(0) == FILE.Tok() {
 			rule = rule[1:]
 		}
+		// Skip safe/unsafe modifiers (handled at exec time)
+		if rule.Get(0) == "unsafe" || rule.Get(0) == "safe" {
+			rule = rule[1:]
+		}
 
 		r := rule.GetSlice()
 		size := len(r)
@@ -65,7 +70,13 @@ func newFile(q Qualifier, rule rule) (Rule, error) {
 			return nil, fmt.Errorf("missing file or access in rule: %s", rule)
 		}
 
-		path, access = r[0], r[1]
+		// Determine format: "path access" vs "access path"
+		// Try parsing first token as access - if valid, use "access path" format
+		if testAccess, _ := toAccess(FILE, r[0]); len(testAccess) > 0 {
+			access, path = r[0], r[1]
+		} else {
+			path, access = r[0], r[1]
+		}
 		if size > 2 {
 			if r[2] != tokARROW {
 				return nil, fmt.Errorf("missing '%s' in rule: %s", tokARROW, rule)
@@ -84,10 +95,13 @@ func newFile(q Qualifier, rule rule) (Rule, error) {
 		Path:      path,
 		Access:    accesses,
 		Target:    target,
-	}, nil
+	}, rule.ValidateMapKeys([]string{})
 }
 
 func newFileFromLog(log map[string]string) Rule {
+	if log["operation"] == "link" {
+		log["requested_mask"] += "l"
+	}
 	accesses, err := toAccess("file-log", log["requested_mask"])
 	if err != nil {
 		panic(fmt.Errorf("newFileFromLog(%v): %w", log, err))
@@ -136,19 +150,41 @@ func (r *File) Validate() error {
 			return fmt.Errorf("invalid mode '%s'", v)
 		}
 	}
-	if r.Target != "" && !isAARE(r.Target) {
-		return fmt.Errorf("'%s' is not a valid AARE", r.Target)
+	if err := validateAAREPattern(r.Path); err != nil {
+		return err
+	}
+	// Conflicting access: write (w) and append (a) cannot coexist
+	hasW := slices.Contains(r.Access, "w")
+	hasA := slices.Contains(r.Access, "a")
+	if hasW && hasA {
+		return fmt.Errorf("conflicting file access: 'w' and 'a' cannot coexist")
 	}
 	return nil
 }
 
 func (r *File) Compare(other Rule) int {
 	o, _ := other.(*File)
+	if o.AccessType == "deny" {
+		return -1 // Deny file rules always come last
+	}
 
-	letterR := getLetterIn(fileAlphabet, r.Path)
-	letterO := getLetterIn(fileAlphabet, o.Path)
-	if fileWeights[letterR] != fileWeights[letterO] && letterR != "" && letterO != "" {
-		return fileWeights[letterR] - fileWeights[letterO]
+	// Compare by file group - use pattern matching
+	groupR := getGroup(fileWeights, r.Path)
+	groupO := getGroup(fileWeights, o.Path)
+	if groupR != "" && groupO != "" {
+		weightR := fileWeights[groupR]
+		weightO := fileWeights[groupO]
+		if weightR != weightO {
+			return weightR - weightO
+		}
+	} else if groupR != "" {
+		return -1
+	} else if groupO != "" {
+		return 1
+	}
+
+	if res := r.Qualifier.Compare(o.Qualifier); res != 0 {
+		return res
 	}
 	if res := compare(r.Owner, o.Owner); res != 0 {
 		return res
@@ -159,10 +195,7 @@ func (r *File) Compare(other Rule) int {
 	if res := compare(r.Access, o.Access); res != 0 {
 		return res
 	}
-	if res := compare(r.Target, o.Target); res != 0 {
-		return res
-	}
-	return r.Qualifier.Compare(o.Qualifier)
+	return compare(r.Target, o.Target)
 }
 
 func (r *File) Merge(other Rule) bool {
@@ -180,6 +213,11 @@ func (r *File) Merge(other Rule) bool {
 }
 
 func (r *File) Lengths() []int {
+	// Deny rules don't participate in padding alignment
+	if r.AccessType == "deny" {
+		return []int{0, 0, 0, 0}
+	}
+
 	// Add padding to align with other transition rule
 	lenPath := 0
 	isTransition := util.Intersect(
@@ -207,12 +245,23 @@ func (r *File) addLine(other Rule) bool {
 	if other.Kind() != r.Kind() {
 		return false
 	}
+	o := other.(*File)
 
-	letterI := getLetterIn(fileAlphabet, r.Path)
-	letterJ := getLetterIn(fileAlphabet, other.(*File).Path)
-	groupI, ok1 := fileAlphabetGroups[letterI]
-	groupJ, ok2 := fileAlphabetGroups[letterJ]
-	return letterI != letterJ && (!ok1 || !ok2 || groupI != groupJ)
+	// Deny rules are all grouped together without blank lines
+	if r.AccessType == "deny" && o.AccessType == "deny" {
+		return false
+	}
+
+	patternI := getGroup(fileWeights, r.Path)
+	patternJ := getGroup(fileWeights, o.Path)
+	if patternI == "" || patternJ == "" {
+		return patternI != patternJ
+	}
+	groupI, ok1 := fileAlphabetGroups[patternI]
+	groupJ, ok2 := fileAlphabetGroups[patternJ]
+
+	// Add newline if patterns differ and they're in different groups (or unrecognized)
+	return patternI != patternJ && (!ok1 || !ok2 || groupI != groupJ)
 }
 
 type Link struct {
@@ -255,7 +304,7 @@ func newLink(q Qualifier, rule rule) (Rule, error) {
 		Subset:    subset,
 		Path:      path,
 		Target:    target,
-	}, nil
+	}, rule.ValidateMapKeys([]string{})
 }
 
 func newLinkFromLog(log map[string]string) Rule {
@@ -284,14 +333,29 @@ func (r *Link) Validate() error {
 	if !isAARE(r.Path) {
 		return fmt.Errorf("'%s' is not a valid AARE", r.Path)
 	}
-	if !isAARE(r.Target) {
-		return fmt.Errorf("'%s' is not a valid AARE", r.Target)
-	}
 	return nil
 }
 
 func (r *Link) Compare(other Rule) int {
 	o, _ := other.(*Link)
+	if o.AccessType == "deny" {
+		return -1 // Deny file rules always come last
+	}
+
+	// Compare by file group - use pattern matching
+	groupR := getGroup(fileWeights, r.Path)
+	groupO := getGroup(fileWeights, o.Path)
+	if groupR != "" && groupO != "" {
+		weightR := fileWeights[groupR]
+		weightO := fileWeights[groupO]
+		if weightR != weightO {
+			return weightR - weightO
+		}
+	} else if groupR != "" {
+		return -1
+	} else if groupO != "" {
+		return 1
+	}
 
 	if res := compare(r.Owner, o.Owner); res != 0 {
 		return res
@@ -328,4 +392,36 @@ func (r *Link) setPaddings(max []int) {
 		max[2:], []string{"owner", "subset", "", ""},
 		[]any{r.Owner, r.Subset, r.Path, r.Target})...,
 	)
+}
+
+// compareFileLink compares File and Link rules by their file group weight.
+func compareFileLink(a, b Rule) int {
+	pathA := ""
+	switch r := a.(type) {
+	case *File:
+		pathA = r.Path
+	case *Link:
+		pathA = r.Path
+	}
+
+	pathB := ""
+	switch r := b.(type) {
+	case *File:
+		pathB = r.Path
+	case *Link:
+		pathB = r.Path
+	}
+
+	groupA := getGroup(fileWeights, pathA)
+	groupB := getGroup(fileWeights, pathB)
+	if groupA != "" && groupB != "" {
+		if res := fileWeights[groupA] - fileWeights[groupB]; res != 0 {
+			return res
+		}
+	} else if groupA != "" {
+		return -1
+	} else if groupB != "" {
+		return 1
+	}
+	return compare(pathA, pathB)
 }

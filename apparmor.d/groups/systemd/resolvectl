@@ -7,15 +7,30 @@ abi <abi/4.0>,
 include <tunables/global>
 
 @{exec_path} = @{bin}/resolvectl
-profile resolvectl @{exec_path} {
+profile resolvectl @{exec_path} flags=(attach_disconnected) {
   include <abstractions/base>
-  include <abstractions/consoles>
   include <abstractions/bus-system>
   include <abstractions/common/systemd>
+  include <abstractions/consoles>
+
+  capability net_admin,
+
+  network inet raw,
+  network inet stream,
+  network inet6 raw,
+  network inet6 stream,
+  network netlink raw,
 
   signal send set=cont peer=child-pager,
 
-  #aa:dbus talk bus=system name=org.freedesktop.resolve1 label=systemd-resolved
+  unix bind type=stream addr=@@{udbus}/bus/resolvconf/system,
+
+  #aa:dbus talk bus=system name=org.freedesktop.resolve1 label="@{p_systemd_resolved}"
+
+  #aa:dbus talk bus=system name=org.freedesktop.network1 label="@{p_systemd_networkd}"
+  dbus send bus=system path=/org/freedesktop/network1
+       interface=org.freedesktop.network1.Manager
+       peer=(name=org.freedesktop.network1),
 
   @{exec_path} mr,
 

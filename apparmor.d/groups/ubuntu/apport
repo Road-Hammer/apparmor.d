@@ -9,11 +9,12 @@ include <tunables/global>
 @{exec_path} = /usr/share/apport/apport
 profile apport @{exec_path} flags=(attach_disconnected) {
   include <abstractions/base>
-  include <abstractions/common/apt>
+  include <abstractions/apt>
+  include <abstractions/audio-client>
   include <abstractions/bus-session>
-  include <abstractions/bus/org.gnome.SessionManager>
   include <abstractions/nameservice-strict>
   include <abstractions/python>
+  include <abstractions/session-manager>
 
   capability chown,
   capability dac_read_search,
@@ -28,31 +29,56 @@ profile apport @{exec_path} flags=(attach_disconnected) {
   @{exec_path} mr,
 
   @{bin}/{,e,f}grep   rix,
-  @{bin}/dpkg         rPx -> child-dpkg,
-  @{bin}/dpkg-divert  rPx -> child-dpkg-divert,
+  @{bin}/*              r,
+  @{bin}/dpkg         rPx -> apport//&child-dpkg,
+  @{bin}/dpkg-divert  rPx -> apport//&child-dpkg-divert,
   @{bin}/gdbus        rix,
   @{bin}/md5sum       rix,
 
-  /usr/share/apport/{,**} r,
-
   @{etc_ro}/login.defs r,
-  /etc/apport/report-ignore/{,**} r,
+  /etc/apport/{,**} r,
+  /etc/dpkg/dpkg.cfg r,
+  /etc/dpkg/dpkg.cfg.d/{,**} r,
+
+  # Apport needs access to all install path of packages to report problems.
+  /usr/{,**} r,
+  /opt/{,**} r,
 
   /var/lib/dpkg/info/ r,
   /var/lib/dpkg/info/*.list r,
   /var/lib/dpkg/info/*.md5sums r,
+  /var/lib/dpkg/diversions r,
+  /var/lib/dpkg/triggers/* r,
+  /var/lib/dpkg/updates/{,*} r,
+
+  /var/lib/apport/{,**} r,
+  /var/lib/ispell/{,**} r,
+  /var/lib/systemd/coredump/{,**} r,
 
         /var/crash/ rw,
         /var/crash/*.@{uid}.crash rw,
   owner /var/cache/apt/pkgcache.bin.@{rand6} rw,
   owner /var/log/apport.log rw,
 
-  @{run}/apport.lock rwk,
+  /{run,var}/log/journal/ r,
+  /{run,var}/log/journal/@{hex32}/ r,
+  /{run,var}/log/journal/@{hex32}/system.journal* r,
+  /{run,var}/log/journal/@{hex32}/system@@{hex}-@{hex}.journal* r,
+  /{run,var}/log/journal/@{hex32}/system@@{hex32}-@{hex16}-@{hex16}.journal* r,
+  /{run,var}/log/journal/@{hex32}/user-@{hex}.journal* r,
+  /{run,var}/log/journal/@{hex32}/user-@{uid}@@{hex}-@{hex}.journal* r,
+  /{run,var}/log/journal/@{hex32}/user-@{uid}@@{hex32}-@{hex16}-@{hex16}.journal* r,
 
-        @{PROC}/@{pid}/cgroup r,
-        @{PROC}/@{pid}/environ r,
-        @{PROC}/@{pid}/fd/ r,
-        @{PROC}/@{pid}/stat r,
+  @{run}/apport.lock rwk,
+  @{run}/log/journal/ r,
+
+        @{PROC}/@{pids}/cgroup r,
+        @{PROC}/@{pids}/environ r,
+        @{PROC}/@{pids}/fd/ r,
+        @{PROC}/@{pids}/fdinfo/@{int} r,
+        @{PROC}/@{pids}/maps r,
+        @{PROC}/@{pids}/stat r,
+        @{PROC}/@{pids}/status r,
         @{PROC}/sys/fs/suid_dumpable w,
         @{PROC}/sys/kernel/core_pattern w,
         @{PROC}/sys/kernel/core_pipe_limit w,

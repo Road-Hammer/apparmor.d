@@ -10,15 +10,20 @@ include <tunables/global>
 @{share_dirs} += @{user_share_dirs}/gnome-shell/extensions/gsconnect@andyholmes.github.io
 
 @{exec_path} = @{share_dirs}/service/daemon.js @{share_dirs}/gsconnect-preferences
-profile gnome-extension-gsconnect @{exec_path} {
+profile gnome-extension-gsconnect @{exec_path} flags=(attach_disconnected) {
   include <abstractions/base>
   include <abstractions/audio-client>
-  include <abstractions/bus-accessibility>
-  include <abstractions/bus-session>
-  include <abstractions/bus-system>
+  include <abstractions/bus/session/org.freedesktop.FileManager1>
+  include <abstractions/bus/session/org.freedesktop.FileManager1>
+  include <abstractions/bus/session/org.gtk.vfs.Daemon>
+  include <abstractions/bus/session/org.gtk.vfs.MountOperation>
+  include <abstractions/bus/system/org.freedesktop.hostname1>
+  include <abstractions/bus/system/org.freedesktop.login1>
   include <abstractions/dconf-write>
   include <abstractions/gnome-strict>
+  include <abstractions/mpris>
   include <abstractions/nameservice-strict>
+  include <abstractions/network-manager-observe>
   include <abstractions/p11-kit>
   include <abstractions/ssl_certs>
   include <abstractions/user-download-strict>
@@ -28,6 +33,33 @@ profile gnome-extension-gsconnect @{exec_path} {
   network inet stream,
   network inet6 stream,
   network netlink raw,
+
+  unix type=stream addr=none peer=(label=gvfsd-*, addr=none),
+
+  #aa:dbus own bus=session name=org.gnome.Shell.Extensions.GSConnect
+
+  #aa:dbus own bus=session name=org.mpris.MediaPlayer2.GSConnect.*
+
+  dbus send bus=session path=/org/freedesktop/DBus
+       interface=org.freedesktop.DBus.Monitoring
+       member=BecomeMonitor
+       peer=(name=org.freedesktop.DBus, label="@{p_dbus_session}"),
+
+  dbus send bus=session path=/org/mpris/MediaPlayer2
+       interface=org.freedesktop.DBus.Properties
+       member={Get,GetAll}
+       peer=(name=@{busname}),
+
+  dbus receive bus=session path=/org/mpris/MediaPlayer2
+       interface=org.freedesktop.DBus.Properties
+       member=PropertiesChanged
+       peer=(name=@{busname}),
+  dbus send bus=session path=/org/mpris/MediaPlayer2
+       interface=org.mpris.MediaPlayer2.Player
+       member=PlayPause
+       peer=(name=@{busname}),
+
+  dbus eavesdrop bus=session,
 
   @{exec_path} mr,
 
@@ -49,24 +81,37 @@ profile gnome-extension-gsconnect @{exec_path} {
   @{share_dirs}/{,**} r,
   @{share_dirs}/gsconnect-preferences rix,
 
+  /snap/*/@{uid}/**.@{icon_ext} r,
+  /usr/share/**.@{icon_ext} r,
+  /var/lib/flatpak/appstream/**/icons/{,**} r,
+
   owner @{user_cache_dirs}/gsconnect/{,**} rw,
+  owner @{user_cache_dirs}/*/**.@{icon_ext} r,
 
   owner @{user_config_dirs}/gsconnect/{,**} rw,
   owner @{user_config_dirs}/mimeapps.list w,
   owner @{user_config_dirs}/mimeapps.list.@{rand6} rw,
 
-  owner @{HOME}/.mozilla/firefox/firefox-mpris/@{word}.png r,
+  owner @{HOME}/.mozilla/firefox{,-esr}/firefox-mpris/@{word}.@{icon_ext} r,
+  owner @{HOME}/.var/app/*/**.@{icon_ext} r,
 
   owner @{tmp}/.org.chromium.Chromium.@{rand6} r,
 
+  owner @{run}/user/@{uid}/app/*/.org.chromium.Chromium.@{rand6} r,
+  owner @{run}/user/@{uid}/gcr/ssh rw,
   owner @{run}/user/@{uid}/gsconnect/{,**} rw,
+  owner @{run}/user/@{uid}/gvfsd/socket-@{rand8} rw,
+  owner @{run}/user/@{uid}/keyring/ssh rw,
 
   @{sys}/devices/virtual/dmi/id/chassis_type r,
 
+  owner @{PROC}/@{pid}/cgroup r,
   owner @{PROC}/@{pid}/mounts r,
   owner @{PROC}/@{pid}/stat r,
-  owner @{PROC}/@{pid}/status r,
+  owner @{PROC}/@{pid}/statm r,
   owner @{PROC}/@{pid}/task/@{tid}/stat r,
+
+  deny @{user_share_dirs}/gvfs-metadata/* r,
 
   include if exists <local/gnome-extension-gsconnect>
 }

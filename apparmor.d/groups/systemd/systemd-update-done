@@ -16,10 +16,15 @@ profile systemd-update-done @{exec_path} flags=(attach_disconnected) {
 
   @{exec_path} mr,
 
+  /etc/ r,
   /etc/.#.updated@{hex} rw,
   /etc/.updated w,
+
+  /var/ r,
   /var/.#.updated@{hex} rw,
   /var/.updated w,
+
+  / r,
 
   @{run}/host/container-manager r,
 

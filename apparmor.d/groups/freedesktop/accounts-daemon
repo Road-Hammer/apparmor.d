@@ -11,7 +11,7 @@ include <tunables/global>
 profile accounts-daemon @{exec_path} flags=(attach_disconnected) {
   include <abstractions/base>
   include <abstractions/bus-system>
-  include <abstractions/bus/org.freedesktop.PolicyKit1>
+  include <abstractions/bus/system/org.freedesktop.PolicyKit1>
   include <abstractions/nameservice-strict>
   include <abstractions/wutmp>
 
@@ -24,6 +24,7 @@ profile accounts-daemon @{exec_path} flags=(attach_disconnected) {
   ptrace read peer=unconfined,
 
   #aa:dbus own bus=system name=org.freedesktop.Accounts
+  #aa:dbus talk bus=system name=org.freedesktop.home1 label=systemd-homed
 
   @{exec_path} mr,
 
@@ -43,6 +44,7 @@ profile accounts-daemon @{exec_path} flags=(attach_disconnected) {
   /usr/share/accountsservice/{,**} r,
   /usr/share/dbus-1/interfaces/*.xml r,
 
+  @{etc_rw}/tcb/{,**} r,
   /etc/default/locale r,
   /etc/gdm{3,}/ r,
   /etc/gdm{3,}/custom.conf{,.@{rand6}} rw,
@@ -62,6 +64,8 @@ profile accounts-daemon @{exec_path} flags=(attach_disconnected) {
   owner @{HOME}/.pam_environment r,
 
   owner @{tmp}/gnome-control-center-user-icon-@{rand6} rw,
+
+  @{att}@{run}/systemd/userdb/io.systemd.Machine rw,
 
         @{PROC}/@{pid}/cmdline r,
         @{PROC}/@{pid}/loginuid r,

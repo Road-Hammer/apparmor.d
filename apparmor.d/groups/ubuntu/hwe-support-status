@@ -9,13 +9,13 @@ include <tunables/global>
 @{exec_path} = @{bin}/hwe-support-status
 profile hwe-support-status @{exec_path} {
   include <abstractions/base>
-  include <abstractions/common/apt>
+  include <abstractions/apt>
   include <abstractions/python>
 
   @{exec_path} mr,
 
   @{bin}/dpkg         rPx,
-  @{bin}/lsb_release  rPx -> lsb_release,
+  @{bin}/lsb_release  rPx,
 
   /usr/share/distro-info/{,**} r,
 

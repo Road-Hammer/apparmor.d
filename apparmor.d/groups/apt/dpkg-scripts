@@ -11,19 +11,23 @@ profile dpkg-scripts @{exec_path} {
   include <abstractions/base>
   include <abstractions/common/debconf>
   include <abstractions/disks-read>
+  include <abstractions/python>
 
   capability chown,
+  capability dac_override,
   capability dac_read_search,
   capability fowner,
   capability fsetid,
   capability setgid,
   capability setuid,
+  capability sys_admin, # optional: no audit
 
   @{exec_path} mrix,
 
   # Common program found in maintainer scripts
   @{sh_path}                                     rix,
   @{coreutils_path}                              rix,
+  @{python_path}                                 rix,
   @{bin}/run-parts                               rix,
 
   @{bin}/envsubst                                 ix,
@@ -46,39 +50,64 @@ profile dpkg-scripts @{exec_path} {
   @{sbin}/ldconfig.real                           Cx -> ldconfig,
   @{sbin}/update-rc.d                             Cx -> rc,
 
+  #aa:lint ignore=too-wide
   # Maintainer scripts can legitimately start/restart anything
-  @{bin}/**                                       PUx,
-  @{sbin}/**                                      PUx,
-  @{lib}/**                                       PUx,
+  # PU is only used as a safety fallback.
+  @{bin}/**                                     mrPUx,
+  @{sbin}/**                                    mrPUx,
+  @{lib}/**                                     mrPUx,
+  /etc/**                                         PUx,
   /usr/share/**                                   PUx,
-  /etc/init.d/*                                   PUx,
 
+  #aa:lint ignore=too-wide
   # Maintainer's scripts can update a lot of files
   / r,
   /*/ r,
   @{bin}/ r,
-  @{lib}/ r,
+  @{bin}/* w,
+  @{sbin}/ r,
+  @{sbin}/* w,
+  @{lib}/ rw,
+  @{lib}/** wl -> @{lib}/**,
+  /opt/*/** rw,
+
+  #aa:lint ignore=too-wide
   /etc/ r,
   /etc/** rw,
   /usr/share/*/{,**} rw,
   /usr/local/share/*/{,**} rw,
   /var/** rw,
-  @{run}/** rw,
-  @{efi}/grub/* rw,
+  @{run}/** rwk,
+  @{efi}/grub{,2}/* rw,
 
-  /tmp/grub.@{rand10} rw,
-  /tmp/sed@{rand6} rw,
-  /tmp/tmp.@{rand10} rw,
+  @{HOME}/.profile r,
+
+  #aa:lint ignore=too-wide
+  /tmp/* rw,
+  /tmp/dbconfig-*.@{rand6}/{,**} rw,
+  /tmp/tmp.@{rand10}/{,**} rw,
+
+  @{sys}/kernel/security/apparmor/features/policy/unconfined_restrictions/userns r,
+
+  @{PROC}/@{pid}/fd/ r,
+  @{PROC}/@{pid}/mountinfo r,
 
   profile bus {
     include <abstractions/base>
     include <abstractions/app/bus>
     include <abstractions/bus-system>
 
+    capability dac_read_search,
+
     dbus send bus=system path=/
          interface=org.freedesktop.DBus
          member=ReloadConfig
          peer=(name=org.freedesktop.DBus, label="@{p_dbus_system}"),
+
+    dbus send bus=system path=/org/freedesktop/PackageKit
+         interface=org.freedesktop.PackageKit
+         member=SuggestDaemonQuit
+         peer=(name=org.freedesktop.PackageKit),
 
     include if exists <local/dpkg-scripts_bus>
   }
@@ -87,19 +116,40 @@ profile dpkg-scripts @{exec_path} {
     include <abstractions/base>
     include <abstractions/app/kmod>
 
+    @{efi}/System.map-* r,
+
+    /var/lib/dpkg/triggers/* r,
+
+    @{lib}/modules/*/modules.* w,
+
+    @{sys}/module/** r,
+
     include if exists <local/dpkg-scripts_kmod>
   }
 
   profile systemctl {
     include <abstractions/base>
     include <abstractions/app/systemctl>
+    include <abstractions/nameservice-strict>
 
     capability net_admin,
     capability sys_ptrace,
     capability sys_resource,
 
+    signal send set=(cont term) peer=systemd-tty-ask-password-agent,
+    signal send set=cont peer=child-pager,
+
+    ptrace read peer=@{p_systemd},
+
     @{bin}/systemd-tty-ask-password-agent  Px,
+    @{lib}/systemd/systemd-sysv-install   PUx,
     @{pager_path}                          Px -> child-pager,
+
+    /etc/machine-id r,
+
+    /etc/systemd/system/{,*/} r,
+
+    /var/lib/systemd/catalog/database r,
 
     /{run,var}/log/journal/ r,
     /{run,var}/log/journal/@{hex32}/ r,
@@ -109,6 +159,8 @@ profile dpkg-scripts @{exec_path} {
     /{run,var}/log/journal/@{hex32}/user-@{hex}.journal* r,
     /{run,var}/log/journal/@{hex32}/user-@{uid}@@{hex}-@{hex}.journal* r,
     /{run,var}/log/journal/@{hex32}/user-@{uid}@@{hex32}-@{hex16}-@{hex16}.journal* r,
+
+    /tmp/tmp.@{rand10} rw,
 
     @{run}/utmp rk,
 
@@ -134,6 +186,8 @@ profile dpkg-scripts @{exec_path} {
     /etc/rc@{int}.d/ r,
     /etc/rc@{int}.d/* rw,
 
+    /tmp/tmp.@{rand10} rw,
+
     include if exists <local/dpkg-scripts_rc>
   }
 
@@ -145,10 +199,16 @@ profile dpkg-scripts @{exec_path} {
     @{sbin}/ldconfig       mrix,
     @{sbin}/ldconfig.real   rix,
 
+    @{bin}/dpkg-trigger     rPx,
+
     @{lib}/ r,
     /usr/local/ r,
     /usr/local/lib/ r,
 
+    /etc/ld.so.cache rw,
+    /etc/ld.so.cache~ rw,
+
+          /var/cache/ldconfig/ rw,
     owner /var/cache/ldconfig/aux-cache* rw,
 
     include if exists <local/dpkg-scripts_ldconfig>

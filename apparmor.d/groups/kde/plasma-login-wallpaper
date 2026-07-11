@@ -1,0 +1,40 @@
+# apparmor.d - Full set of apparmor profiles
+# Copyright (C) 2026 Alexandre Pujol <alexandre@pujol.io>
+# SPDX-License-Identifier: GPL-2.0-only
+
+abi <abi/4.0>,
+
+include <tunables/global>
+
+@{exec_path} = @{bin}/plasma-login-wallpaper
+profile plasma-login-wallpaper @{exec_path} {
+  include <abstractions/base>
+  include <abstractions/graphics>
+  include <abstractions/kde-strict>
+
+  @{exec_path} mr,
+
+  @{bin}/ r,
+
+  /usr/share/plasma/{,**} r,
+  /usr/share/wallpapers/{,**} r,
+
+  @{etc_ro}/login.defs r,
+  /etc/plasmalogin.conf r,
+
+  owner @{sddm_cache_dirs}/plasma-login-wallpaper/ rw,
+  owner @{sddm_cache_dirs}/plasma-login-wallpaper/** rwkl,
+  owner @{sddm_cache_dirs}/nvidia/ rw,
+  owner @{sddm_cache_dirs}/nvidia/GLCache/ rw,
+  owner @{sddm_cache_dirs}/nvidia/GLCache/** rwk,
+  owner @{sddm_config_dirs}/kdedefaults/* r,
+  owner @{sddm_config_dirs}/kdeglobals r,
+  owner @{sddm_config_dirs}/kcminputrc r,
+  owner @{sddm_config_dirs}/plasmarc r,
+
+  owner @{PROC}/@{pid}/task/@{tid}/comm w,
+
+  include if exists <local/plasma-login-wallpaper>
+}
+
+# vim:syntax=apparmor

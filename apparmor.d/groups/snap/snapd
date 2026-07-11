@@ -6,21 +6,23 @@ abi <abi/4.0>,
 
 include <tunables/global>
 
-@{bin_dirs} = @{bin}/ /snap/{snapd,core}/@{int}@{bin}
-@{lib_dirs} = @{lib}/ /snap/{snapd,core}/@{int}@{lib}
+@{bin_dirs} = @{bin}/ /snap/{snapd,core}/{,x}@{int}@{bin}
+@{lib_dirs} = @{lib}/ /snap/{snapd,core}/{,x}@{int}@{lib}
 
 @{exec_path} = @{lib_dirs}/snapd/snapd
 profile snapd @{exec_path} {
   include <abstractions/base>
   include <abstractions/authentication>
   include <abstractions/bus-system>
-  include <abstractions/bus/org.freedesktop.PolicyKit1>
-  include <abstractions/bus/org.freedesktop.timedate1>
+  include <abstractions/bus/system/org.freedesktop.PolicyKit1>
+  include <abstractions/bus/system/org.freedesktop.timedate1>
   include <abstractions/disks-write>
   include <abstractions/fontconfig-cache-write>
   include <abstractions/fonts>
+  include <abstractions/mime>
   include <abstractions/nameservice-strict>
   include <abstractions/ssl_certs>
+  include <abstractions/vulkan-strict>
 
   capability audit_write,
   capability chown,
@@ -34,7 +36,6 @@ profile snapd @{exec_path} {
   capability setuid,
   capability sys_admin,
   capability sys_ptrace,
-  capability sys_resource,
 
   network inet stream,
   network inet6 stream,
@@ -55,7 +56,7 @@ profile snapd @{exec_path} {
   dbus send bus=system path=/org/freedesktop/
          interface=org.freedesktop.login1.Manager
          member={SetWallMessage,ScheduleShutdown}
-         peer=(name=org.freedesktop.login1, label=systemd-logind),
+         peer=(name=org.freedesktop.login1, label="@{p_systemd_logind}"),
 
   dbus send bus=system path=/org/freedesktop/timedate1
        interface=org.freedesktop.DBus.Properties
@@ -98,18 +99,20 @@ profile snapd @{exec_path} {
   @{lib_dirs}/snapd/snap-update-ns   rPx,
 
   /usr/share/bash-completion/{,**} r,
-  /usr/share/dbus-1/{system,session}.d/{,snapd*} rw,
+  /usr/share/dbus-1/{system,session}.d/ rw,
+  /usr/share/dbus-1/{system,session}.d/snapd* rw,
   /usr/share/dbus-1/services/*snap* r,
-  /usr/share/polkit-1/actions/{,**/} r,
+  /usr/share/polkit-1/actions/{,**} r,
+  /usr/share/polkit-1/actions/snap.*.policy* rw,
 
   @{etc_ro}/environment r,
   /etc/apparmor.d/*snapd.snap* r,
   /etc/dbus-1/system.d/{,**/} r,
   /etc/fstab r,
-  /etc/mime.types r,
   /etc/modprobe.d/{,**/} r,
   /etc/modules-load.d/{,**/} r,
   /etc/modules-load.d/*snap* rw,
+  /etc/polkit-1/rules.d/{,**/} r,
   /etc/systemd/system/{,**/} r,
   /etc/systemd/system/snap* rw,
   /etc/systemd/user/{,**/} rw,
@@ -132,8 +135,8 @@ profile snapd @{exec_path} {
   /tmp/syscheck-mountpoint-@{int}/{,**} rw,
   /tmp/syscheck-squashfs-@{int} rw,
 
-  /boot/ r,
-  /boot/grub/grubenv r,
+  @{efi}/ r,
+  @{efi}/grub/grubenv r,
 
   / r,
   /home/ r,
@@ -147,6 +150,7 @@ profile snapd @{exec_path} {
 
   @{run}/user/ r,
   @{run}/user/@{uid}/ r,
+  @{run}/user/@{uid}/snap.*/{,**} rw,
   @{run}/user/@{uid}/snapd-session-agent.socket rw,
   @{run}/user/snap.*/{,**} rw,
 
@@ -154,7 +158,6 @@ profile snapd @{exec_path} {
   @{run}/snapd*.socket rw,
   @{run}/snapd/{,**} rw,
   @{run}/snapd/lock/*.lock rwk,
-  @{run}/systemd/notify rw,
   @{run}/systemd/private rw,
 
   @{sys}/fs/cgroup/{,*/} r,
@@ -162,6 +165,8 @@ profile snapd @{exec_path} {
   @{sys}/fs/cgroup/*.slice/{,**/} r,
   @{sys}/fs/cgroup/*.slice/**/cgroup.procs r,
   @{sys}/fs/cgroup/cgroup.controllers r,
+  @{sys}/fs/cgroup/net_cls/*/ r,
+  @{sys}/fs/cgroup/system.slice/snapd.service/cpu.max r,
   @{sys}/kernel/kexec_loaded r,
   @{sys}/kernel/security/apparmor/.notify r,
   @{sys}/kernel/security/apparmor/features/{,**} r,
@@ -188,13 +193,13 @@ profile snapd @{exec_path} {
 
     network netlink raw,
 
+    ptrace read peer=@{p_systemd},
+
     /etc/systemd/system/{,**/} r,
     /etc/systemd/system/snap* rw,
     /etc/systemd/user/{,**/} rw,
     /etc/systemd/user/**/*snap* rw,
     /etc/systemd/user/*snap* rw,
-
-    @{run}/systemd/notify rw,
 
     include if exists <local/snapd_systemctl>
   }
@@ -218,15 +223,27 @@ profile snapd @{exec_path} {
     /{run,var}/log/journal/ r,
     /{run,var}/log/journal/@{hex32}/{,*} r,
 
-    @{run}/systemd/notify w,
-
     include if exists <local/snapd_journalctl>
   }
 
   profile runuser {
     include <abstractions/base>
+    include <abstractions/authentication>
+    include <abstractions/nameservice-strict>
+
+    capability audit_write,
+    capability setgid,
+    capability setuid,
+
+    network netlink raw,
 
     @{sbin}/runuser mr,
+
+    @{sh_path}   ix,
+    @{bin}/gzip  ix,
+    @{bin}/tar   ix,
+
+    owner @{HOME}/snap/*/{,**} r,
 
     include if exists <local/snapd_runuser>
   }

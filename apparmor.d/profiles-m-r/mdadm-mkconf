@@ -7,8 +7,9 @@ abi <abi/4.0>,
 include <tunables/global>
 
 @{exec_path} = /usr/share/mdadm/mkconf
-profile mdadm-mkconf @{exec_path} {
+profile mdadm-mkconf @{exec_path} flags=(attach_disconnected) {
   include <abstractions/base>
+  include <abstractions/consoles>
 
   @{exec_path} mr,
 
@@ -19,10 +20,12 @@ profile mdadm-mkconf @{exec_path} {
   @{sbin}/mdadm   Px,
 
   /etc/default/mdadm r,
+  /etc/mdadm/mdadm.conf r,
 
   / r,
 
   /var/tmp/mkinitramfs_@{rand6}/etc/mdadm/mdadm.conf.tmp rw,
+  /tmp/tmp.@{rand10}/mkinitramfs_@{rand6}/etc/mdadm/mdadm.conf.tmp rw,
 
   include if exists <local/mdadm-mkconf>
 }

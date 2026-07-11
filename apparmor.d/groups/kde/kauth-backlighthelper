@@ -7,29 +7,21 @@ abi <abi/4.0>,
 include <tunables/global>
 
 @{exec_path} = @{lib}/{,kf6/}kauth/{,libexec/}backlighthelper
-profile kauth-backlighthelper @{exec_path} {
+profile kauth-backlighthelper @{exec_path} flags=(attach_disconnected) {
   include <abstractions/base>
+  include <abstractions/backlight>
   include <abstractions/bus-system>
-  include <abstractions/bus/org.freedesktop.PolicyKit1>
+  include <abstractions/bus/system/org.freedesktop.PolicyKit1>
   include <abstractions/nameservice-strict>
   include <abstractions/qt5>
 
   capability net_admin,
 
+  #aa:dbus own bus=system name=org.kde.powerdevil.backlighthelper
+
   @{exec_path} mr,
 
   /usr/share/icu/@{int}.@{int}/*.dat r,
-
-  @{sys}/class/backlight/ r,
-  @{sys}/class/leds/ r,
-  @{sys}/devices/@{pci}/*_backlight/{,max_,actual_}brightness rw,
-  @{sys}/devices/@{pci}/*_backlight/{uevent,type,enabled} r,
-  @{sys}/devices/@{pci}/backlight/**/{,max_,actual_}brightness rw,
-  @{sys}/devices/@{pci}/backlight/**/{uevent,type,enabled} r,
-  @{sys}/devices/@{pci}/backlight/**/brightness rw,
-  @{sys}/devices/@{pci}/drm/card@{int}/**/{,max_,actual_}brightness rw,
-  @{sys}/devices/@{pci}/drm/card@{int}/**/{uevent,type,enabled} r,
-  @{sys}/devices/@{pci}/drm/card@{int}/**/brightness rw,
 
   /dev/tty r,
 

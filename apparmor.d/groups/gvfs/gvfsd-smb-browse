@@ -11,8 +11,9 @@ include <tunables/global>
 profile gvfsd-smb-browse @{exec_path} {
   include <abstractions/base>
   include <abstractions/bus-session>
-  include <abstractions/bus/org.gtk.vfs.MountTracker>
+  include <abstractions/gvfs-backend>
   include <abstractions/dconf-write>
+  include <abstractions/gschemas>
   include <abstractions/nameservice-strict>
 
   network netlink raw,
@@ -23,19 +24,7 @@ profile gvfsd-smb-browse @{exec_path} {
 
   #aa:dbus own bus=session name=org.gtk.vfs.mountpoint_smb_browse
 
-  dbus receive bus=session path=/org/gtk/vfs/mountable
-       interface=org.gtk.vfs.Mountable
-       member=Mount
-       peer=(name="@{busname}", label=gvfsd),
-
-  dbus send bus=session path=/org/gtk/gvfs/exec_spaw/@{int}
-       interface=org.gtk.vfs.Spawner
-       member=Spawned
-       peer=(name="@{busname}", label=gvfsd),
-
   @{exec_path} mr,
-
-  /usr/share/glib-2.0/schemas/gschemas.compiled r,
 
   /etc/samba/* r,
 

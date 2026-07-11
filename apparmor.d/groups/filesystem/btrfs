@@ -7,7 +7,7 @@ abi <abi/4.0>,
 
 include <tunables/global>
 
-@{exec_path} = @{bin}/{btrfs,btrfsck}
+@{exec_path} = @{sbin}/btrfs @{sbin}/btrfsck
 profile btrfs @{exec_path} flags=(attach_disconnected) {
   include <abstractions/base>
   include <abstractions/disks-write>
@@ -25,14 +25,17 @@ profile btrfs @{exec_path} flags=(attach_disconnected) {
 
   / r,
   /.snapshots/ r,
-  /boot/ r,
-  /boot/**/ r,
+  @{efi}/ r,
+  @{efi}/**/ r,
   /home/ r,
   /opt/ r,
   /root/ r,
   /srv/ r,
   /usr/local/ r,
   /var/ r,
+  /var/log/ r,
+  /var/tmp/ r,
+  /var/cache/ r,
   @{MOUNTS}/ r,
   @{MOUNTS}/ext2_saved/ rw,
   @{MOUNTS}/ext2_saved/image rw,
@@ -50,6 +53,7 @@ profile btrfs @{exec_path} flags=(attach_disconnected) {
   @{run}/blkid/blkid.tab.old rwl -> @{run}/blkid/blkid.tab,
   @{run}/snapper-tools-*/ r,
   @{run}/snapper-tools-@{rand6}/@/.snapshots/@{int}/snapshot r,
+  @{run}/BtrfsAssistant/@{uuid}/ r,
 
   @{sys}/fs/btrfs/@{uuid}/** r,
 
@@ -57,8 +61,8 @@ profile btrfs @{exec_path} flags=(attach_disconnected) {
   owner @{PROC}/@{pid}/mounts r,
 
   /dev/btrfs-control rw,
-  /dev/pts/@{int} rw,
-  /dev/tty@{int} rw,
+  /dev/pts/@{u16} rw,
+  /dev/tty@{u8} rw,
 
   include if exists <local/btrfs>
 }

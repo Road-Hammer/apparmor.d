@@ -10,6 +10,7 @@ include <tunables/global>
 @{exec_path} = @{lib}/apt/methods/mirror{,+*}
 profile apt-methods-mirror @{exec_path} {
   include <abstractions/base>
+  include <abstractions/apt>
   include <abstractions/consoles>
   include <abstractions/nameservice-strict>
 
@@ -44,7 +45,7 @@ profile apt-methods-mirror @{exec_path} {
   # For package building
   @{user_build_dirs}/** rwkl -> @{user_build_dirs}/**,
 
-  owner /dev/tty@{int} rw,
+  owner /dev/tty@{u8} rw,
 
   include if exists <local/apt-methods-mirror>
 }

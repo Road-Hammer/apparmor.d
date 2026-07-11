@@ -7,9 +7,13 @@ abi <abi/4.0>,
 include <tunables/global>
 
 @{exec_path} = @{lib}/{,kf6/}kauth/{,libexec/}discretegpuhelper
-profile kauth-discretegpuhelper @{exec_path} {
+profile kauth-discretegpuhelper @{exec_path} flags=(attach_disconnected) {
   include <abstractions/base>
+  include <abstractions/bus-system>
+  include <abstractions/bus/system/org.freedesktop.PolicyKit1>
   include <abstractions/nameservice-strict>
+
+  #aa:dbus own bus=system name=org.kde.powerdevil.discretegpuhelper
 
   @{exec_path} mr,
 

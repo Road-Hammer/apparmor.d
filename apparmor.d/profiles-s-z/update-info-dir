@@ -11,12 +11,23 @@ profile update-info-dir @{exec_path} {
   include <abstractions/base>
   include <abstractions/consoles>
 
+  capability dac_read_search,
+
   @{exec_path} mr,
 
   @{sh_path} r,
-  @{bin}/install-info  Px,
+  @{bin}/cp            ix,
   @{bin}/find          ix,
+  @{bin}/install-info  Px,
   @{bin}/rm            ix,
+
+  /usr/share/info/ r,
+  /usr/share/info/dir rw,
+  /usr/share/info/dir.old w,
+
+  /etc/environment r,
+
+  / r,
 
   include if exists <local/update-info-dir>
 }

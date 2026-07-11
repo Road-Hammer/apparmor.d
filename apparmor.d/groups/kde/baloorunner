@@ -11,9 +11,12 @@ include <tunables/global>
 profile baloorunner @{exec_path} {
   include <abstractions/base>
   include <abstractions/deny-sensitive-home>
+  include <abstractions/fontconfig-cache-write>
   include <abstractions/graphics>
   include <abstractions/kde-strict>
   include <abstractions/nameservice-strict>
+
+  #aa:dbus own bus=session name=org.kde.runners.baloo
 
   @{exec_path} mr,
 
@@ -28,8 +31,8 @@ profile baloorunner @{exec_path} {
 
   /tmp/ r,
 
-  @{run}/udev/data/+*:* r,
-  @{run}/udev/data/c@{int}:@{int} r,
+  @{run}/udev/data/+*:* r,                # Identifies all subsystems
+  @{run}/udev/data/c@{int}:@{int} r,      # Identifies all character devices
 
   @{sys}/bus/ r,
   @{sys}/bus/*/devices/ r,

@@ -1,25 +1,29 @@
 % aa-log(8)
 % aa-log was written by Alexandre Pujol (alexandre@pujol.io)
-% September 2024
+% December 2025
 
 # NAME
 
-aa-log — Review AppArmor generated messages in a colorful way.
+aa-log - Review AppArmor generated messages in a colorful way.
 
 # SYNOPSIS
 
-**aa-log** [*options…*] [*profile*]
+**aa-log** [*options...*] [*profile*]
 
 # DESCRIPTION
 
-Review AppArmor generated messages in a colourful way. Support logs from *auditd*, *systemd*, *syslog* as well as *dbus session* events.
+Review AppArmor generated messages in a colorful way. Support logs from *auditd*, *systemd*, *syslog* as well as *dbus session* events.
 
 It can be given an optional profile name to filter the output with.
 
-It can be used to generate AppArmor rules from the logs and it therefore an alternative to `aa-logprof(8)`. The generated rules should be manually reviewed and inserted into the profile.
+It can be used to generate AppArmor rules from the logs and it is therefore an alternative to `aa-logprof(8)`. The generated rules should be manually reviewed and inserted into the profile.
 
 Default logs are read from `/var/log/audit/audit.log`. Other files in `/var/log/audit/` can easily be checked: **aa-log -f 1** parses `audit.log.1`
 
+Use `aa-log -f -` to read from standard input.
+
+Logs written with `aa-log` can be read again with `aa-log -l`.
+  
 # OPTIONS
 
 **aa-log** [*options…*] [*profile*]
@@ -36,6 +40,10 @@ Default logs are read from `/var/log/audit/audit.log`. Other files in `/var/log/
 
 : Parse systemd logs from journalctl. Provides all AppArmor logs since the last boot.
 
+`--namespace`, `-n`
+
+: Filter the log to the specified AppArmor namespace.
+
 `--rules`, `-r`
 
 : Convert the log into AppArmor rules.
@@ -43,6 +51,18 @@ Default logs are read from `/var/log/audit/audit.log`. Other files in `/var/log/
 `--raw`, `-R`
 
 : Print the raw log without any formatting. Useful for reporting logs.
+
+`--since`, `-S`
+
+: Show entries not older than the specified date. It currently only supports log from journalctl (with `--systemd`)
+
+`--boot`, `-b`
+
+: Show entries from the specified boot ID.
+
+`--load`, `-l`
+
+: Load logs from the default `aa-log` output.
 
 `--help`, `-h`
 

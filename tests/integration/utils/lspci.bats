@@ -7,6 +7,7 @@ load ../common
 
 @test "lspci: Show a brief list of devices" {
     lspci
+    sudo lspci
 }
 
 @test "lspci: Display additional info" {
@@ -19,6 +20,10 @@ load ../common
 
 @test "lspci: Show a specific device" {
     lspci -s 00:00.0
+}
+
+@test "lspci: Query the PCI ID database for unknown ID's via DNS" {
+    sudo lspci -q
 }
 
 @test "lspci: Dump info in a readable form" {

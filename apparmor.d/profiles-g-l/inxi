@@ -13,6 +13,8 @@ profile inxi @{exec_path} {
   include <abstractions/nameservice-strict>
   include <abstractions/perl>
 
+  capability dac_read_search,
+
   network inet dgram,
   network inet6 dgram,
   network inet stream,
@@ -32,6 +34,7 @@ profile inxi @{exec_path} {
   @{lib}/llvm-[0-9]*/bin/clang      rix,
   @{bin}/{,@{multiarch}-}gcc-[0-9]* rix,
 
+  @{bin}/ip              rCx -> ip, #aa:lint ignore=sbin
   @{sbin}/ip             rCx -> ip,
   @{bin}/kmod            rCx -> kmod,
   @{bin}/systemctl       rCx -> systemctl,
@@ -115,6 +118,7 @@ profile inxi @{exec_path} {
 
     network netlink raw,
 
+    @{bin}/ip mr, #aa:lint ignore=sbin
     @{sbin}/ip mr,
 
     @{sys}/devices/@{pci}/net/*/{duplex,address,speed,operstate} r,

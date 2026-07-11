@@ -10,7 +10,6 @@ include <tunables/global>
 profile plasma-browser-integration-host @{exec_path} {
   include <abstractions/base>
   include <abstractions/bus-session>
-  include <abstractions/bus-system>
   include <abstractions/graphics>
   include <abstractions/kde-strict>
   include <abstractions/nameservice-strict>
@@ -21,21 +20,18 @@ profile plasma-browser-integration-host @{exec_path} {
 
   @{exec_path} mr,
 
-  /etc/xdg/menus/applications-merged/ r,
-
   /usr/share/kservices{5,6}/{,**} r,
 
-  /etc/xdg/menus/ r,
   /etc/xdg/taskmanagerrulesrc r,
-
-  owner @{user_config_dirs}/menus/ r,
-  owner @{user_config_dirs}/menus/applications-merged/ r,
 
   owner @{user_share_dirs}/kservices{5,6}/ r,
   owner @{user_share_dirs}/kservices{5,6}/ServiceMenus/ r,
 
   owner @{PROC}/@{pid}/cmdline r,
   owner @{PROC}/@{pid}/stat r,
+
+  owner /tmp/#@{int} rw,
+  owner @{tmp}/plasma-browser-integration_artwork_@{rand6}.jpg rwl -> /tmp/#@{int},
 
   include if exists <local/plasma-browser-integration-host>
 }

@@ -6,7 +6,7 @@ abi <abi/4.0>,
 
 include <tunables/global>
 
-@{lib_dirs} = @{lib}/ /snap/{snapd,core}/@{int}@{lib}
+@{lib_dirs} = @{lib}/ /snap/{snapd,core}/{,x}@{int}@{lib}
 
 @{exec_path} = @{lib_dirs}/snapd/snap-update-ns
 profile snap-update-ns @{exec_path} {
@@ -18,33 +18,36 @@ profile snap-update-ns @{exec_path} {
 
   network netlink raw,
 
-  mount -> /boot/,
+  mount -> @{efi}/,
   mount -> /snap/**,
   mount -> /tmp/.snap/**,
   mount -> /usr/**,
+  mount -> /var/cache/fontconfig/,
   mount -> /var/lib/dhcp/,
 
-  umount @{lib}/@{multiarch}/webkit2gtk-@{version}/,
+  umount @{lib}/**/,
   umount /snap/**,
   umount /tmp/.snap/**,
-  umount /usr/share/xml/iso-codes/,
+  umount /usr/share/{,**/},
+  umount /var/cache/fontconfig/,
   umount /var/lib/dhcp/,
 
   @{exec_path} mr,
   @{lib_dirs}/**.so* mr,
 
-  @{lib}/@{multiarch}/webkit2gtk-@{version}/ w,
-  /usr/share/xml/iso-codes/ w,
+  @{lib}/**/ w,
 
   /var/lib/snapd/mount/{,*} r,
 
   / r,
   /tmp/ r,
+  @{lib}/ r,
   /usr/ r,
   /usr/local/ r,
   /usr/local/share/ r,
-  /usr/local/share/doc/ rw,
-  /usr/local/share/fonts/ rw,
+  /usr/local/share/*/ rw,
+  /usr/share/ r,
+  /usr/share/**/ rw,
 
   owner /snap/{,**} rw,
 
@@ -61,9 +64,12 @@ profile snap-update-ns @{exec_path} {
 
   @{sys}/fs/cgroup/{,**/} r,
   @{sys}/fs/cgroup/system.slice/snap.*.service/cgroup.freeze rw,
+  @{sys}/fs/cgroup/system.slice/snapd.service/cpu.max r,
+  @{sys}/fs/cgroup/user.slice/user-@{uid}.slice/user@@{uid}.service/app.slice/snap*.scope/cgroup.freeze rw,
   @{sys}/fs/cgroup/user.slice/user-@{uid}.slice/user@@{uid}.service/app.slice/snap*.service/cgroup.freeze rw,
 
   @{PROC}/@{pids}/cgroup r,
+  @{PROC}/@{pids}/mountinfo r,
   @{PROC}/cmdline r,
   @{PROC}/version r,
 

@@ -7,7 +7,7 @@ abi <abi/4.0>,
 include <tunables/global>
 
 @{exec_path} = @{bin}/kgx
-profile kgx @{exec_path} {
+profile kgx @{exec_path} flags=(attach_disconnected) {
   include <abstractions/base>
   include <abstractions/consoles>
   include <abstractions/dconf-write>
@@ -39,6 +39,7 @@ profile kgx @{exec_path} {
         @{PROC}/ r,
         @{PROC}/@{pids}/cmdline r,
         @{PROC}/@{pids}/stat r,
+        @{PROC}/@{pids}/status r,
         @{PROC}/1/cgroup r,
   owner @{PROC}/@{pid}/cgroup r,
   owner @{PROC}/@{pid}/task/@{tid}/comm rw,

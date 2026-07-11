@@ -11,13 +11,10 @@ include <tunables/global>
 profile xarchiver @{exec_path} {
   include <abstractions/base>
   include <abstractions/dconf-write>
-  include <abstractions/gtk>
-  include <abstractions/fonts>
-  include <abstractions/fontconfig-cache-read>
-  include <abstractions/freedesktop.org>
+  include <abstractions/desktop>
   include <abstractions/nameservice-strict>
-  include <abstractions/user-download-strict>
   include <abstractions/thumbnails-cache-read>
+  include <abstractions/user-download-strict>
 
   @{exec_path} mrix,
 
@@ -28,18 +25,7 @@ profile xarchiver @{exec_path} {
   @{bin}/cp            rix,
 
   # Archivers
-  @{bin}/7z            rix,
-  @{lib}/p7zip/7z      rix,
-  @{bin}/unrar-nonfree rix,
-  @{bin}/zip           rix,
-  @{bin}/unzip         rix,
-  @{bin}/tar           rix,
-  @{bin}/xz            rix,
-  @{bin}/bzip2         rix,
-  @{bin}/cpio          rix,
-  @{bin}/gzip          rix,
-  @{bin}/zstd          rix,
-  # For deb packages
+  @{archive_path}      rix,
   @{bin}/{,@{multiarch}-}ar rix,
 
   @{open_path}         rPx -> child-open,
@@ -51,20 +37,17 @@ profile xarchiver @{exec_path} {
 
   owner @{HOME}/.bz2 rw,
 
-        / r,
-        /home/ r,
-  #owner @{HOME}/ r,
-  #owner @{HOME}/** rw,
-        @{MOUNTS}/ r,
-        @{MOUNTS}/** rw,
-        /tmp/ r,
+  #aa:lint ignore=too-wide
+  # Full access to user's data
+  @{MOUNTS}/** rw,
+  owner @{HOME}/** rw,
   owner @{tmp}/** rw,
 
         @{PROC}/@{pid}/mountinfo r,
         @{PROC}/@{pid}/mounts r,
   owner @{PROC}/@{pid}/fd/ r,
 
-  owner /dev/tty@{int} rw,
+  owner /dev/tty@{u8} rw,
 
   include if exists <local/xarchiver>
 }

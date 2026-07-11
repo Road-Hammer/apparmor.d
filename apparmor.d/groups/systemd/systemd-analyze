@@ -8,11 +8,12 @@ abi <abi/4.0>,
 include <tunables/global>
 
 @{exec_path} = @{bin}/systemd-analyze
-profile systemd-analyze @{exec_path} {
+profile systemd-analyze @{exec_path} flags=(attach_disconnected) {
   include <abstractions/base>
   include <abstractions/bus-system>
-  include <abstractions/consoles>
+  include <abstractions/bus/system/org.freedesktop.hostname1>
   include <abstractions/common/systemd>
+  include <abstractions/consoles>
 
   capability sys_resource,
   capability net_admin,
@@ -22,6 +23,7 @@ profile systemd-analyze @{exec_path} {
 
   signal (send) peer=child-pager,
 
+  unix bind type=stream addr=@@{udbus}/bus/systemd-analyze/,
   unix bind type=stream addr=@@{udbus}/bus/systemd-analyze/system,
 
   #aa:dbus talk bus=system name=org.freedesktop.systemd1 label="@{p_systemd}"
@@ -42,12 +44,15 @@ profile systemd-analyze @{exec_path} {
 
   owner @{tmp}/systemd-temporary-*/ rw,
 
+  @{att}@{run}/systemd/private rw,
+
   @{run}/systemd/generator/ r,
   @{run}/systemd/private rw,
   @{run}/systemd/system/ r,
   @{run}/systemd/transient/ r,
   @{run}/systemd/userdb/io.systemd.DynamicUser w,
-  @{run}/udev/data/* r,
+  @{run}/udev/data/+*:* r,                # Identifies all subsystems
+  @{run}/udev/data/c@{int}:@{int} r,      # Identifies all character devices
   @{run}/udev/tags/systemd/ r,
 
   @{sys}/devices/**/uevent r,

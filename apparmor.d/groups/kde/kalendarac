@@ -12,6 +12,7 @@ profile kalendarac @{exec_path} {
   include <abstractions/audio-server>
   include <abstractions/graphics>
   include <abstractions/kde-strict>
+  include <abstractions/ibus-strict>
   include <abstractions/nameservice-strict>
 
   @{exec_path} mr,
@@ -23,7 +24,6 @@ profile kalendarac @{exec_path} {
 
   /etc/machine-id r,
 
-  owner @{user_config_dirs}/#@{int} rw,
   owner @{user_config_dirs}/akonadi-firstrunrc r,
   owner @{user_config_dirs}/akonadi/ rw,
   owner @{user_config_dirs}/akonadi/akonadiconnectionrc r,
@@ -33,6 +33,10 @@ profile kalendarac @{exec_path} {
   owner @{user_config_dirs}/kalendaracrc.@{rand6} rwl,
   owner @{user_config_dirs}/kalendaracrc.lock rwk,
   owner @{user_config_dirs}/kmail2rc r,
+
+  owner @{user_state_dirs}/kalendaracstaterc rw,
+  owner @{user_state_dirs}/kalendaracstaterc.@{rand6} rwl,
+  owner @{user_state_dirs}/kalendaracstaterc.lock rwk,
 
   /dev/tty r,
 

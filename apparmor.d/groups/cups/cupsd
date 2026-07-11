@@ -10,9 +10,11 @@ include <tunables/global>
 profile cupsd @{exec_path} flags=(attach_disconnected) {
   include <abstractions/base>
   include <abstractions/authentication>
+  include <abstractions/avahi-observe>
   include <abstractions/bus-system>
-  include <abstractions/bus/org.freedesktop.Avahi>
-  include <abstractions/bus/org.freedesktop.ColorManager>
+  include <abstractions/bus/system/org.freedesktop.Avahi.Server>
+  include <abstractions/bus/system/org.freedesktop.Avahi.ServiceBrowser>
+  include <abstractions/bus/system/org.freedesktop.ColorManager>
   include <abstractions/nameservice-strict>
   include <abstractions/python>
 
@@ -29,7 +31,9 @@ profile cupsd @{exec_path} flags=(attach_disconnected) {
   capability setuid,
   capability wake_alarm,
 
+  network inet dgram,
   network inet stream,
+  network inet6 dgram,
   network inet6 stream,
 
   network appletalk dgram,
@@ -42,19 +46,24 @@ profile cupsd @{exec_path} flags=(attach_disconnected) {
   network rose dgram,
   network x25 seqpacket,
 
-  signal (send) set=(term) peer=cups-notifier-dbus,
+  signal send set=term peer=cups-backend-*,
+  signal send set=term peer=cups-notifier-dbus,
+
+  unix type=stream peer=(label=cups-backend-*),
+  unix type=stream peer=(label=ippfind),
 
   @{exec_path} mr,
 
   @{sh_path}                 rix,
   @{bin}/cat                 rix,
+  @{bin}/echo                 ix,
   @{bin}/chmod               rix,
   @{bin}/cp                  rix,
-  @{bin}/grep                rix,
-  @{bin}/gs                  rix,
+  @{bin}/{,e}grep            rix,
+  @{bin}/gs{,.bin}           rCx -> gs,
   @{bin}/gsc                 rix,
   @{bin}/hostname            rix,
-  @{sbin}/ippfind            rix,
+  @{bin}/ippfind             rPx,
   @{bin}/mktemp              rix,
   @{bin}/printenv            rix,
   @{python_path}             rix,
@@ -71,8 +80,9 @@ profile cupsd @{exec_path} flags=(attach_disconnected) {
   @{lib}/cups/monitor/*      rix,
   @{lib}/cups/notifier/*     rPx,
 
+  /usr/share/brother/Printers/*/cupswrapper/lpdwrapper rPUx,
+
   /usr/share/cups/{,**} r,
-  /usr/share/ghostscript/{,**} r,
   /usr/share/poppler/{,**} r,
   /usr/share/ppd/{,**} r,
 
@@ -89,7 +99,6 @@ profile cupsd @{exec_path} flags=(attach_disconnected) {
   /var/spool/cups/{,**} rw,
 
   @{run}/cups/{,**} rw,
-  @{run}/systemd/notify w,
 
   @{sys}/module/apparmor/parameters/enabled r,
 
@@ -99,6 +108,26 @@ profile cupsd @{exec_path} flags=(attach_disconnected) {
   owner @{tmp}/*_latest_print_info w,
 
   /dev/tty rw,
+
+  profile gs {
+    include <abstractions/base>
+    include <abstractions/fonts>
+
+    @{bin}/gs{,.bin} mr,
+
+    /usr/share/ghostscript/{,**} r,
+    /usr/share/color/icc/ghostscript/{,**} r,
+
+    /etc/papersize r,
+    /etc/paperspecs r,
+
+          /var/lib/ghostscript/{,**} r,
+    owner /var/spool/cups/tmp/gs_@{rand6} rw,
+
+    owner /tmp/gs_@{rand6} rw,
+
+    include if exists <local/cupsd_gs>
+  }
 
   include if exists <local/cupsd>
 }

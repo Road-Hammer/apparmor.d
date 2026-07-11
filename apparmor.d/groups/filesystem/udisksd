@@ -30,26 +30,26 @@ profile udisksd @{exec_path} flags=(attach_disconnected) {
   network netlink raw,
 
   # Allow mounting of removable devices
-  mount fstype={btrfs,ext*,vfat,exfat,iso9660,udf,ntfs3} /dev/{s,v}d[a-z]*       -> @{MOUNTS}/*/,
-  mount fstype={btrfs,ext*,vfat,exfat,iso9660,udf,ntfs3} /dev/{s,v}d[a-z]*[0-9]* -> @{MOUNTS}/*/,
-  mount fstype={btrfs,ext*,vfat,exfat,iso9660,udf,ntfs3} /dev/dm-[0-9]*          -> @{MOUNTS}/*/,
+  mount fstype={btrfs,ext*,vfat,exfat,f2fs,iso9660,udf,ntfs3,hfsplus} /dev/{s,v}d[a-z]*       -> @{MOUNTS}/*/,
+  mount fstype={btrfs,ext*,vfat,exfat,f2fs,iso9660,udf,ntfs3,hfsplus} /dev/{s,v}d[a-z]*[0-9]* -> @{MOUNTS}/*/,
+  mount fstype={btrfs,ext*,vfat,exfat,f2fs,iso9660,udf,ntfs3,hfsplus} /dev/dm-[0-9]*          -> @{MOUNTS}/*/,
 
   # Allow mounting of loop devices (ISO files)
-  mount fstype={btrfs,ext*,vfat,exfat,iso9660,udf,ntfs3} /dev/loop[0-9]*        -> @{MOUNTS}/*/,
-  mount fstype={btrfs,ext*,vfat,exfat,iso9660,udf,ntfs3} /dev/loop[0-9]*p[0-9]* -> @{MOUNTS}/*/,
+  mount fstype={btrfs,ext*,vfat,exfat,iso9660,udf,ntfs3,squashfs} /dev/loop[0-9]*        -> @{MOUNTS}/*/,
+  mount fstype={btrfs,ext*,vfat,exfat,iso9660,udf,ntfs3,squashfs} /dev/loop[0-9]*p[0-9]* -> @{MOUNTS}/*/,
 
   # Allow mounting of cdrom
   mount fstype={btrfs,ext*,vfat,exfat,iso9660,udf,ntfs3} /dev/loop[0-9]* -> @{MOUNTS}/*/,
   mount fstype={iso9660,udf,ntfs3}                       /dev/sr[0-9]*   -> @{MOUNTS}/*/,
 
   # Allow mounting od sd cards
-  mount fstype={btrfs,ext*,vfat,exfat,iso9660,udf,ntfs3} /dev/mmcblk[0-9]         -> @{MOUNTS}/*/,
-  mount fstype={btrfs,ext*,vfat,exfat,iso9660,udf,ntfs3} /dev/mmcblk[0-9]*p[0-9]* -> @{MOUNTS}/*/,
+  mount fstype={btrfs,ext*,vfat,exfat,f2fs,iso9660,udf,ntfs3} /dev/mmcblk[0-9]         -> @{MOUNTS}/*/,
+  mount fstype={btrfs,ext*,vfat,exfat,f2fs,iso9660,udf,ntfs3} /dev/mmcblk[0-9]*p[0-9]* -> @{MOUNTS}/*/,
 
   mount options=(rw move) -> @{MOUNTS}/,
   mount options=(rw move) -> @{MOUNTS}/*/,
 
-  mount fstype=vfat -> /boot/efi/,
+  mount fstype=vfat -> @{efi}/,
 
   # Allow mounting on temporary mount point
   mount -> @{run}/udisks2/temp-mount-*/,
@@ -59,14 +59,14 @@ profile udisksd @{exec_path} flags=(attach_disconnected) {
   umount @{MOUNTS}/,
   umount @{MOUNTS}/*/,
   umount @{run}/udisks2/temp-mount-*/,
-  umount /boot/efi/,
+  umount @{efi}/,
   umount /media/cdrom@{int}/,
 
   signal receive set=int peer=@{p_systemd},
 
   #aa:dbus own bus=system name=org.freedesktop.UDisks2
-  #aa:dbus talk bus=system name=org.freedesktop.login1 label=systemd-logind
-  #aa:dbus talk bus=system name=org.freedesktop.PolicyKit1 label=polkitd
+  #aa:dbus talk bus=system name=org.freedesktop.login1 label="@{p_systemd_logind}"
+  #aa:dbus talk bus=system name=org.freedesktop.PolicyKit1 label="@{p_polkitd}"
 
   @{exec_path} mr,
 
@@ -80,7 +80,7 @@ profile udisksd @{exec_path} flags=(attach_disconnected) {
   @{sbin}/lvm                 rPUx,
   @{sbin}/mke2fs              rPx,
   @{sbin}/mkfs.*              rPx,
-  @{bin}/mount.exfat-fuse    rPUx,
+  @{bin}/mount.*             rPUx,
   @{bin}/ntfs-3g              rPx,
   @{bin}/ntfsfix              rPx,
   @{sbin}/sfdisk              rPx,
@@ -89,21 +89,26 @@ profile udisksd @{exec_path} flags=(attach_disconnected) {
   @{bin}/systemd-escape       rPx,
   @{bin}/xfs_*               rPUx,
 
+  /usr/share/gvfs/remote-volume-monitors/{,**} r,
+
+  @{etc_ro}/udisks2/{,**} r,
   /etc/crypttab r,
   /etc/fstab r,
   /etc/libblockdev/{,**} r,
   /etc/nvme/* r,
-  /etc/udisks2/{,**} r,
 
+  /var/lib/udisks2/ w,
   /var/lib/udisks2/{,**} r,
   /var/lib/udisks2/mounted-fs{,*} rw,
+
+  / r,
 
   # Be able to create/delete dirs for removable media
   @{MOUNTDIRS}/ rw,
   @{MOUNTS}/ rw,
   @{MOUNTS}/*/ rw,
 
-  @{att}/@{run}/systemd/inhibit/@{int}.ref rw,
+  @{att}@{run}/systemd/inhibit/@{int}.ref rw,
 
   @{run}/ r,
   @{run}/mount/utab{,.*} rwk,
@@ -112,15 +117,16 @@ profile udisksd @{exec_path} flags=(attach_disconnected) {
   @{run}/cryptsetup/ r,
   @{run}/cryptsetup/L* rwk,
 
-  @{run}/udev/data/+acpi:* r,             # for acpi
+  @{run}/udev/data/+acpi:* r,             # Exposes ACPI objects (power buttons, batteries, thermal)
   @{run}/udev/data/+pci:* r,              # Identifies all PCI devices (CPU, GPU, Network, Disks, USB, etc.)
-  @{run}/udev/data/+platform:* r,
-  @{run}/udev/data/+scsi:* r,
-  @{run}/udev/data/+vmbus:* r,
+  @{run}/udev/data/+platform:* r,         # Identifies onboard devices (laptop/board model, power controllers, thermal sensors)
+  @{run}/udev/data/+scsi:*      r,        # For SCSI devices. Block-storage for SATA, SAS, USB, iSCSI
+  @{run}/udev/data/+vmbus:* r,            # For Hyper-V devices, (network adapters, storage controllers, and other virtual devices)
   @{run}/udev/data/c@{dynamic}:@{int} r,  # For dynamic assignment range 234 to 254, 384 to 511
 
   @{sys}/bus/ r,
   @{sys}/bus/pci/slots/ r,
+  @{sys}/bus/pci/slots/@{int}-@{int}/address r,
   @{sys}/bus/pci/slots/@{int}/address r,
   @{sys}/bus/scsi/devices/ r,
   @{sys}/class/ r,
@@ -136,6 +142,9 @@ profile udisksd @{exec_path} flags=(attach_disconnected) {
   @{sys}/devices/virtual/block/loop@{int}/uevent rw,
   @{sys}/devices/virtual/dmi/id/product_uuid r,
   @{sys}/devices/virtual/nvme-subsystem/{,**} r,
+  @{sys}/firmware/dmi/entries/ r,
+  @{sys}/firmware/dmi/entries/*/raw r,
+  @{sys}/firmware/dmi/entries/*/type r,
   @{sys}/fs/ r,
 
         @{PROC}/cmdline r,

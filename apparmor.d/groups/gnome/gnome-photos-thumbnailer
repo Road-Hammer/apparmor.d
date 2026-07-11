@@ -9,18 +9,17 @@ include <tunables/global>
 @{exec_path} = @{lib}/gnome-photos-thumbnailer
 profile gnome-photos-thumbnailer @{exec_path} {
   include <abstractions/base>
+  include <abstractions/mime>
   include <abstractions/user-download-strict>
 
   @{exec_path} mr,
 
-  /usr/share/mime/mime.cache r,
-
   owner @{user_pictures_dirs}/{,**} r,
 
   owner @{user_cache_dirs}/babl/{,**} r,
-  owner @{user_cache_dirs}/gegl-*/{,**} r,
+  owner @{user_cache_dirs}/gegl-@{version}/{,**} r,
   owner @{user_cache_dirs}/gnome-photos/thumbnails/{,**} rw,
-  owner @{user_share_dirs}/gegl-*/{,**} r,
+  owner @{user_share_dirs}/gegl-@{version}/{,**} r,
 
   owner /dev/shm/DzlCounters-@{int} rw,
 

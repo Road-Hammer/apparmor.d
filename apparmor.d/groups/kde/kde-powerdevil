@@ -11,20 +11,38 @@ include <tunables/global>
 profile kde-powerdevil @{exec_path} flags=(attach_disconnected mediate_deleted) {
   include <abstractions/base>
   include <abstractions/audio-client>
+  include <abstractions/bus-session>
+  include <abstractions/bus/system/org.freedesktop.PolicyKit1>
   include <abstractions/fontconfig-cache-read>
   include <abstractions/graphics>
+  include <abstractions/ibus-strict>
   include <abstractions/kde-strict>
   include <abstractions/nameservice-strict>
+  include <abstractions/network-manager-observe>
+  include <abstractions/upower-observe>
 
   capability wake_alarm,
 
-  network netlink raw,
+  #aa:dbus own bus=system name=org.freedesktop.Policy.Power
+  #aa:dbus own bus=system name=org.kde.kf[56]auth path=/
+
+  #aa:dbus own bus=session name=local.org_kde_powerdevil
+  #aa:dbus own bus=session name=org.freedesktop.PowerManagement
+  #aa:dbus own bus=session name=org.kde.org_kde_powerdevil
+  #aa:dbus own bus=session name=org.kde.ScreenBrightness
+  #aa:dbus own bus=session name=org.kde.Solid.PowerManagement
+
+  #aa:dbus talk bus=session name=org.kde.ActivityManager path=/ActivityManager{,/**} label=kactivitymanagerd
+  #aa:dbus talk bus=session name=org.kde.KGlobalAccel path=/kglobalaccel label=kglobalacceld
+  #aa:dbus talk bus=session name=org.kde.KWin path=/{,**} label="kwin_{wayland,x11}"
+  #aa:dbus talk bus=system name=org.freedesktop.login1 label="@{p_systemd_logind}"
+  #aa:dbus talk bus=system name=org.kde.powerdevil.discretegpuhelper label=kauth-discretegpuhelper
 
   @{exec_path} mrix,
 
   @{sh_path}          rix,
   @{bin}/find         rix,
-  @{bin}/grep         rix,
+  @{bin}/{,e}grep     rix,
   @{bin}/kcminit      rPx,
   @{bin}/sed          rix,
   @{bin}/uname        rPx,
@@ -34,19 +52,19 @@ profile kde-powerdevil @{exec_path} flags=(attach_disconnected mediate_deleted) 
   /etc/fstab r,
   /etc/machine-id r,
 
+  / r,
   owner @{HOME}/ r,
 
-  owner @{user_cache_dirs}/ddcutil/* r,
+  owner @{user_cache_dirs}/ddcutil/* rw,
   owner @{user_cache_dirs}/kcrash-metadata/{,*} rw,
 
-  owner @{user_config_dirs}/#@{int} rw,
   owner @{user_config_dirs}/ksmserverrc r,
   owner @{user_config_dirs}/powerdevilrc.lock rwk,
   owner @{user_config_dirs}/powerdevilrc{,.@{rand6}} rwl -> @{user_config_dirs}/#@{int},
   owner @{user_config_dirs}/powermanagementprofilesrc.lock rwk,
   owner @{user_config_dirs}/powermanagementprofilesrc{,.@{rand6}} rwl -> @{user_config_dirs}/#@{int},
 
-  @{att}/@{run}/systemd/inhibit/@{int}.ref rw,
+  @{att}@{run}/systemd/inhibit/@{int}.ref rw,
 
         @{run}/mount/utab r,
   owner @{run}/user/@{uid}kcrash_@{int} rw,
@@ -73,6 +91,7 @@ profile kde-powerdevil @{exec_path} flags=(attach_disconnected mediate_deleted) 
   @{sys}/devices/@{pci}/i2c-*/{,**/}name r,
   @{sys}/devices/@{pci}/i2c-*/**/dev r,
   @{sys}/devices/**/ r,
+  @{sys}/devices/**/uevent r,
   @{sys}/devices/i2c-*/name r,
   @{sys}/devices/platform/**/i2c-*/**/name r,
   @{sys}/devices/platform/*/i2c-*/name r,

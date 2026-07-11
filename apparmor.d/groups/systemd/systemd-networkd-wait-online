@@ -8,7 +8,7 @@ abi <abi/4.0>,
 include <tunables/global>
 
 @{exec_path} = @{lib}/systemd/systemd-networkd-wait-online
-profile systemd-networkd-wait-online @{exec_path} flags=(complain) {
+profile systemd-networkd-wait-online @{exec_path} flags=(attach_disconnected) {
   include <abstractions/base>
   include <abstractions/common/systemd>
 
@@ -16,9 +16,12 @@ profile systemd-networkd-wait-online @{exec_path} flags=(complain) {
 
   network netlink raw,
 
+  ptrace read peer=@{p_systemd},
+
   @{exec_path} mr,
 
   @{run}/systemd/netif/links/@{int} r,
+  @{run}/systemd/resolve/io.systemd.Resolve.Monitor rw,
 
   include if exists <local/systemd-networkd-wait-online>
 }

@@ -7,12 +7,9 @@ abi <abi/4.0>,
 include <tunables/global>
 
 @{exec_path} = @{lib}/evolution-data-server/{,evolution-data-server/}evolution-alarm-notify
-profile evolution-alarm-notify @{exec_path} {
+profile evolution-alarm-notify @{exec_path} flags=(attach_disconnected)  {
   include <abstractions/base>
-  include <abstractions/bus-accessibility>
-  include <abstractions/bus-session>
-  include <abstractions/bus/org.a11y>
-  include <abstractions/bus/org.gtk.vfs.MountTracker>
+  include <abstractions/audio-client>
   include <abstractions/dconf-write>
   include <abstractions/fontconfig-cache-read>
   include <abstractions/gnome-strict>
@@ -23,19 +20,19 @@ profile evolution-alarm-notify @{exec_path} {
 
   #aa:dbus own bus=session name=org.gnome.Evolution-alarm-notify
 
-  dbus (send, receive) bus=session path=/org/gnome/evolution/dataserver/**
-       interface=org.gnome.evolution.dataserver.Calendar*
-       peer=(name=:*, label=evolution-*),
-
-  dbus (send, receive) bus=session path=/org/gnome/evolution/dataserver/**
-       interface=org.freedesktop.DBus.{ObjectManager,Properties}
-       peer=(name=:*, label=evolution-*),
+  #aa:dbus talk bus=session name=org.gnome.evolution.dataserver.{Source,Sources@{int}} path=/org/gnome/evolution/dataserver/SourceManager{,/**} label=evolution-source-registry
+  #aa:dbus talk bus=session name=org.gnome.evolution.dataserver.Calendar{,View,Factory} path=/org/gnome/evolution/dataserver/Subprocess{,**} label=evolution-calendar-factory
+  #aa:dbus talk bus=session name=org.gnome.evolution.dataserver.Calendar{,View,Factory} label=evolution-calendar-factory
 
   @{exec_path} mr,
 
   /usr/share/evolution-data-server/{,**} r,
 
   /etc/timezone r,
+
+  owner @{user_share_dirs}/evolution/datetime-formats.ini r,
+
+  @{PROC}/@{pid}/cgroup r,
 
   include if exists <local/evolution-alarm-notify>
 }

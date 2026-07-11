@@ -11,18 +11,24 @@ include <tunables/global>
 profile pinentry-gtk @{exec_path} {
   include <abstractions/base>
   include <abstractions/consoles>
-  include <abstractions/gtk>
-  include <abstractions/fonts>
   include <abstractions/fontconfig-cache-read>
-  include <abstractions/freedesktop.org>
+  include <abstractions/desktop>
+
+  dbus receive bus=session path=/org/gnome/keyring/Prompt/p@{int}
+       interface=org.gnome.keyring.internal.Prompter.Callback
+       member={PromptReady,PromptDone}
+       peer=(name=@{busname}),
+
+  dbus send bus=session path=/org/gnome/keyring/Prompter
+       interface=org.gnome.keyring.internal.Prompter
+       member={BeginPrompting,PerformPrompt,StopPrompting}
+       peer=(name=org.gnome.keyring.SystemPrompter),
 
   @{exec_path} mr,
 
-  /usr/share/gtk-@{int}.@{int}/{,**} r,
+  @{PROC}/@{pid}/cmdline r,
 
-  owner @{run}/user/@{uid}/.mutter-Xwaylandauth.@{rand6} r,
-
-  owner /dev/tty@{int} r,
+  owner /dev/tty@{u8} r,
 
   include if exists <local/pinentry-gtk>
 }

@@ -6,7 +6,7 @@ abi <abi/4.0>,
 
 include <tunables/global>
 
-@{exec_path} = @{sbin}/modprobed-db
+@{exec_path} = @{bin}/modprobed-db
 profile modprobed-db @{exec_path} {
   include <abstractions/base>
   include <abstractions/nameservice-strict>
@@ -17,9 +17,9 @@ profile modprobed-db @{exec_path} {
   @{bin}/cat           rix,
   @{bin}/cp            rix,
   @{bin}/cut           rix,
-  @{bin}/gawk          rix,
+  @{bin}/{m,g,}awk     rix,
   @{bin}/getent        rix,
-  @{bin}/grep          rix,
+  @{bin}/{,e}grep      rix,
   @{bin}/logname       rix,
   @{bin}/md5sum        rix,
   @{bin}/rm            rix,

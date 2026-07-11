@@ -7,18 +7,22 @@ abi <abi/4.0>,
 include <tunables/global>
 
 @{exec_path} = @{bin}/thunar-volman
-profile thunar-volman @{exec_path} {
+profile thunar-volman @{exec_path} flags=(attach_disconnected) {
   include <abstractions/base>
-  include <abstractions/bus-accessibility>
   include <abstractions/bus-session>
+  include <abstractions/disks-read>
+  include <abstractions/dconf>
   include <abstractions/nameservice-strict>
   include <abstractions/xfce>
+  include <abstractions/devices-usb-read>
 
   network netlink raw,
 
   @{exec_path} mr,
 
   /etc/fstab r,
+
+  / r,
 
   @{sys}/devices/virtual/input/input@{int}/{,**/}uevent r,
 

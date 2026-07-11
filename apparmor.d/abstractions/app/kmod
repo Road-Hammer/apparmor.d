@@ -7,13 +7,7 @@
 
   include <abstractions/consoles>
 
-  @{sbin}/depmod    mr,
-  @{sbin}/insmod    mr,
   @{bin}/kmod       mr,
-  @{sbin}/lsmod     mr,
-  @{sbin}/modinfo   mr,
-  @{sbin}/modprobe  mr,
-  @{sbin}/rmmod     mr,
 
   @{lib}/modprobe.d/ r,
   @{lib}/modprobe.d/*.conf r,
@@ -22,6 +16,9 @@
   /etc/depmod.d/*.conf r,
   /etc/modprobe.d/ r,
   /etc/modprobe.d/*.conf r,
+
+  @{run}/modprobe.d/ r,
+  @{run}/modprobe.d/*.conf r,
 
   @{PROC}/cmdline r,
   @{PROC}/modules r,

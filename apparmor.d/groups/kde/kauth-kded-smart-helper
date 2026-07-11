@@ -7,18 +7,22 @@ abi <abi/4.0>,
 include <tunables/global>
 
 @{exec_path} = @{lib}/{,kf6/}kauth/{,libexec/}kded-smart-helper
-profile kauth-kded-smart-helper @{exec_path} {
+profile kauth-kded-smart-helper @{exec_path} flags=(attach_disconnected) {
   include <abstractions/base>
   include <abstractions/bus-system>
-  include <abstractions/bus/org.freedesktop.PolicyKit1>
+  include <abstractions/bus/system/org.freedesktop.PolicyKit1>
   include <abstractions/nameservice-strict>
 
   #aa:dbus own bus=system name=org.kde.kded.smart
 
+  dbus receive bus=system path=/
+       interface=org.kde.kf[56]auth
+       member=performAction
+       peer=(name=@{busname}, label=kded),
   dbus send bus=system path=/
-       interface=org.kde.kf5auth
+       interface=org.kde.kf[56]auth
        member=remoteSignal
-       peer=(name=org.freedesktop.DBus, label=kded5),
+       peer=(name=org.freedesktop.DBus, label=kded),
 
   @{exec_path} mr,
 

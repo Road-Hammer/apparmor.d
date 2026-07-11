@@ -7,6 +7,7 @@ abi <abi/4.0>,
 include <tunables/global>
 
 @{name} = wechat
+@{domain} = org.chromium.Chromium
 @{lib_dirs} = /opt/wechat/
 @{config_dirs} = @{user_config_dirs}/@{name}
 @{cache_dirs} = @{user_cache_dirs}/@{name}
@@ -14,10 +15,9 @@ include <tunables/global>
 @{exec_path} = @{lib_dirs}/wechat
 profile wechat @{exec_path} flags=(attach_disconnected) {
   include <abstractions/base>
-  include <abstractions/consoles>
   include <abstractions/audio-client>
   include <abstractions/common/electron>
-  include <abstractions/fontconfig-cache-read>
+  include <abstractions/consoles>
 
   network netlink raw,
   network netlink dgram,
@@ -28,14 +28,14 @@ profile wechat @{exec_path} flags=(attach_disconnected) {
 
   @{exec_path} mr,
 
-  @{sh_path}  rix,
-  @{lib_dirs}/crashpad_handler ix,
-  @{bin}/mkdir ix,
-  @{bin}/gawk  rix,
-  @{bin}/lsblk rPx,
-  @{sbin}/ip rix,
-  @{bin}/xdg-user-dir rix,
-  @{open_path} rpx -> child-open-strict,
+  @{sh_path}                                    rix,
+  @{bin}/{m,g,}awk                              rix,
+  @{bin}/ip                                     rix, #aa:lint ignore=sbin
+  @{sbin}/ip                                    rix,
+  @{bin}/lsblk                                   Px,
+  @{bin}/mkdir                                  rix,
+  @{bin}/xdg-user-dir                           rix,
+  @{open_path}                                   Px -> child-open-strict,
 
   owner @{HOME}/.xwechat/{,**} rwk,
   owner @{user_documents_dirs}/xwechat_files/{,**} rwk,

@@ -11,52 +11,68 @@ The default package configuration installs all profiles in *complain* mode. This
     - When reporting an issue, you **must** ensure the affected profiles are in complain mode.
 
 
-=== ":material-arch: Archlinux"
+**Prerequisite**
 
-    In the `PKGBUILD`, replace `make` by `make enforce`:
+As the `enforced` version of the package conflicts with the default `apparmor.d` package, you need to uninstall it first:
 
-    ```diff
-    -  make DISTRIBUTION=arch
-    +  make enforce DISTRIBUTION=arch
+=== ":material-arch: Arch Linux"
+
+    ```sh
+    sudo pacman -R apparmor.d
     ```
-
-    Then, build the package with: `make pkg`
 
 === ":material-ubuntu: Ubuntu"
 
-    In `debian/rules`, add the following lines:
-
-    ```make
-    override_dh_auto_build:
-        make enforce
+    ```sh
+    sudo apt purge apparmor.d
     ```
-
-    Then, build the package with: `make dpkg`
 
 === ":material-debian: Debian"
-    
-    In `debian/rules`, add the following lines:
 
-    ```make
-    override_dh_auto_build:
-        make enforce
+    ```sh
+    sudo apt purge apparmor.d
     ```
-
-    Then, build the package with: `make dpkg`
 
 === ":simple-suse: openSUSE"
 
-    In `dists/apparmor.d.spec`, replace `%make_build` by `%make_build enforce`
-
-    ```diff
-    -  %make_build
-    +  %make_build enforce
+    ```sh
+    sudo zypper remove apparmor.d
     ```
 
-    Then, build the package with: `make rpm`
+
+**Installation**
+
+=== ":material-arch: Arch Linux"
+
+    `apparmor.d.enforced` is available in the [Arch User Repository](https://aur.archlinux.org/packages/apparmor.d-git):
+
+    ```sh
+    yay -S apparmor.d.enforced  # or your preferred AUR install method
+    ```
+
+=== ":material-ubuntu: Ubuntu"
+
+    Using the [pkg.pujol.io](https://pkg.pujol.io) debian repository, install the package:
+    ```sh
+    sudo apt install apparmor.d.enforced
+    ```
+
+
+=== ":material-debian: Debian"
+
+    Using the [pkg.pujol.io](https://pkg.pujol.io) debian repository, install the package:
+    ```sh
+    sudo apt install apparmor.d.enforced
+    ```
+
+=== ":simple-suse: openSUSE"
+
+    openSUSE users need to add [cboltz](https://en.opensuse.org/User:Cboltz) repo on OBS:
+
+    ```sh
+    zypper install apparmor.d.enforced
+    ```
 
 === ":material-home: Partial Install"
 
-    Use the `make enforce` command to build instead of `make`
-
-[aur]: https://aur.archlinux.org/packages/apparmor.d-git
+    Use the `just enforce` command to build instead of `just complain`

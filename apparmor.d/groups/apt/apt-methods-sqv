@@ -18,14 +18,20 @@ profile apt-methods-sqv @{exec_path} {
   capability setuid,
 
   signal receive set=int peer=apt,
+  signal receive set=int peer=packagekitd,
 
   @{exec_path} mr,
 
   @{bin}/sqv ix,
 
   /usr/share/apt/default-sequoia.config r,
-  /usr/share/keyrings/debian-archive-keyring.gpg r,
-  /usr/share/keyrings/debian-archive-keyring.pgp r,
+  /usr/share/keyrings/ r,
+  /usr/share/keyrings/*.{gpg,pgp,asc} r,
+
+  /etc/apt/keyrings/ r,
+  /etc/apt/keyrings/*.{gpg,asc} r,
+  /etc/apt/trusted.gpg r,
+  /etc/apt/trusted.gpg.d/{,*.{gpg,asc}} r,
 
   owner /var/lib/apt/lists/{,**} r,
 

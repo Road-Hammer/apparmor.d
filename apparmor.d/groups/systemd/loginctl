@@ -10,7 +10,7 @@ include <tunables/global>
 profile loginctl @{exec_path} flags=(attach_disconnected) {
   include <abstractions/base>
   include <abstractions/bus-system>
-  include <abstractions/bus/org.freedesktop.systemd1>
+  include <abstractions/bus/system/org.freedesktop.systemd1>
   include <abstractions/common/systemd>
   include <abstractions/consoles>
   include <abstractions/nameservice-strict>
@@ -20,7 +20,7 @@ profile loginctl @{exec_path} flags=(attach_disconnected) {
 
   signal send set=cont peer=child-pager,
 
-  #aa:dbus talk bus=system name=org.freedesktop.login1 label=systemd-logind
+  #aa:dbus talk bus=system name=org.freedesktop.login1 label="@{p_systemd_logind}"
 
   @{exec_path} mr,
 
@@ -30,6 +30,8 @@ profile loginctl @{exec_path} flags=(attach_disconnected) {
   /etc/machine-id r,
 
   @{run}/log/journal/ r,
+
+  owner @{tmp}/xauth_@{rand6} r,
 
   /var/lib/systemd/catalog/database r,
 

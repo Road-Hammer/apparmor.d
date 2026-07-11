@@ -15,6 +15,8 @@
   capability audit_write,
   capability chown,
   capability dac_read_search,
+  capability fowner,
+  capability fsetid,
   capability kill,
   capability setgid,
   capability setuid,
@@ -25,18 +27,20 @@
   # but will fall back to a non-privileged version if it fails.
   deny capability net_admin,
 
+  network inet stream,
   network inet6 stream,
   network netlink raw,
 
-  signal receive set=exists peer=systemd-journald,
+  signal receive set=exists peer=@{p_systemd_journald},
   signal receive set=hup peer=@{p_systemd},
 
+  unix bind type=stream addr=@@{udbus}/bus/sshd-session/system,
   unix bind type=stream addr=@@{udbus}/bus/sshd/system,
 
   dbus send bus=system path=/org/freedesktop/login1
        interface=org.freedesktop.login1.Manager
        member={CreateSession,ReleaseSession,CreateSessionWithPIDFD}
-       peer=(name=org.freedesktop.login1, label=systemd-logind),
+       peer=(name=org.freedesktop.login1, label="@{p_systemd_logind}"),
 
   /etc/motd r,
   /etc/locale.conf r,
@@ -47,7 +51,7 @@
   @{PROC}/1/limits r,
 
   /dev/ptmx rw,
-  /dev/pts/@{int} k,
+  /dev/pts/@{u16} k,
 
   include if exists <abstractions/mapping/sshd.d>
 

@@ -2,7 +2,10 @@
 # Copyright (C) 2021-2024 Alexandre Pujol <alexandre@pujol.io>
 # SPDX-License-Identifier: GPL-2.0-only
 
-# TODO: Rethink this profile. Should not be called by another profile.
+# !!! warning "TODO: Rethink this profile"
+#
+#     It should not be called by another profile.
+#
 
 abi <abi/4.0>,
 
@@ -22,7 +25,7 @@ profile sysctl @{exec_path} {
 
   /etc/sysctl.conf r,
   /etc/sysctl.d/{,**} r,
-  /usr/lib/sysctl.d/{,**} r,
+  @{lib}/sysctl.d/{,**} r,
 
   /etc/ufw/sysctl.conf r, # Add support for ufw
 

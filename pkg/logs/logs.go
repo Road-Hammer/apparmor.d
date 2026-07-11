@@ -2,11 +2,14 @@
 // Copyright (C) 2021-2024 Alexandre Pujol <alexandre@pujol.io>
 // SPDX-License-Identifier: GPL-2.0-only
 
+// Package logs parses AppArmor denial events from auditd, the systemd
+// journal, dmesg, and plain kernel log files (/var/log/kern.log,
+// /var/log/messages), and exposes a unified stream consumable by aa-log.
 package logs
 
 import (
+	"bufio"
 	"io"
-	"regexp"
 	"slices"
 	"strings"
 
@@ -34,9 +37,7 @@ const (
 )
 
 var (
-	quoted                bool
-	isAppArmorLogTemplate = regexp.MustCompile(`apparmor=("DENIED"|"ALLOWED"|"AUDIT")`)
-	regCleanLogs          = util.ToRegexRepl([]string{
+	regCleanLogs = util.ToRegexRepl([]string{
 		// Clean apparmor log file
 		`.*apparmor="`, `apparmor="`,
 		`(peer_|)pid=[0-9]*\s`, " ",
@@ -49,9 +50,12 @@ var (
 		`(?m)^.*/usr/share/locale[^/]?/.*$`, ``,
 		`(?m)^.*/usr/share/zoneinfo[^/]?/.*$`, ``,
 		`(?m)^.*/dev/(null|zero|full|log).*$`, ``,
-		`(?m)^.*/dev/(u|)random.*$`, ``,
 	})
 	regResolveLogs = util.ToRegexRepl([]string{
+		// Resolve re-attached paths variable
+		`/att/ns/[^/]+/`, `@{att}/`,
+		`/att/[^/]+/`, `@{att}/`,
+
 		// Resolve user variables
 		`/home/[^/]+/.cache`, `@{user_cache_dirs}`,
 		`/home/[^/]+/.config`, `@{user_config_dirs}`,
@@ -64,7 +68,8 @@ var (
 		`/home/[^/]+/`, `@{HOME}/`,
 
 		// Resolve system variables
-		`/att/[^/@]+`, `@{att}/`,
+		`/usr/bin/gnu`, `@{bin}/`,
+		`/usr/lib/cargo/bin/coreutils/`, `@{bin}/`,
 		`/usr/lib(32|64|exec)`, `@{lib}`,
 		`/usr/lib`, `@{lib}`,
 		`/usr/sbin`, `@{sbin}`,
@@ -72,6 +77,9 @@ var (
 		`(x86_64|amd64|i386|i686)`, `@{arch}`,
 		`@{arch}-*linux-gnu[^/]?`, `@{multiarch}`,
 		`/usr/etc/`, `@{etc_ro}/`,
+		`/var/etc/`, `@{etc_rw}/`,
+		`/boot/(|efi/)`, `@{efi}/`,
+		`/efi/`, `@{efi}/`,
 		`/var/run/`, `@{run}/`,
 		`/run/`, `@{run}/`,
 		`user/[0-9]*/`, `user/@{uid}/`,
@@ -86,7 +94,6 @@ var (
 		`pci` + strings.Repeat(h, 4) + `:` + strings.Repeat(h, 2), `@{pci_bus}`,
 		`@{pci_bus}/[0-9a-f:*./]*/`, `@{pci}/`,
 		`1000`, `@{uid}`,
-		`@{att}//`, `@{att}/`,
 
 		// Some system glob
 		`:not.active.yet`, `@{busname}`, // dbus unique bus name
@@ -114,11 +121,15 @@ type AppArmorLog map[string]string
 // AppArmorLogs describes all apparmor log entries
 type AppArmorLogs []AppArmorLog
 
-func splitQuoted(r rune) bool {
-	if r == '"' {
-		quoted = !quoted
-	}
-	return !quoted && r == ' '
+// splitFields splits a string by separator while respecting quoted sections.
+func splitFields(s string, sep rune) []string {
+	var quoted bool
+	return strings.FieldsFunc(s, func(r rune) bool {
+		if r == '"' {
+			quoted = !quoted
+		}
+		return !quoted && r == sep
+	})
 }
 
 func toQuote(str string) string {
@@ -129,24 +140,18 @@ func toQuote(str string) string {
 }
 
 // New returns a new ApparmorLogs list of map from a log file
-func New(file io.Reader, profile string) AppArmorLogs {
-	logs := GetApparmorLogs(file, profile)
+func New(file io.Reader, profile string, namespace string) AppArmorLogs {
+	logs := GetApparmorLogs(file, profile, namespace)
 
 	// Parse log into ApparmorLog struct
-	aaLogs := make(AppArmorLogs, 0)
+	aaLogs := make(AppArmorLogs, 0, len(logs))
 	toClean := []string{"profile", "name", "target"}
 	for _, log := range logs {
-		quoted = false
-		tmp := strings.FieldsFunc(log, splitQuoted)
+		tmp := splitFields(log, ' ')
 
 		aa := make(AppArmorLog)
 		for _, item := range tmp {
-			kv := strings.FieldsFunc(item, func(r rune) bool {
-				if r == '"' {
-					quoted = !quoted
-				}
-				return !quoted && r == '='
-			})
+			kv := splitFields(item, '=')
 			if len(kv) >= 2 {
 				key, value := kv[0], kv[1]
 				if slices.Contains(toClean, key) {
@@ -155,9 +160,75 @@ func New(file io.Reader, profile string) AppArmorLogs {
 				aa[key] = strings.Trim(value, `"`)
 			}
 		}
+
+		if _, present := aa["family"]; present {
+			aa["class"] = "net"
+		}
 		aaLogs = append(aaLogs, aa)
 	}
+	return aaLogs
+}
 
+// Load reads an ApparmorLogs from file written with AppArmorLogs.String.
+func Load(file io.Reader, profile string, namespace string) AppArmorLogs {
+	scanner := bufio.NewScanner(file)
+	aaLogs := make(AppArmorLogs, 0)
+	for scanner.Scan() {
+		log := scanner.Text()
+		tmp := splitFields(log, ' ')
+		if len(tmp) < 3 {
+			continue
+		}
+		if profile != "" && !strings.HasPrefix(tmp[1], profile) {
+			continue
+		}
+		aa := AppArmorLog{
+			"apparmor":  tmp[0],
+			"profile":   tmp[1],
+			"operation": tmp[2],
+		}
+		tmp = slices.Delete(tmp, 0, 3)
+		isDbus := strings.Contains(aa["operation"], "dbus")
+
+		for idx, item := range tmp {
+			if strings.Contains(item, "=") {
+				break
+			}
+
+			switch idx {
+			case 0:
+				if item == "owner" {
+					aa["fsuid"], aa["ouid"] = "1000", "1000"
+					aa["FSUID"], aa["OUID"] = "user", "user"
+					aa["name"] = tmp[idx+1]
+				} else {
+					aa["name"] = item
+				}
+
+			case 1:
+				if isDbus {
+					aa["mask"] = item
+				}
+
+			case 2:
+				if item == "->" {
+					aa["target"] = tmp[idx+1]
+				}
+			}
+		}
+
+		for _, item := range tmp {
+			kv := strings.SplitN(item, "=", 2)
+			if len(kv) == 2 {
+				aa[kv[0]] = strings.Trim(kv[1], `"`)
+			}
+		}
+
+		if _, present := aa["family"]; present {
+			aa["class"] = "net"
+		}
+		aaLogs = append(aaLogs, aa)
+	}
 	return aaLogs
 }
 
@@ -173,18 +244,20 @@ func (aaLogs AppArmorLogs) String() string {
 	keys := []string{
 		"profile", "label", // Profile name
 		"operation", "name", "target",
-		"mask", "bus", "path", "interface", "member", // dbus
+		"mask", "bus", "path", "interface", "member", "method", // dbus
 		"info", "comm",
 		"laddr", "lport", "faddr", "fport", "family", "sock_type", "protocol",
 		"requested_mask", "denied_mask", "signal", "peer", "peer_label",
 	}
 	// Key to not print
-	ignore := []string{
-		"fsuid", "ouid", "FSUID", "OUID", "exe", "SAUID", "sauid", "terminal",
-		"UID", "AUID", "hostname", "class",
+	ignore := map[string]bool{
+		"fsuid": true, "ouid": true, "FSUID": true, "OUID": true,
+		"exe": true, "SAUID": true, "sauid": true, "terminal": true,
+		"UID": true, "AUID": true, "hostname": true, "class": true,
 	}
 	// Color template to use
 	template := map[string]string{
+		"namespace":      fgBlue,
 		"profile":        fgBlue,
 		"label":          fgBlue,
 		"operation":      fgYellow,
@@ -197,6 +270,7 @@ func (aaLogs AppArmorLogs) String() string {
 		"denied_mask":    "denied_mask=" + boldRed,
 		"interface":      "interface=" + fgWhite,
 		"member":         "member=" + fgGreen,
+		"method":         "method=" + fgGreen,
 	}
 	var res strings.Builder
 
@@ -204,8 +278,16 @@ func (aaLogs AppArmorLogs) String() string {
 		seen := map[string]bool{"apparmor": true}
 		res.WriteString(state[log["apparmor"]])
 		owner := aa.IsOwner(log)
+		hasNs := false
+		if ns, present := log["namespace"]; present {
+			res.WriteString(" " + fgBlue + ":" + getNameSpace(ns) + ":" + log["profile"] + reset)
+			hasNs = true
+		}
 
 		for _, key := range keys {
+			if hasNs && key == "profile" {
+				continue
+			}
 			if item, present := log[key]; present {
 				if key == "name" && owner {
 					res.WriteString(template[key] + " owner" + reset)
@@ -220,7 +302,7 @@ func (aaLogs AppArmorLogs) String() string {
 		}
 
 		for key, value := range log {
-			if slices.Contains(ignore, key) {
+			if ignore[key] {
 				continue
 			}
 			if _, present := seen[key]; !present && value != "" {
@@ -230,6 +312,17 @@ func (aaLogs AppArmorLogs) String() string {
 		res.WriteString("\n")
 	}
 	return res.String()
+}
+
+func getNameSpace(rawNamespace string) string {
+	return strings.TrimPrefix(rawNamespace, "root//")
+}
+
+func profileKey(name, namespace string) string {
+	if namespace == "" {
+		return name
+	}
+	return ":" + namespace + ":" + name
 }
 
 // ParseToProfiles convert the log data into a new AppArmorProfiles
@@ -242,13 +335,18 @@ func (aaLogs AppArmorLogs) ParseToProfiles() map[string]*aa.Profile {
 		} else {
 			name = log["profile"]
 		}
+		ns := getNameSpace(log["namespace"])
+		key := profileKey(name, ns)
 
-		if _, ok := profiles[name]; !ok {
-			profile := &aa.Profile{Header: aa.Header{Name: name}}
+		if _, ok := profiles[key]; !ok {
+			profile := &aa.Profile{Header: aa.Header{
+				Name:      name,
+				NameSpace: ns,
+			}}
 			profile.AddRule(log)
-			profiles[name] = profile
+			profiles[key] = profile
 		} else {
-			profiles[name].AddRule(log)
+			profiles[key].AddRule(log)
 		}
 	}
 	return profiles

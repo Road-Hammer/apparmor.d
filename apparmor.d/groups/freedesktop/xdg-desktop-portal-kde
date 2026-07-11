@@ -8,14 +8,15 @@ include <tunables/global>
 
 @{exec_path}  = @{lib}/xdg-desktop-portal-kde
 @{exec_path} += @{lib}/@{multiarch}/{,libexec/}xdg-desktop-portal-kde
-profile xdg-desktop-portal-kde @{exec_path} {
+profile xdg-desktop-portal-kde @{exec_path} flags=(attach_disconnected,mediate_deleted) {
   include <abstractions/base>
-  include <abstractions/bus-session>
+  include <abstractions/devices-usb-read>
   include <abstractions/graphics>
   include <abstractions/kde-globals-write>
   include <abstractions/kde-strict>
   include <abstractions/nameservice-strict>
   include <abstractions/qt5-shader-cache>
+  include <abstractions/thumbnails-cache-write>
 
   network inet dgram,
   network inet6 dgram,
@@ -25,26 +26,59 @@ profile xdg-desktop-portal-kde @{exec_path} {
 
   signal send set=term peer=kioworker,
 
+  #aa:dbus own bus=session name=org.freedesktop.impl.portal.desktop.kde
+
+  #aa:dbus talk bus=session name=org.freedesktop.impl.portal{,.*} path=/org/freedesktop/portal/desktop label=xdg-desktop-portal
+  #aa:dbus talk bus=session name=org.freedesktop.ScreenSaver label=kwin_wayland
+  #aa:dbus talk bus=session name=org.kde.KWin label=kwin_wayland
+
   @{exec_path} mr,
 
+  @{bin}/net      ix,
+  @{bin}/testparm ix,
   #aa:exec kioworker
 
+  /usr/share/pipewire/client.conf.d/{,**} r,
   /usr/share/plasma/look-and-feel/** r,
+  /usr/share/thumbnailers/{,**} r,
+
+  /etc/exports r,
+  /etc/fstab r,
+  /etc/xdg/dolphinrc r,
+
+  / r,
 
   owner @{HOME}/ r,
 
   owner @{desktop_config_dirs}/user-dirs.dirs r,
 
-  owner @{user_cache_dirs}/xdg-desktop-portal-kde/{,**} rw,
+  owner @{user_cache_dirs}/xdg-desktop-portal-kde/{,**} rwl,
 
+  owner @{user_config_dirs}/#@{int8} rw,
   owner @{user_config_dirs}/autostart/org.kde.*.desktop r,
   owner @{user_config_dirs}/breezerc r,
+  owner @{user_config_dirs}/kbookmarkrc r,
+  owner @{user_config_dirs}/kdeglobals.@{rand6} rwl,
+  owner @{user_config_dirs}/kioslaverc r,
+  owner @{user_config_dirs}/knfsshare r,
+  owner @{user_config_dirs}/kservicemenurc r,
+  owner @{user_config_dirs}/Kvantum/{,**} r,
   owner @{user_config_dirs}/xdg-desktop-portal-kderc{,.*} rwlk,
 
-  owner @{run}/user/@{uid}/xdg-desktop-portal-kde@{rand6}.*.socket rw,
+  owner @{user_share_dirs}/user-places.xbel r,
+
+  owner @{user_state_dirs}/xdg-desktop-portal-kdestaterc rw,
+  owner @{user_state_dirs}/xdg-desktop-portal-kdestaterc.@{rand6} rwlk,
+  owner @{user_state_dirs}/xdg-desktop-portal-kdestaterc.lock rwk,
+
+        @{run}/user/@{uid}/gvfs/ r,
+  owner @{run}/user/@{uid}/#@{int} rw,
+  owner @{run}/user/@{uid}/xdg-desktop-portal-kde@{rand6}.@{int}.socket rwl,
+  owner @{run}/user/@{uid}/xdg-desktop-portal-kde@{rand6}.@{int}.kioworker.socket rwl,
 
   owner @{PROC}/@{pid}/mountinfo r,
 
+  /dev/shm/ r,
   /dev/tty r,
 
   include if exists <local/xdg-desktop-portal-kde>

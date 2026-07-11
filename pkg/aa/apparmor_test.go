@@ -13,15 +13,15 @@ import (
 )
 
 var (
-	testData = paths.New("../../tests/testdata/")
-	intData  = paths.New("../../apparmor.d")
+	testData     = paths.New("../../tests/testdata/")
+	apparmorDDir = paths.New("../../apparmor.d")
 )
 
 // mustReadProfileFile read a file and return its content as a slice of string.
 // It panics if an error occurs. It removes the last comment line.
 func mustReadProfileFile(path *paths.Path) string {
 	res := strings.Split(path.MustReadFileAsString(), "\n")
-	return strings.Join(res[:len(res)-2], "\n")
+	return strings.Join(res[:len(res)-2], "\n") + "\n"
 }
 
 func TestAppArmorProfileFile_String(t *testing.T) {
@@ -36,7 +36,7 @@ func TestAppArmorProfileFile_String(t *testing.T) {
 			want: ``,
 		},
 		{
-			name: "foo",
+			name: "string.aa",
 			f: &AppArmorProfileFile{
 				Preamble: Rules{
 					&Comment{Base: Base{Comment: " Simple test profile for the AppArmorProfileFile.String() method", IsLineRule: true}},
@@ -88,7 +88,6 @@ func TestAppArmorProfileFile_String(t *testing.T) {
 							Type:      "stream",
 							Address:   "@/tmp/.ICE-unix/1995",
 							PeerLabel: "gnome-shell",
-							PeerAddr:  "none",
 						},
 						&Dbus{Access: []string{"bind"}, Bus: "session", Name: "org.gnome.*"},
 						&Dbus{
@@ -100,7 +99,7 @@ func TestAppArmorProfileFile_String(t *testing.T) {
 							PeerName:  ":1.3",
 							PeerLabel: "power-profiles-daemon",
 						},
-						&File{Path: "/opt/intel/oneapi/compiler/*/linux/lib/*.so./*", Access: []string{"r", "m"}},
+						&File{Path: "/opt/intel/oneapi/compiler/*/linux/lib/*.so./*", Access: []string{"m", "r"}},
 						&File{Path: "@{PROC}/@{pid}/task/@{tid}/comm", Access: []string{"r", "w"}},
 						&File{Path: "@{sys}/devices/@{pci}/class", Access: []string{"r"}},
 						includeLocal1,
@@ -144,8 +143,8 @@ func TestAppArmorProfileFile_Sort(t *testing.T) {
 						include1, all1, rlimit3, userns1, capability1, capability2,
 						network2, network1, mount2, mount1, remount2, umount2,
 						pivotroot1, changeprofile2, mqueue2, iouring2, signal1,
-						signal2, ptrace1, unix2, dbus2, dbus1, file1, file2,
-						link2, includeLocal1,
+						signal2, ptrace1, unix2, dbus2, dbus1, file1,
+						link2, file2, includeLocal1,
 					},
 				}},
 			},
@@ -218,26 +217,27 @@ func TestAppArmorProfileFile_Integration(t *testing.T) {
 					Header: Header{
 						Name:        "aa-status",
 						Attachments: []string{"@{exec_path}"},
+						Flags:       []string{"attach_disconnected"},
 					},
 					Rules: Rules{
 						&Include{IfExists: true, IsMagic: true, Path: "local/aa-status"},
 						&Capability{Names: []string{"dac_read_search"}},
 						&File{Path: "@{exec_path}", Access: []string{"m", "r"}},
-						&File{Path: "@{PROC}/@{pids}/attr/apparmor/current", Access: []string{"r"}},
+						&File{Path: "@{PROC}/@{pid}/attr/apparmor/current", Access: []string{"r"}},
 						&File{Path: "@{PROC}/", Access: []string{"r"}},
 						&File{Path: "@{sys}/module/apparmor/parameters/enabled", Access: []string{"r"}},
 						&File{Path: "@{sys}/kernel/security/apparmor/profiles", Access: []string{"r"}},
-						&File{Path: "@{PROC}/@{pids}/attr/current", Access: []string{"r"}},
+						&File{Path: "@{PROC}/@{pid}/attr/current", Access: []string{"r"}},
 						&Include{IsMagic: true, Path: "abstractions/consoles"},
 						&File{Owner: true, Path: "@{PROC}/@{pid}/mounts", Access: []string{"r"}},
 						&Include{IsMagic: true, Path: "abstractions/base"},
-						&File{Path: "/dev/tty@{int}", Access: []string{"r", "w"}},
+						&File{Path: "/dev/tty@{u8}", Access: []string{"r", "w"}},
 						&Capability{Names: []string{"sys_ptrace"}},
 						&Ptrace{Access: []string{"read"}},
 					},
 				}},
 			},
-			want: mustReadProfileFile(intData.Join("groups/apparmor/aa-status")),
+			want: mustReadProfileFile(apparmorDDir.Join("groups/apparmor/aa-status")),
 		},
 	}
 	for _, tt := range tests {

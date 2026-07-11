@@ -8,7 +8,7 @@ title: Installation
 
     Do **not** expect this project to work correctly on your desktop if your Desktop Environment (DE) and Display Manager (DM) are not supported. Your DE/DM might not load, and that would be a **feature**.
 
-Due to the development stage of this project, the default package configuration installs all profiles in **complain** mode. The recommended installation workflow is as-follow:
+Due to the development stage of this project, the default package configuration installs all profiles in **complain** mode. The recommended installation workflow is as follows:
 
 1. **[Configure AppArmor](#configure-apparmor)** AppArmor for *apparmor.d*.
 1. **[Install](#installation)** *apparmor.d* in the (default) complain mode.
@@ -32,102 +32,100 @@ The following desktop environments are supported:
 
 - [x] :material-gnome: Gnome (GDM)
 - [x] :simple-kde: KDE (SDDM)
-- [ ] :simple-xfce: XFCE (Lightdm) *(work in progress)*
+- [ ] :simple-xfce: XFCE (LightDM) *(work in progress)*
 
 **Build dependency**
 
 * Go >= 1.23
+* [just](https://github.com/casey/just) >= 1.40.0
 
 
 ## Configure AppArmor
 
-As there are a lot of rules (~80k lines), it is recommended to enable fast caching compression of AppArmor profiles. In `/etc/apparmor/parser.conf`, add `write-cache` and `Optimize=compress-fast`:
+As there are a lot of rules (~100k lines), it is recommended to enable fast caching compression of AppArmor profiles. [Early policy](https://gitlab.com/apparmor/apparmor/-/wikis/AppArmorInSystemd#early-policy-loads) load **must** also be enabled.
 
+In `/etc/apparmor/parser.conf` ensure you have:
+```
+write-cache
+cache-loc /etc/apparmor/earlypolicy/
+Optimize=compress-fast
+```
+
+Or run:
 ```sh
 echo 'write-cache' | sudo tee -a /etc/apparmor/parser.conf
+echo 'cache-loc /etc/apparmor/earlypolicy/' | sudo tee -a /etc/apparmor/parser.conf
 echo 'Optimize=compress-fast' | sudo tee -a /etc/apparmor/parser.conf
 ```
 
 
 ## Installation
 
-=== ":material-arch: Archlinux"
+=== ":material-arch: Arch Linux"
 
-    `apparmor.d-git` is available in the [Arch User Repository][aur]:
-
-    ```sh
-    yay -S apparmor.d-git  # or your preferred AUR install method
-    ```
-
-    Or without an AUR helper:
+    `apparmor.d` is available in the [Arch User Repository](https://aur.archlinux.org/packages/apparmor.d-git):
 
     ```sh
-    git clone https://aur.archlinux.org/apparmor.d-git.git
-    cd apparmor.d-git
-    makepkg -si
+    yay -S apparmor.d  # or your preferred AUR install method
     ```
 
 === ":material-ubuntu: Ubuntu"
 
-    Build the package from sources:
+    `apparmor.d` is available under the [pkg.pujol.io](https://pkg.pujol.io) debian repository.
+    The repository is signed with my [GPG key](https://pujol.io/keys). Configure it as follows:
 
     ```sh
-    sudo apt install apparmor-profiles build-essential config-package-dev debhelper golang-go rsync git
-    git clone https://github.com/roddhjav/apparmor.d.git
-    cd apparmor.d
-    dpkg-buildpackage -b -d --no-sign
-    sudo dpkg -i ../apparmor.d_*.deb
+    sudo apt-get install wget gnupg
+    wget -qO - https://pkg.pujol.io/debian/gpgkey \
+        | gpg --dearmor \
+        | sudo tee /usr/share/keyrings/roddhjav.gpg >/dev/null
+    cat <<-EOF | sudo tee /etc/apt/sources.list.d/roddhjav.sources
+    Types: deb
+    URIs: https://pkg.pujol.io/debian/repo
+    Suites: $(lsb_release -cs)
+    Components: main
+    Signed-By: /usr/share/keyrings/roddhjav.gpg
+    EOF
+    sudo apt-get update
     ```
 
-    !!! tip
-
-        If you have `devscripts` installed, you can use the one liner:
-
-        ```sh
-        make dpkg
-        ```
+    Install the package:
+    ```sh
+    sudo apt install apparmor.d
+    ```
 
     !!! warning
 
-        **Beware**: do not install a `.deb` made for Debian on Ubuntu as the packages are different.
-
-        If your distribution is based on Ubuntu, you may want to manually set the target distribution by exporting `DISTRIBUTION=ubuntu`.
+        Only Ubuntu `24.04`, `25.10`, and `26.04` are currently supported.
 
 === ":material-debian: Debian"
 
-    Build the package from sources:
+    `apparmor.d` is available under the [pkg.pujol.io](https://pkg.pujol.io) debian repository.
+    The repository is signed with my [GPG key](https://pujol.io/keys). Configure it as follows:
 
     ```sh
-    sudo apt install apparmor-profiles build-essential config-package-dev debhelper golang-go rsync git
-    git clone https://github.com/roddhjav/apparmor.d.git
-    cd apparmor.d
-    dpkg-buildpackage -b -d --no-sign
-    sudo dpkg -i ../apparmor.d_*.deb
+    sudo apt-get install wget gnupg
+    wget -qO - https://pkg.pujol.io/debian/gpgkey \
+        | gpg --dearmor \
+        | sudo tee /usr/share/keyrings/roddhjav.gpg >/dev/null
+    cat <<-EOF | sudo tee /etc/apt/sources.list.d/roddhjav.sources
+    Types: deb
+    URIs: https://pkg.pujol.io/debian/repo
+    Suites: $(lsb_release -cs)
+    Components: main
+    Signed-By: /usr/share/keyrings/roddhjav.gpg
+    EOF
+    sudo apt-get update
     ```
 
-    !!! tip
-
-        If you have `devscripts` installed, you can use the one liner:
-
-        ```sh
-        make dpkg
-        ```
-
-    !!! note
-
-        You may need golang from the backports repository to build:
-
-        ```sh
-        echo 'deb http://deb.debian.org/debian bookworm-backports main contrib non-free' | sudo tee -a /etc/apt/sources.list
-        sudo apt update
-        sudo apt install -t bookworm-backports golang-go
-        ```
+    Install the package:
+    ```sh
+    sudo apt install apparmor.d
+    ```
 
     !!! warning
 
-        **Beware**: do not install a `.deb` made for Ubuntu on Debian as the packages are different.
-
-        If your distribution is based on Debian, you may want to manually set the target distribution by exporting `DISTRIBUTION=debian`.
+        Only `trixie` is currently supported.
 
 === ":simple-suse: openSUSE"
 
@@ -144,15 +142,15 @@ echo 'Optimize=compress-fast' | sudo tee -a /etc/apparmor/parser.conf
     For test purposes, you can install specific profiles with the following commands. Abstractions, tunable, and most of the OS dependent post-processing is managed.
 
     ```sh
-    make
-    sudo make profile-names...
+    just complain
+    sudo just local profile-names...
     ```
 
     !!! warning
 
         Partial installation is discouraged because profile dependencies are not fetched. To prevent some AppArmor issues, the dependencies are automatically switched to unconfined (`rPx` -> `rPUx`). The installation process warns on the missing profiles so that you can easily install them if desired. (PR is welcome see [#77](https://github.com/roddhjav/apparmor.d/issues/77))
 
-        For instance, `sudo make pass` gives:
+        For instance, `sudo just local pass` gives:
         ```sh
         Warning: profile dependencies fallback to unconfined.
         @{bin}/wl-{copy,paste} rPx,
@@ -169,7 +167,7 @@ echo 'Optimize=compress-fast' | sudo tee -a /etc/apparmor/parser.conf
 
 ## Uninstallation
 
-=== ":material-arch: Archlinux"
+=== ":material-arch: Arch Linux"
 
     ```sh
     sudo pacman -R apparmor.d
@@ -192,5 +190,3 @@ echo 'Optimize=compress-fast' | sudo tee -a /etc/apparmor/parser.conf
     ```sh
     sudo zypper remove apparmor.d
     ```
-
-[aur]: https://aur.archlinux.org/packages/apparmor.d-git

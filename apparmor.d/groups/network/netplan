@@ -1,0 +1,64 @@
+# apparmor.d - Full set of apparmor profiles
+# Copyright (C) 2023-2024 Alexandre Pujol <alexandre@pujol.io>
+# SPDX-License-Identifier: GPL-2.0-only
+
+abi <abi/4.0>,
+
+include <tunables/global>
+
+@{exec_path} = /usr/share/netplan/netplan.script
+profile netplan @{exec_path} flags=(attach_disconnected) {
+  include <abstractions/base>
+  include <abstractions/bus-system>
+  include <abstractions/nameservice-strict>
+  include <abstractions/python>
+
+  #aa:dbus own bus=system name=io.netplan.Netplan
+
+  @{exec_path} mr,
+
+  @{bin}/ip                rPx, #aa:lint ignore=sbin
+  @{sbin}/ip               rPx,
+  @{bin}/networkctl        rPx,
+  @{bin}/nmcli             rPx,
+  @{bin}/ovs-vsctl        rPUx,
+  @{bin}/systemctl         rCx -> systemctl,
+  @{bin}/udevadm           rPx,
+  @{lib}/netplan/generate  rPx,
+
+  /usr/share/netplan/{,**} r,
+
+  /etc/netplan/{,*} r,
+
+  @{run}/netplan/ r,
+  @{run}/NetworkManager/system-connections/netplan-* r,
+  @{run}/systemd/network/ r,
+  @{run}/systemd/system/ r,
+  @{run}/systemd/system/systemd-networkd.service.wants/ r,
+
+  /tmp/@{word8} rw,
+  /tmp/#@{int} rw,
+  /tmp/netplan_@{word8}/{,**} rw,
+  /tmp/tmp@{word8}/{,**} rwlk,
+
+  profile systemctl {
+    include <abstractions/base>
+    include <abstractions/app/systemctl>
+
+    capability net_admin,
+    capability sys_resource,
+
+    ptrace read peer=@{p_systemd},
+
+    signal send set=(cont term) peer=systemd-tty-ask-password-agent,
+
+    @{run}/udev/control rw,
+    @{bin}/systemd-tty-ask-password-agent rPx,
+
+    include if exists <local/netplan_systemctl>
+  }
+
+  include if exists <local/netplan>
+}
+
+# vim:syntax=apparmor

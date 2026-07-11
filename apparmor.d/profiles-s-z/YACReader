@@ -14,6 +14,7 @@ profile YACReader @{exec_path} flags=(attach_disconnected,mediate_deleted) {
   include <abstractions/desktop>
   include <abstractions/graphics>
   include <abstractions/nameservice-strict>
+  include <abstractions/network-manager-observe>
   include <abstractions/qt5-settings-write>
   include <abstractions/qt5-shader-cache>
   include <abstractions/ssl_certs>
@@ -28,19 +29,24 @@ profile YACReader @{exec_path} flags=(attach_disconnected,mediate_deleted) {
 
   /usr/share/yacreader/{,**} r,
 
-  /etc/machine-id r,
-
   owner @{user_books_dirs}/{,**} r,
 
   owner @{user_share_dirs}/YACReader/ rw,
   owner @{user_share_dirs}/YACReader/* r,
+  owner @{user_share_dirs}/YACReader/plugins/** r,
   owner @{user_share_dirs}/YACReader/YACReader/ rw,
   owner @{user_share_dirs}/YACReader/YACReader/** rwlk,
+
+  owner @{tmp}/@{uuid} rw,
+
+  owner @{run}/user/@{uid}/speech-dispatcher/speechd.sock rw,
 
   owner @{PROC}/@{pid}/cmdline r,
   owner @{PROC}/@{pid}/mountinfo r,
   owner @{PROC}/@{pid}/stat r,
   owner @{PROC}/@{pid}/task/@{tid}/comm rw,
+
+  /dev/char/@{dynamic}:@{int} w,          # For dynamic assignment range 234 to 254, 384 to 511
 
   include if exists <local/YACReader>
 }

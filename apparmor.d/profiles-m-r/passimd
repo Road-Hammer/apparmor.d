@@ -9,8 +9,12 @@ include <tunables/global>
 @{exec_path} = @{lib}/passimd
 profile passimd @{exec_path} flags=(attach_disconnected) {
   include <abstractions/base>
+  include <abstractions/avahi-observe>
   include <abstractions/bus-system>
+  include <abstractions/bus/system/org.freedesktop.Avahi.EntryGroup>
+  include <abstractions/mime>
   include <abstractions/nameservice-strict>
+  include <abstractions/network-manager-observe>
 
   capability dac_read_search,
 
@@ -18,7 +22,7 @@ profile passimd @{exec_path} flags=(attach_disconnected) {
   network inet6 stream,
   network netlink raw,
 
-  #aa:dbus own bus=system name=org.freedesktop.Passim
+  #aa:dbus own bus=system name=org.freedesktop.Passim path=/
 
   @{exec_path} mr,
 

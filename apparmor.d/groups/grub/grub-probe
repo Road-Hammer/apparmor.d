@@ -7,8 +7,8 @@ abi <abi/4.0>,
 
 include <tunables/global>
 
-@{exec_path} = @{sbin}/grub-probe
-profile grub-probe @{exec_path} {
+@{exec_path} = @{sbin}/grub-probe @{sbin}/grub2-probe
+profile grub-probe @{exec_path} flags=(attach_disconnected) {
   include <abstractions/base>
   include <abstractions/consoles>
   include <abstractions/disks-read>
@@ -16,23 +16,27 @@ profile grub-probe @{exec_path} {
   capability dac_read_search,
   capability sys_admin,
 
+  mqueue (read getattr) type=posix /,
+  mqueue (read getattr) type=posix /att/grub-probe/,
+
   @{exec_path} mr,
 
   /{usr/,}{local/,}{s,}bin/zpool rPx,
-  @{bin}/lsb_release        rPx -> lsb_release,
+  @{bin}/lsb_release        rPx,
   @{sbin}/lvm               rPx,
   @{bin}/udevadm            rPx,
 
-  /usr/share/grub/* r,
+  /usr/share/grub{,2}/{,**} r,
 
   / r,
-  /boot/ r,
-  /boot/grub/ r,
-  /boot/grub/themes/{,**} r,
+  @{efi}/ r,
+  @{efi}/grub{,2}/ r,
+  @{efi}/grub{,2}/themes/{,**} r,
 
   @{PROC}/@{pids}/mountinfo r,
   @{PROC}/devices r,
 
+  /dev/* r,
   /dev/**/ r,
   /dev/mapper/control w,
 

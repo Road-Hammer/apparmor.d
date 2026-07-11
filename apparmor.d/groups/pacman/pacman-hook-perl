@@ -7,7 +7,7 @@ abi <abi/4.0>,
 include <tunables/global>
 
 @{exec_path} = /usr/share/libalpm/scripts/detect-old-perl-modules.sh
-profile pacman-hook-perl @{exec_path} {
+profile pacman-hook-perl @{exec_path} flags=(attach_disconnected) {
   include <abstractions/base>
   include <abstractions/perl>
 
@@ -20,10 +20,11 @@ profile pacman-hook-perl @{exec_path} {
   @{bin}/find    rix,
   @{bin}/pacman  rPx,
   @{bin}/sed     rix,
+  @{bin}/wc      rix,
 
         /dev/tty rw,
-        /dev/tty@{int} rw,
-  owner /dev/pts/@{int} rw,
+        /dev/tty@{u8} rw,
+  owner /dev/pts/@{u16} rw,
 
   # Inherit silencer
   deny network inet6 stream,
