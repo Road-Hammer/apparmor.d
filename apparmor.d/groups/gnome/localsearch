@@ -2,7 +2,7 @@
 # Copyright (C) 2024 Alexandre Pujol <alexandre@pujol.io>
 # SPDX-License-Identifier: GPL-2.0-only
 
-abi <abi/4.0>,
+abi <abi/5.0>,
 
 include <tunables/global>
 
@@ -41,6 +41,7 @@ profile localsearch @{exec_path} flags=(attach_disconnected) {
 
   @{lib}/localsearch-extractor-3 ix, # nnp
 
+  /usr/share/gupnp-dlna-2.0/{,**} r,
   /usr/share/localsearch3/{,**} r,
   /usr/share/osinfo/{,**} r,
 

@@ -3,7 +3,7 @@
 # Copyright (C) 2021-2024 Alexandre Pujol <alexandre@pujol.io>
 # SPDX-License-Identifier: GPL-2.0-only
 
-abi <abi/4.0>,
+abi <abi/5.0>,
 
 include <tunables/global>
 
@@ -41,8 +41,6 @@ profile gvfsd-fuse @{exec_path} {
     umount @{run}/user/@{uid}/**/,
 
     unix (send,receive) type=stream addr=none peer=(label=gvfsd-fuse),
-
-    /etc/machine-id r,
 
     include if exists <local/gvfsd-fuse_fusermount>
   }

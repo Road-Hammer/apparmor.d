@@ -6,6 +6,7 @@ package aa
 
 import (
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -62,6 +63,35 @@ func TestRule_Merge(t *testing.T) {
 	}
 }
 
+// bucketKey builds the merge bucket key exactly as Rules.Merge does.
+func bucketKey(r Rule) string {
+	var b strings.Builder
+	b.WriteString(string(r.Kind()))
+	b.WriteByte(0)
+	r.mergeKey(&b)
+	return b.String()
+}
+
+// TestRule_MergeKeyInvariant enforces the Rules.Merge bucketing invariant: two
+// rules that merge or compare-equal must share a bucket key, otherwise the
+// hash-bucketed Merge would never compare them and the merge would be missed.
+func TestRule_MergeKeyInvariant(t *testing.T) {
+	for _, tt := range testRule {
+		if tt.other == nil || tt.rule.Kind() == COMMENT ||
+			tt.rule.Kind() != tt.other.Kind() {
+			continue // comments never bucket; cross-kind pairs never merge
+		}
+		if !tt.wMerge && tt.wCompare != 0 {
+			continue // not a mergeable pair, no shared-key requirement
+		}
+		t.Run(tt.name, func(t *testing.T) {
+			if k1, k2 := bucketKey(tt.rule), bucketKey(tt.other); k1 != k2 {
+				t.Errorf("mergeKey() = %q, want %q (mergeable rules must share a bucket key)", k1, k2)
+			}
+		})
+	}
+}
+
 var (
 	// Test cases for the Rule interface
 	testRule = []struct {
@@ -87,9 +117,9 @@ var (
 			name:     "abi",
 			rule:     abi1,
 			other:    abi2,
-			wCompare: 1,
+			wCompare: 2,
 			wMerge:   false,
-			wString:  "abi <abi/4.0>,",
+			wString:  "abi <abi/5.0>,",
 		},
 		{
 			name:     "alias",
@@ -367,7 +397,7 @@ var (
 		},
 		{
 			name:     "dbus-bind",
-			rule:     &Dbus{Access: []string{"bind"}, Bus: "session", Name: "org.gnome.*"},
+			rule:     &Dbus{Access: MustAccess(DBUS, "bind"), Bus: "session", Name: "org.gnome.*"},
 			other:    dbus2,
 			wCompare: -39,
 			wMerge:   false,
@@ -419,8 +449,8 @@ var (
 		},
 		{
 			name:     "file-access",
-			rule:     &File{Path: "/usr/share/poppler/cMap/Identity-H", Access: []string{"r"}},
-			other:    &File{Path: "/usr/share/poppler/cMap/Identity-H", Access: []string{"w"}},
+			rule:     &File{Path: "/usr/share/poppler/cMap/Identity-H", Access: MustAccess(FILE, "r")},
+			other:    &File{Path: "/usr/share/poppler/cMap/Identity-H", Access: MustAccess(FILE, "w")},
 			wCompare: -5,
 			wMerge:   true,
 			wString:  "/usr/share/poppler/cMap/Identity-H r,",

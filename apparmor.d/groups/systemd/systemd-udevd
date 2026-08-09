@@ -3,7 +3,7 @@
 # Copyright (C) 2021-2024 Alexandre Pujol <alexandre@pujol.io>
 # SPDX-License-Identifier: GPL-2.0-only
 
-abi <abi/4.0>,
+abi <abi/5.0>,
 
 include <tunables/global>
 
@@ -80,7 +80,7 @@ profile systemd-udevd @{exec_path} flags=(attach_disconnected) {
   @{lib}/open-iscsi/net-interface-handler   Px,
   @{lib}/pm-utils/power.d/*                 PUx,
   @{lib}/snapd/snap-device-helper           Px,
-  @{lib}/switcheroo-control-check-discrete-amdgpu  PUx,
+  @{lib}/switcheroo-control-check-discrete-amdgpu  Px,
   @{lib}/systemd/systemd-*                  Px,
   @{lib}/udev/*                             PUx,
   /usr/share/hplip/config_usb_printer.py    PUx,

@@ -2,9 +2,9 @@
 # Copyright (C) 2023-2025 Alexandre Pujol <alexandre@pujol.io>
 # SPDX-License-Identifier: GPL-2.0-only
 
-# Each daemon (main and for mounts) implement this.
+# Each GVFS daemon (main and for mounts) implement this.
 
-  abi <abi/4.0>,
+  abi <abi/5.0>,
 
   dbus send bus=session path=/org/gtk/vfs/Daemon
        interface=org.gtk.vfs.Daemon

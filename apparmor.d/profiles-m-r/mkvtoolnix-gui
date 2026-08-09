@@ -3,7 +3,7 @@
 # Copyright (C) 2023-2024 Alexandre Pujol <alexandre@pujol.io>
 # SPDX-License-Identifier: GPL-2.0-only
 
-abi <abi/4.0>,
+abi <abi/5.0>,
 
 include <tunables/global>
 
@@ -40,7 +40,7 @@ profile mkvtoolnix-gui @{exec_path} flags=(attach_disconnected,mediate_deleted) 
 
   owner @{user_config_dirs}/bunkus.org/ rw,
   owner @{user_config_dirs}/bunkus.org/mkvtoolnix-gui/ rw,
-  owner @{user_config_dirs}/bunkus.org/mkvtoolnix-gui/** rwkl -> @{user_config_dirs}/bunkus.org/mkvtoolnix-gui/#@{int},
+  owner @{user_config_dirs}/bunkus.org/mkvtoolnix-gui/** rwlk -> @{user_config_dirs}/bunkus.org/mkvtoolnix-gui/#@{int},
 
   owner @{user_cache_dirs}/ rw,
   owner @{user_cache_dirs}/bunkus.org/ rw,

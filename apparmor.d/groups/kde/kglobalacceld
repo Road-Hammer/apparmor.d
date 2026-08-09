@@ -2,7 +2,7 @@
 # Copyright (C) 2023-2024 Alexandre Pujol <alexandre@pujol.io>
 # SPDX-License-Identifier: GPL-2.0-only
 
-abi <abi/4.0>,
+abi <abi/5.0>,
 
 include <tunables/global>
 
@@ -20,8 +20,6 @@ profile kglobalacceld @{exec_path} {
 
   /usr/share/desktop-directories/{,**} r,
   /usr/share/kglobalaccel/{,**} r,
-
-  /etc/xdg/menus/plasma-applications.menu r,
 
   owner @{user_config_dirs}/kglobalshortcutsrc.lock rwk,
   owner @{user_config_dirs}/kglobalshortcutsrc* rwl,

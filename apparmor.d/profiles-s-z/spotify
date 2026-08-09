@@ -3,7 +3,7 @@
 # Copyright (C) 2021-2024 Alexandre Pujol <alexandre@pujol.io>
 # SPDX-License-Identifier: GPL-2.0-only
 
-abi <abi/4.0>,
+abi <abi/5.0>,
 
 include <tunables/global>
 
@@ -62,8 +62,7 @@ profile spotify @{exec_path} flags=(attach_disconnected) {
 
   @{sys}/devices/@{pci_bus}/uevent r,
 
-        @{PROC}/@{pid}/net/unix r,
-  owner @{PROC}/@{pid}/clear_refs w,
+  @{PROC}/@{pid}/net/unix r,
 
   /dev/tty rw,
 

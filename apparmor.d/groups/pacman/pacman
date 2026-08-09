@@ -2,7 +2,7 @@
 # Copyright (C) 2021-2024 Alexandre Pujol <alexandre@pujol.io>
 # SPDX-License-Identifier: GPL-2.0-only
 
-abi <abi/4.0>,
+abi <abi/5.0>,
 
 include <tunables/global>
 
@@ -110,10 +110,10 @@ profile pacman @{exec_path} flags=(attach_disconnected) {
   owner /var/lib/pacman/{,**} rwl,
   owner @{tmp}/alpm_@{rand6}/{,**} rw,
   owner @{tmp}/arch-update-@{uid}/checkupdates-@{rand}/sync/** w,
-  owner @{tmp}/checkup-db-@{int}/db.lck rw,
-  owner @{tmp}/checkup-db-@{int}/sync/{,*.db*} rw,
-  owner @{tmp}/checkup-db-@{uid}/sync/download-@{rand6}/ rw,
-  owner @{tmp}/checkup-db-@{uid}/sync/download-@{rand6}/{,*} rw,
+  @{tmp}/checkup-db-@{int}/db.lck rw,
+  @{tmp}/checkup-db-@{int}/sync/{,*.db*} rw,
+  @{tmp}/checkup-db-@{uid}/sync/download-@{rand6}/ rw,
+  @{tmp}/checkup-db-@{uid}/sync/download-@{rand6}/{,*} rw,
 
   @{run}/utmp rk,
 
@@ -154,7 +154,7 @@ profile pacman @{exec_path} flags=(attach_disconnected) {
     @{bin}/gpg-connect-agent rix,
 
     /etc/pacman.d/gnupg/ rw,
-    /etc/pacman.d/gnupg/** rwkl -> /etc/pacman.d/gnupg/**,
+    /etc/pacman.d/gnupg/** rwlk -> /etc/pacman.d/gnupg/**,
 
     @{run}/user/@{uid}/gnupg/ w,
 

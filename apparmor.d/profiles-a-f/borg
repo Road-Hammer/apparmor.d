@@ -3,7 +3,7 @@
 # Copyright (C) 2021-2024 Alexandre Pujol <alexandre@pujol.io>
 # SPDX-License-Identifier: GPL-2.0-only
 
-abi <abi/4.0>,
+abi <abi/5.0>,
 
 include <tunables/global>
 
@@ -60,7 +60,7 @@ profile borg @{exec_path} flags=(attach_disconnected) {
 
   # The backup dirs
   owner @{MOUNTS}/ r,
-  owner @{MOUNTS}/** rwkl -> @{MOUNTS}/**,
+  owner @{MOUNTS}/** rwlk -> @{MOUNTS}/**,
 
   owner @{user_cache_dirs}/ rw,
   owner @{user_cache_dirs}/borg/ rw,

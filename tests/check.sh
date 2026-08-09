@@ -4,7 +4,6 @@
 # SPDX-License-Identifier: GPL-2.0-only
 
 # Usage: just check
-# shellcheck disable=SC2044
 
 set -eu -o pipefail
 
@@ -149,6 +148,7 @@ _check() {
         _check_directory_mark
         _check_equivalent
         _check_too_wide
+        _check_access
         _check_transition
         _check_useless
         _check_tunables
@@ -276,6 +276,13 @@ _check_too_wide() {
     done
 }
 
+_check_access() {
+	_is_enabled access || return 0
+	if [[ "$line" == *" rwkl"* ]]; then
+		_warn access "$file:$line_number" "file access should be written as 'rwlk' instead of 'rwkl'"
+	fi
+}
+
 readonly TRANSITION_MUST_CI=( # Must transition to 'ix' or 'Cx'
     chgrp chmod chown cp find head install link ln ls mkdir mktemp mv rm rmdir
     sed shred stat tail tee test timeout touch truncate unlink
@@ -385,7 +392,7 @@ _check_tunables() {
 # Guidelines check: https://apparmor.pujol.io/development/guidelines/
 
 RES_ABI=false
-readonly ABI_SYNTAX='abi <abi/4.0>,'
+readonly ABI_SYNTAX='abi <abi/5.0>,'
 _check_abi() {
     _is_enabled abi || return 0
     if [[ "$line" == *"$ABI_SYNTAX" ]]; then
@@ -395,7 +402,7 @@ _check_abi() {
 _res_abi() {
     _is_enabled abi || return 0
     if ! $RES_ABI; then
-        _err abi "$file" "missing 'abi <abi/4.0>,'"
+        _err abi "$file" "missing 'abi <abi/5.0>,'"
     fi
 }
 
@@ -626,7 +633,7 @@ check_profiles() {
     )
     jobs=0
     WITH_CHECK=(
-        abstractions directory-mark equivalent too-wide useless transition tunables
+        abstractions directory-mark equivalent too-wide useless access transition tunables
         abi include profile header tabs trailing indentation subprofiles vim udev
     )
     for file in "${files[@]}"; do
@@ -652,7 +659,7 @@ check_abstractions() {
     mapfile -t files < <(find "$APPARMORD/abstractions" -type f -not -path "$APPARMORD/abstractions/*.d/*" 2>/dev/null || true)
     jobs=0
     WITH_CHECK=(
-        abstractions directory-mark equivalent too-wide tunables
+        abstractions directory-mark equivalent too-wide access tunables
         abi include header tabs trailing indentation vim udev
     )
     for file in "${files[@]}"; do
@@ -673,7 +680,7 @@ check_abstractions() {
     # shellcheck disable=SC2034
     jobs=0
     WITH_CHECK=(
-        abstractions directory-mark equivalent too-wide tunables
+        abstractions directory-mark equivalent too-wide access tunables
         header tabs trailing indentation vim udev
     )
     for file in "${files[@]}"; do

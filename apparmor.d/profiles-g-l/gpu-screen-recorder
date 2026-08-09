@@ -2,7 +2,7 @@
 # Copyright (C) 2026 Alexandre Pujol <alexandre@pujol.io>
 # SPDX-License-Identifier: GPL-2.0-only
 
-abi <abi/4.0>,
+abi <abi/5.0>,
 
 include <tunables/global>
 
@@ -30,10 +30,10 @@ profile gpu-screen-recorder @{exec_path} {
   owner @{HOME}/.nv/nvidia-application-profiles-rc.d/ rw,
   owner @{HOME}/.nv/nvidia-application-profiles-rc.d/10-gsr-cuda-no-stable-perf-limit rw,
 
-  owner @{user_videos_dirs}/ r,
-  owner @{user_videos_dirs}/**.{flv,mkv,mp4,mov} w,
   owner @{user_pictures_dirs}/ r,
   owner @{user_pictures_dirs}/**.{jpg,png} w,
+  owner @{user_videos_dirs}/ r,
+  owner @{user_videos_dirs}/**.{flv,mkv,mp4,mov} w,
 
   owner @{user_config_dirs}/gpu-screen-recorder/restore_token rw,
 
@@ -46,6 +46,8 @@ profile gpu-screen-recorder @{exec_path} {
   /usr/share/gsr-ui/fonts/{,**} r,
 
   /etc/machine-id r,
+
+  deny /dev/input/event@{int} r, # file_inherit
 
   include if exists <local/gpu-screen-recorder>
 }

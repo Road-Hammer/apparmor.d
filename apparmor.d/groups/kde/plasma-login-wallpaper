@@ -2,7 +2,7 @@
 # Copyright (C) 2026 Alexandre Pujol <alexandre@pujol.io>
 # SPDX-License-Identifier: GPL-2.0-only
 
-abi <abi/4.0>,
+abi <abi/5.0>,
 
 include <tunables/global>
 
@@ -23,7 +23,7 @@ profile plasma-login-wallpaper @{exec_path} {
   /etc/plasmalogin.conf r,
 
   owner @{sddm_cache_dirs}/plasma-login-wallpaper/ rw,
-  owner @{sddm_cache_dirs}/plasma-login-wallpaper/** rwkl,
+  owner @{sddm_cache_dirs}/plasma-login-wallpaper/** rwlk,
   owner @{sddm_cache_dirs}/nvidia/ rw,
   owner @{sddm_cache_dirs}/nvidia/GLCache/ rw,
   owner @{sddm_cache_dirs}/nvidia/GLCache/** rwk,

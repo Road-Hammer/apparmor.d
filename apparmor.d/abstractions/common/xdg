@@ -5,7 +5,7 @@
 
 # Minimal set of rules for XDG utilities like xdg-mime, xdg-settings, etc.
 
-  abi <abi/4.0>,
+  abi <abi/5.0>,
 
   include <abstractions/consoles>
   include <abstractions/desktop-files>
@@ -43,17 +43,26 @@
   @{bin}/whoami    rix,
 
   # To set/get DE information
-  @{bin}/gconftool{,-2}       ix,
-  @{bin}/gio                  ix,
-  @{bin}/gnomevfs-info        ix,
-  @{bin}/gvfs-info            ix,
-  @{bin}/kde{,4}-config       ix,
-  @{bin}/kfile                ix,
-  @{bin}/kmimetypefinder{,5}  ix,
-  @{bin}/ktraderclient{,5}    ix,
-  @{bin}/kwriteconfig{,5,6}   ix,
-  @{bin}/qtpaths              ix,
-  @{bin}/qtxdg-mat            ix,
+  if "gnome" in @{DE} {
+    @{bin}/gconftool{,-2}       ix,
+    @{bin}/gio                  ix,
+    @{bin}/gnomevfs-info        ix,
+    @{bin}/gvfs-info            ix,
+
+  } else if "kde" in @{DE} {
+    @{bin}/kde{,4}-config       ix,
+    @{bin}/kfile                ix,
+    @{bin}/kmimetypefinder{,5}  ix,
+    @{bin}/ktraderclient{,5}    ix,
+    @{bin}/kwriteconfig{,5,6}   ix,
+    @{bin}/qtpaths              ix,
+    @{bin}/qtxdg-mat            ix,
+
+  }
+
+  @{bin}/kbuildsycoca{,5,6}   rix,
+
+  @{etc_ro}/xdg/menus/*.menu r,
 
   / r,
 

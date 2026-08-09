@@ -2,7 +2,7 @@
 # Copyright (C) 2023-2024 Alexandre Pujol <alexandre@pujol.io>
 # SPDX-License-Identifier: GPL-2.0-only
 
-abi <abi/4.0>,
+abi <abi/5.0>,
 
 include <tunables/global>
 
@@ -129,9 +129,12 @@ profile kded @{exec_path} flags=(attach_disconnected,mediate_deleted) {
   / r,
   @{efi}/ r,
   /home/ r,
+  /snap/*/@{uid}/ r,
 
         /var/lib/update-notifier/user.d/ r,
   owner /var/lib/update-manager/meta-release* rw,
+
+  /var/crash/ r,
 
   owner @{MOUNTS}/ r,
   owner @{HOME}/ r,
@@ -169,7 +172,7 @@ profile kded @{exec_path} flags=(attach_disconnected,mediate_deleted) {
   owner @{user_share_dirs}/icc/{,edid-*} r,
   owner @{user_share_dirs}/kcookiejar/#@{int} rw,
   owner @{user_share_dirs}/kcookiejar/cookies.lock rwk,
-  owner @{user_share_dirs}/kcookiejar/cookies{,.@{rand6}} rwkl,
+  owner @{user_share_dirs}/kcookiejar/cookies{,.@{rand6}} rwlk,
   owner @{user_share_dirs}/kded{5,6}/{,**} rw,
   owner @{user_share_dirs}/kscreen/{,**} rwl,
   owner @{user_share_dirs}/kservices{5,6}/{,**} r,

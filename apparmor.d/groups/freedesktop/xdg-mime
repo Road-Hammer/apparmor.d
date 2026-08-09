@@ -3,7 +3,7 @@
 # Copyright (C) 2022-2024 Alexandre Pujol <alexandre@pujol.io>
 # SPDX-License-Identifier: GPL-2.0-only
 
-abi <abi/4.0>,
+abi <abi/5.0>,
 
 include <tunables/global>
 
@@ -16,7 +16,6 @@ profile xdg-mime @{exec_path} flags=(attach_disconnected) {
   @{exec_path} r,
 
   @{bin}/dbus-send            Cx -> bus,
-  @{bin}/kbuildsycoca{,5}     Px,
   @{bin}/mimetype             Px,
   @{bin}/vendor_perl/mimetype Px,
   @{bin}/xprop                Px,

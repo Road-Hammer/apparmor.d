@@ -2,7 +2,7 @@
 # Copyright (C) 2021-2024 Alexandre Pujol <alexandre@pujol.io>
 # SPDX-License-Identifier: GPL-2.0-only
 
-abi <abi/4.0>,
+abi <abi/5.0>,
 
 include <tunables/global>
 
@@ -24,6 +24,8 @@ profile systemd-userwork @{exec_path} flags=(attach_disconnected) {
   /etc/userdb/ r,
 
   @{run}/userdb/ r,
+
+  @{att}@{run}/systemd/userdb/io.systemd.Machine rw,
 
   include if exists <local/systemd-userwork>
 }

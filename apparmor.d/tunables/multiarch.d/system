@@ -16,7 +16,7 @@
 # Common places for binaries and libraries across distributions
 @{bin}=/{,usr/}bin
 @{sbin}=/{,usr/}sbin     #aa:only apt zypper
-@{sbin}=/{,usr/}{,s}bin  #aa:only pacman
+@{sbin}=/{,usr/}{,s}bin  #aa:only pacman fedora
 @{lib}=/{,usr/}lib{,exec,32,64}
 
 # Common places for temporary files
@@ -44,8 +44,11 @@
 # Universally unique identifier
 @{uuid}=@{hex8}[-_]@{hex4}[-_]@{hex4}[-_]@{hex4}[-_]@{hex12}
 
+# User word character: matches any letter, digit, dash or underscore.
+@{uw}=[-a-z0-9_]
+
 # Username & group valid characters
-@{user}=[a-zA-Z_]{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}{@{w},}
+@{user}=[a-zA-Z_]{@{uw},}{@{uw},}{@{uw},}{@{uw},}{@{uw},}{@{uw},}{@{uw},}{@{uw},}{@{uw},}{@{uw},}{@{uw},}{@{uw},}{@{uw},}{@{uw},}{@{uw},}{@{uw},}{@{uw},}{@{uw},}{@{uw},}{@{uw},}{@{uw},}{@{uw},}{@{uw},}{@{uw},}{@{uw},}{@{uw},}{@{uw},}{@{uw},}{@{uw},}{@{uw},}{@{uw},}
 @{group}=@{user}
 
 # Semantic version
@@ -54,6 +57,10 @@
 #aa:only opensuse
 # OpenSUSE does not have the same multiarch structure
 @{multiarch}+=*-suse-linux*
+
+#aa:only fedora
+# Fedora/RHEL does not have the same multiarch structure (no "-gnu" suffix)
+@{multiarch}+=*-redhat-linux*
 
 
 # System Internal

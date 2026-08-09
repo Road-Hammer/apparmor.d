@@ -2,7 +2,7 @@
 # Copyright (C) 2024 Alexandre Pujol <alexandre@pujol.io>
 # SPDX-License-Identifier: GPL-2.0-only
 
-abi <abi/4.0>,
+abi <abi/5.0>,
 
 include <tunables/global>
 
@@ -23,6 +23,7 @@ profile wayland-session @{exec_path} {
   @{bin}/id             ix,
   @{bin}/locale         ix,
   @{bin}/locale-check   ix,
+  @{bin}/run-parts      Cx -> run-parts,
   @{bin}/sed            ix,
   @{bin}/tr             ix,
 
@@ -40,6 +41,14 @@ profile wayland-session @{exec_path} {
   /etc/X11/Xsession.d/*im-config_launch r,
 
   owner @{user_share_dirs}/sddm/wayland-session.log rw,
+
+  profile run-parts {
+    include <abstractions/base>
+
+    @{bin}/run-parts mr,
+
+    include if exists <local/wayland-session_run-parts>
+  }
 
   include if exists <local/wayland-session>
 }

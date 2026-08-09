@@ -2,7 +2,7 @@
 # Copyright (C) 2021-2024 Alexandre Pujol <alexandre@pujol.io>
 # SPDX-License-Identifier: GPL-2.0-only
 
-abi <abi/4.0>,
+abi <abi/5.0>,
 
 include <tunables/global>
 
@@ -37,6 +37,7 @@ profile ibus-extension-gtk3 @{exec_path} flags=(attach_disconnected) {
 
   owner @{desktop_config_dirs}/ibus/bus/ r,
   owner @{desktop_config_dirs}/ibus/bus/@{hex32}-unix-{,wayland-}@{int} r,
+  owner @{desktop_config_dirs}/ibus/bus/machine-id-unix-{,wayland-}@{int} r,
 
   include if exists <local/ibus-extension-gtk3>
 }

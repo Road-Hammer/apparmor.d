@@ -2,7 +2,7 @@
 # Copyright (C) 2023-2024 Alexandre Pujol <alexandre@pujol.io>
 # SPDX-License-Identifier: GPL-2.0-only
 
-abi <abi/4.0>,
+abi <abi/5.0>,
 
 include <tunables/global>
 
@@ -57,6 +57,7 @@ profile kwin_wayland @{exec_path} flags=(attach_disconnected,mediate_deleted) {
   #aa:exec kscreenlocker_greet
 
   /usr/share/color-schemes/*.colors r,
+  /usr/share/color/icc/{,**} r,
   /usr/share/desktop-directories/*.directory r,
   /usr/share/kglobalaccel/{,**} r,
   /usr/share/kservices{5,6}/{,**} r,
@@ -75,7 +76,7 @@ profile kwin_wayland @{exec_path} flags=(attach_disconnected,mediate_deleted) {
   owner @{HOME}/ r,
 
   owner @{sddm_cache_dirs}/#@{int} rwk,
-  owner @{sddm_cache_dirs}/ksycoca{5,6}_* rwkl  -> @{sddm_cache_dirs}/#@{int},
+  owner @{sddm_cache_dirs}/ksycoca{5,6}_* rwlk  -> @{sddm_cache_dirs}/#@{int},
   owner @{sddm_cache_dirs}/kwin/ rw,
   owner @{sddm_cache_dirs}/kwin/** rwlk,
 
@@ -92,7 +93,7 @@ profile kwin_wayland @{exec_path} flags=(attach_disconnected,mediate_deleted) {
   owner @{user_cache_dirs}/ r,
   owner @{user_cache_dirs}/ksvg-elements r,
   owner @{user_cache_dirs}/kwin/ rw,
-  owner @{user_cache_dirs}/kwin/** rwkl -> @{user_cache_dirs}/kwin/**,
+  owner @{user_cache_dirs}/kwin/** rwlk -> @{user_cache_dirs}/kwin/**,
   owner @{user_cache_dirs}/plasma_theme_*.kcache rw,
   owner @{user_cache_dirs}/plasma-svgelements rw,
   owner @{user_cache_dirs}/plasma-svgelements.@{rand6} rwl -> @{user_cache_dirs}/#@{int},
@@ -175,6 +176,7 @@ profile kwin_wayland @{exec_path} flags=(attach_disconnected,mediate_deleted) {
     @{bin}/xprop  rPx,
 
     /etc/xdg/Xwayland-session.d/00-at-spi r,
+    /usr/share/color/icc/{,**} r,
 
     /home/ r,
     owner @{HOME}/ r,

@@ -3,7 +3,7 @@
 # Copyright (C) 2022-2024 Alexandre Pujol <alexandre@pujol.io>
 # SPDX-License-Identifier: GPL-2.0-only
 
-abi <abi/4.0>,
+abi <abi/5.0>,
 
 include <tunables/global>
 
@@ -27,6 +27,8 @@ profile xrdb @{exec_path} flags=(attach_disconnected) {
   @{etc_ro}/X11/xdm/Xresources r,
   @{etc_ro}/X11/Xresources r,
   /etc/X11/Xresources/* r,
+
+  /usr/share/color/icc/{,**} r,
 
   # The location of the .Xresources file
   owner @{HOME}/.Xdefaults r,

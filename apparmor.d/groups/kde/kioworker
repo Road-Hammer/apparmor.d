@@ -2,7 +2,7 @@
 # Copyright (C) 2023-2024 Alexandre Pujol <alexandre@pujol.io>
 # SPDX-License-Identifier: GPL-2.0-only
 
-abi <abi/4.0>,
+abi <abi/5.0>,
 
 include <tunables/global>
 
@@ -127,12 +127,15 @@ profile kioworker @{exec_path} {
 
   profile gs {
     include <abstractions/base>
+    include <abstractions/fonts>
 
     @{bin}/gs{,.bin} mr,
     @{lib}/ghostscript/**  mr,
 
     /usr/share/ghostscript/{,**} r,
     /usr/share/org.kde.syntax-highlighting/{,**} r,
+
+    /etc/paperspecs r,
 
     #aa:lint ignore=too-wide
     @{MOUNTS}/** r,

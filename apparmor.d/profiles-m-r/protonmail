@@ -3,7 +3,7 @@
 # Copyright (C) 2024 curiosityseeker
 # SPDX-License-Identifier: GPL-2.0-only
 
-abi <abi/4.0>,
+abi <abi/5.0>,
 
 include <tunables/global>
 
@@ -14,7 +14,7 @@ include <tunables/global>
 @{cache_dirs} = @{user_cache_dirs}/@{name}
 
 @{exec_path} = @{bin}/@{name} /opt/proton-mail/@{name}
-profile protonmail @{exec_path} flags=(attach_disconnected) {
+profile protonmail @{exec_path} flags=(attach_disconnected,mediate_deleted) {
   include <abstractions/base>
   include <abstractions/common/electron>
   include <abstractions/secrets-service>

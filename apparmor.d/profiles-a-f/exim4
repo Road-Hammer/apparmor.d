@@ -3,7 +3,7 @@
 # Copyright (C) 2021-2024 Alexandre Pujol <alexandre@pujol.io>
 # SPDX-License-Identifier: GPL-2.0-only
 
-abi <abi/4.0>,
+abi <abi/5.0>,
 
 include <tunables/global>
 
@@ -48,7 +48,7 @@ profile exim4 @{exec_path} flags=(attach_disconnected) {
   /var/spool/exim4/ r,
   /var/spool/exim4/** rwk,
 
-  owner /var/mail/* rwkl -> /var/mail/*,
+  owner /var/mail/* rwlk -> /var/mail/*,
 
   /tmp/#@{int} rw,
 

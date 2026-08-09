@@ -3,7 +3,7 @@
 # Copyright (C) 2021-2024 Alexandre Pujol <alexandre@pujol.io>
 # SPDX-License-Identifier: GPL-2.0-only
 
-abi <abi/4.0>,
+abi <abi/5.0>,
 
 include <tunables/global>
 
@@ -40,7 +40,7 @@ profile birdtray @{exec_path} {
   owner @{HOME}/.thunderbird/*.*/{Imap,}Mail/**/*.msf r,
 
   owner @{user_config_dirs}/ulduzsoft/ rw,
-  owner @{user_config_dirs}/ulduzsoft/* rwkl -> @{user_config_dirs}/ulduzsoft/*,
+  owner @{user_config_dirs}/ulduzsoft/* rwlk -> @{user_config_dirs}/ulduzsoft/*,
 
   owner @{user_config_dirs}/birdtray-config.json rwl -> @{user_config_dirs}/#@{int},
   owner @{user_config_dirs}/birdtray-config.json.* rwl -> @{user_config_dirs}/#@{int},

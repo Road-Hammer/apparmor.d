@@ -3,7 +3,7 @@
 # Copyright (C) 2021-2024 Alexandre Pujol <alexandre@pujol.io>
 # SPDX-License-Identifier: GPL-2.0-only
 
-abi <abi/4.0>,
+abi <abi/5.0>,
 
 include <tunables/global>
 
@@ -17,6 +17,7 @@ profile id @{exec_path} flags=(attach_disconnected) {
 
   /etc/machine-id r,
 
+  # file_inherit
   deny @{user_share_dirs}/gvfs-metadata/* r,
 
   include if exists <local/id>

@@ -3,7 +3,7 @@
 # Copyright (C) 2024 Jeroen Rijken
 # SPDX-License-Identifier: GPL-2.0-only
 
-abi <abi/4.0>,
+abi <abi/5.0>,
 
 include <tunables/global>
 
@@ -56,6 +56,9 @@ profile systemd-logind @{exec_path} flags=(attach_disconnected,mediate_deleted) 
   /swapfile r,
 
   /var/lib/systemd/linger/{,@{user}} rw,
+
+  /dev/shm/ r,
+  /dev/shm/sem.mp-@{word8} r,
 
   @{run}/.#nologin* rw,
   @{run}/credentials/getty@tty@{int}.service/ r,
@@ -151,7 +154,6 @@ profile systemd-logind @{exec_path} flags=(attach_disconnected,mediate_deleted) 
   /dev/mqueue/ r,
   /dev/tty@{u8} rw,
   /dev/pts/@{u8} w,
-  /dev/shm/{,**} rw,
 
   include if exists <local/systemd-logind>
 }

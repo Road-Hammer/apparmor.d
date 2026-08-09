@@ -3,7 +3,7 @@
 # Copyright (C) 2021-2024 Alexandre Pujol <alexandre@pujol.io>
 # SPDX-License-Identifier: GPL-2.0-only
 
-abi <abi/4.0>,
+abi <abi/5.0>,
 
 include <tunables/global>
 
@@ -39,6 +39,9 @@ profile systemd-journald @{exec_path} flags=(attach_disconnected,mediate_deleted
   /{run,var}/log/journal/ rw,
   /{run,var}/log/journal/@{hex32}/ rw,
   /{run,var}/log/journal/@{hex32}/* rwl -> /{run,var}/log/journal/@{hex32}/#@{int},
+  /{run,var}/log/journal/system.journal rw,
+  /{run,var}/log/journal/system@@{hex16}-@{hex16}.journal~ rw,
+  /{run,var}/log/journal/user-@{uid}.journal rw,
 
   owner @{run}/systemd/journal/{,**} rw,
 

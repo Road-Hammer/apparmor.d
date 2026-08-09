@@ -2,7 +2,7 @@
 # Copyright (C) 2022-2024 Alexandre Pujol <alexandre@pujol.io>
 # SPDX-License-Identifier: GPL-2.0-only
 
-abi <abi/4.0>,
+abi <abi/5.0>,
 
 include <tunables/global>
 
@@ -83,6 +83,7 @@ profile cupsd @{exec_path} flags=(attach_disconnected) {
   /usr/share/brother/Printers/*/cupswrapper/lpdwrapper rPUx,
 
   /usr/share/cups/{,**} r,
+  /usr/share/gutenprint/{,**} r,
   /usr/share/poppler/{,**} r,
   /usr/share/ppd/{,**} r,
 

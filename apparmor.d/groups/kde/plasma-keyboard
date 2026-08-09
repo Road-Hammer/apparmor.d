@@ -2,7 +2,7 @@
 # Copyright (C) 2026 Alexandre Pujol <alexandre@pujol.io>
 # SPDX-License-Identifier: GPL-2.0-only
 
-abi <abi/4.0>,
+abi <abi/5.0>,
 
 include <tunables/global>
 
@@ -19,7 +19,7 @@ profile plasma-keyboard @{exec_path} flags=(attach_disconnected,mediate_deleted)
   /usr/share/plasma/keyboard/{,**} r,
 
   owner @{sddm_cache_dirs}/plasma-keyboard/ rw,
-  owner @{sddm_cache_dirs}/plasma-keyboard/** rwkl,
+  owner @{sddm_cache_dirs}/plasma-keyboard/** rwlk,
   owner @{sddm_config_dirs}/kdedefaults/* r,
   owner @{sddm_config_dirs}/kdeglobals r,
 

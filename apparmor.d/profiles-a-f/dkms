@@ -13,7 +13,7 @@
 #     ```
 #     2. Needs to be tested with the zfs dkms module
 
-abi <abi/4.0>,
+abi <abi/5.0>,
 
 include <tunables/global>
 
@@ -82,7 +82,7 @@ profile dkms @{exec_path} flags=(attach_disconnected) {
   /var/lib/dkms/**/build/** rix,
   /var/lib/dkms/**/configure rix,
   /var/lib/dkms/**/dkms.postbuild rix,
-  /var/lib/dkms/vboxhost/*/build/** rw,
+  /var/lib/dkms/vboxhost/*/build/** rwk,
 
   /var/lib/shim-signed/mok/** r,
 

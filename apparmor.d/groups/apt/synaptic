@@ -3,7 +3,7 @@
 # Copyright (C) 2021-2024 Alexandre Pujol <alexandre@pujol.io>
 # SPDX-License-Identifier: GPL-2.0-only
 
-abi <abi/4.0>,
+abi <abi/5.0>,
 
 include <tunables/global>
 
@@ -88,7 +88,7 @@ profile synaptic @{exec_path} {
   /var/lib/apt/extended_states{,.*} rw,
 
   # For package building
-  @{user_build_dirs}/** rwkl -> @{user_build_dirs}/**,
+  @{user_build_dirs}/** rwlk -> @{user_build_dirs}/**,
 
   owner @{HOME}/.synaptic/ rw,
   owner @{HOME}/.synaptic/** rwk,

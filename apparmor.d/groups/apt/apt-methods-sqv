@@ -3,7 +3,7 @@
 # Copyright (C) 2021-2024 Alexandre Pujol <alexandre@pujol.io>
 # SPDX-License-Identifier: GPL-2.0-only
 
-abi <abi/4.0>,
+abi <abi/5.0>,
 
 include <tunables/global>
 
@@ -26,12 +26,13 @@ profile apt-methods-sqv @{exec_path} {
 
   /usr/share/apt/default-sequoia.config r,
   /usr/share/keyrings/ r,
-  /usr/share/keyrings/*.{gpg,pgp,asc} r,
+  /usr/share/keyrings/*.@{gpg_ext} r,
 
   /etc/apt/keyrings/ r,
-  /etc/apt/keyrings/*.{gpg,asc} r,
+  /etc/apt/keyrings/*.@{gpg_ext} r,
   /etc/apt/trusted.gpg r,
-  /etc/apt/trusted.gpg.d/{,*.{gpg,asc}} r,
+  /etc/apt/trusted.gpg.d/ r,
+  /etc/apt/trusted.gpg.d/.@{gpg_ext} r,
 
   owner /var/lib/apt/lists/{,**} r,
 

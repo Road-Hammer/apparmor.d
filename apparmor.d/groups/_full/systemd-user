@@ -4,7 +4,7 @@
 
 #aa:lint ignore=too-wide
 
-# Profile for 'systemd --user', not PID 1 but the user manager for any UID.
+# Profile for `systemd --user`, not PID 1 but the user manager for any UID.
 # It does not specify an attachment path because it is intended to be used only
 # via `px -> systemd-user` exec transitions from the `systemd` profile.
 #
@@ -18,7 +18,7 @@
 #     Distributions and other programs can add rules in the `usr/systemd-user.d` directory
 #
 
-abi <abi/4.0>,
+abi <abi/5.0>,
 
 include <tunables/global>
 
@@ -66,7 +66,7 @@ profile systemd-user flags=(attach_disconnected,mediate_deleted,complain) {
   owner @{user_config_dirs}/systemd/user/{,**} rw,
 
   owner @{run}/user/@{uid}/ rw,
-  owner @{run}/user/@{uid}/** rwkl,
+  owner @{run}/user/@{uid}/** rwlk,
 
   @{run}/mount/utab r,
   @{run}/systemd/oom/io.systemd.ManagedOOM rw,

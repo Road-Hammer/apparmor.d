@@ -3,7 +3,7 @@
 # Copyright (C) 2023-2024 Alexandre Pujol <alexandre@pujol.io>
 # SPDX-License-Identifier: GPL-2.0-only
 
-abi <abi/4.0>,
+abi <abi/5.0>,
 
 include <tunables/global>
 
@@ -72,6 +72,7 @@ profile sddm-greeter @{exec_path} flags=(attach_disconnected,mediate_deleted) {
        owner @{HOME}/.glvnd* mrw,
 
   owner @{tmp}/runtime-sddm/ rw,
+  owner @{tmp}/sddm--@{rand6} rw,
   owner @{tmp}/sddm-:@{int}-@{rand6} rw,
 
   owner @{run}/sddm/{,*} rw,

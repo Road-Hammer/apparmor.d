@@ -2,7 +2,7 @@
 # Copyright (C) 2023-2024 Alexandre Pujol <alexandre@pujol.io>
 # SPDX-License-Identifier: GPL-2.0-only
 
-abi <abi/4.0>,
+abi <abi/5.0>,
 
 include <tunables/global>
 
@@ -181,7 +181,7 @@ profile flatpak @{exec_path} flags=(attach_disconnected,mediate_deleted) {
     @{HOME}/@{XDG_GPG_DIR}/*.conf r,
 
     owner @{tmp}/ostree-gpg-@{rand6}/ rw,
-    owner @{tmp}/ostree-gpg-@{rand6}/** rwkl -> /tmp/ostree-gpg-@{rand6}/**,
+    owner @{tmp}/ostree-gpg-@{rand6}/** rwlk -> /tmp/ostree-gpg-@{rand6}/**,
 
     owner @{PROC}/@{pid}/fd/ r,
 

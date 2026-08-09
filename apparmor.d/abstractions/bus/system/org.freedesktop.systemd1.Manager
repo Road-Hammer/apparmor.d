@@ -4,10 +4,13 @@
 
 # libnss-systemd (D-Bus portion from nameservice abstraction)
 #
-# Also allow lookups for systemd-exec's DynamicUsers via D-Bus
-#   https://www.freedesktop.org/software/systemd/man/systemd.exec.html
+# Also allow lookups for systemd-exec's DynamicUsers via D-Bus.
+#
+# <figure markdown>
+# https://www.freedesktop.org/software/systemd/man/systemd.exec.html
+# </figure>
 
-  abi <abi/4.0>,
+  abi <abi/5.0>,
 
   dbus send bus=system path=/org/freedesktop/systemd1
        interface=org.freedesktop.systemd1.Manager

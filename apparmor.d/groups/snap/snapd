@@ -2,7 +2,7 @@
 # Copyright (C) 2022-2024 Alexandre Pujol <alexandre@pujol.io>
 # SPDX-License-Identifier: GPL-2.0-only
 
-abi <abi/4.0>,
+abi <abi/5.0>,
 
 include <tunables/global>
 
@@ -136,7 +136,7 @@ profile snapd @{exec_path} {
   /tmp/syscheck-squashfs-@{int} rw,
 
   @{efi}/ r,
-  @{efi}/grub/grubenv r,
+  @{efi}/grub{,2}/grubenv r,
 
   / r,
   /home/ r,

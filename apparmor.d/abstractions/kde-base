@@ -4,7 +4,7 @@
 
 # Minimal kde specific rules.
 
-  abi <abi/4.0>,
+  abi <abi/5.0>,
 
   @{lib}/kde{,3,4}/*.so mr,
   @{lib}/kde{,3,4}/plugins/*/ r,
@@ -17,8 +17,9 @@
   /etc/xdg/kcminputrc r,
   /etc/xdg/kdeglobals r,
   /etc/xdg/kwinrc r,
+  /etc/xdg/menus/plasma-applications.menu r,
 
-  owner @{user_cache_dirs}/#@{int} rw,
+  owner @{user_cache_dirs}/#@{int} rwlk,
   owner @{user_cache_dirs}/icon-cache.kcache rw,
   owner @{user_cache_dirs}/ksycoca{5,6}_??{_,-}* rwlk,
 

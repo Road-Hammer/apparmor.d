@@ -2,7 +2,7 @@
 # Copyright (C) 2024 Alexandre Pujol <alexandre@pujol.io>
 # SPDX-License-Identifier: GPL-2.0-only
 
-abi <abi/4.0>,
+abi <abi/5.0>,
 
 include <tunables/global>
 
@@ -43,8 +43,6 @@ profile loupe @{exec_path} flags=(attach_disconnected) {
   owner @{PROC}/@{pid}/mountinfo r,
   owner @{PROC}/@{pid}/stat r,
   owner @{PROC}/@{pid}/task/@{tid}/comm rw,
-
-  deny @{user_share_dirs}/gvfs-metadata/* r,
 
   include if exists <local/loupe>
 }

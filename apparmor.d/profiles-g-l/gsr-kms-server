@@ -2,7 +2,7 @@
 # Copyright (C) 2026 Alexandre Pujol <alexandre@pujol.io>
 # SPDX-License-Identifier: GPL-2.0-only
 
-abi <abi/4.0>,
+abi <abi/5.0>,
 
 include <tunables/global>
 
@@ -23,6 +23,8 @@ profile gsr-kms-server @{exec_path} {
   /usr/share/gsr-ui/fonts/{,**} r,
 
   /tmp/.gsr-kms-socket-* rw,
+
+  deny /dev/input/event@{int} r, # file_inherit
 
   include if exists <local/gsr-kms-server>
 }

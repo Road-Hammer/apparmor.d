@@ -3,7 +3,7 @@
 # Copyright (C) 2025 Jose Maldonado
 # SPDX-License-Identifier: GPL-2.0-only
 
-abi <abi/4.0>,
+abi <abi/5.0>,
 
 include <tunables/global>
 
@@ -26,9 +26,9 @@ profile rpcbind @{exec_path} flags=(complain) {
 
   /etc/netconfig r,
 
-  @{run}/rpcbind.lock rwkl,
+  @{run}/rpcbind.lock rwlk,
   @{run}/rpcbind.sock rw,
-  @{run}/rpcbind/*.xdr rwkl,
+  @{run}/rpcbind/*.xdr rwlk,
 
   include if exists <local/rpcbind>
 }

@@ -5,7 +5,7 @@
 # Allows control over Bluetooth devices such as pairing, connecting,
 # and managing profiles.
 
-  abi <abi/4.0>,
+  abi <abi/5.0>,
 
   include <abstractions/bluetooth-observe>
 
@@ -22,6 +22,13 @@
        interface=org.freedesktop.DBus.Properties
        member=Set
        peer=(name="{@{busname},org.bluez}", label="@{p_bluetoothd}"),
+
+  # bluez.Device1
+
+  dbus send bus=system path==/org/bluez/hci@{int}/dev_@{hex2}_@{hex2}_@{hex2}_@{hex2}_@{hex2}_@{hex2}
+       interface=org.bluez.Device1
+       member={Pair,Connect}
+       peer=(name=@{busname}, label=bluetoothd),
 
   include if exists <abstractions/bluetooth-control.d>
 

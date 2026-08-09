@@ -3,7 +3,7 @@
 # Copyright (C) 2021-2024 Alexandre Pujol <alexandre@pujol.io>
 # SPDX-License-Identifier: GPL-2.0-only
 
-abi <abi/4.0>,
+abi <abi/5.0>,
 
 include <tunables/global>
 
@@ -92,7 +92,7 @@ profile xorg @{exec_path} flags=(attach_disconnected) {
         /tmp/ r,
         /tmp/server-@{int}.xkm rw,
   owner @{tmp}/.tX@{int}-lock rwk,
-  owner @{tmp}/.X@{int}-lock rwkl -> @{tmp}/.tX@{int}-lock,
+  owner @{tmp}/.X@{int}-lock rwlk -> @{tmp}/.tX@{int}-lock,
   owner @{tmp}/server-* rwk,
   owner @{tmp}/serverauth.* r,
 

@@ -13,7 +13,7 @@
 #
  #     - https://gitlab.com/apparmor/apparmor/-/blob/master/profiles/apparmor/profiles/extras/usr.sbin.sshd
 
-abi <abi/4.0>,
+abi <abi/5.0>,
 
 include <tunables/global>
 
@@ -93,6 +93,8 @@ profile sshd @{exec_path} flags=(attach_disconnected) {
 
   @{etc_ro}/ssh/sshd_config r,
   @{etc_ro}/ssh/sshd_config.d/{,*} r,
+  @{etc_rw}/ssh/sshd_config r,
+  @{etc_rw}/ssh/sshd_config.d/{,*} r,
   /etc/ssh/ssh_host_* r,
 
   /var/lib/lastlog/ r,

@@ -3,7 +3,7 @@
 # Copyright (C) 2021-2024 Alexandre Pujol <alexandre@pujol.io>
 # SPDX-License-Identifier: GPL-2.0-only
 
-abi <abi/4.0>,
+abi <abi/5.0>,
 
 include <tunables/global>
 
@@ -37,7 +37,7 @@ profile repo @{exec_path} {
   /usr/share/git-core/{,**} r,
 
   # Android source dir
-  owner @{user_projects_dirs}/** rwkl -> @{user_projects_dirs}/**,
+  owner @{user_projects_dirs}/** rwlk -> @{user_projects_dirs}/**,
   owner @{user_projects_dirs}/**/.repo/repo/main.py rix,
 
   owner @{HOME}/.gitconfig rw,

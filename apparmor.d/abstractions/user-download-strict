@@ -3,16 +3,16 @@
 # Copyright (C) 2021-2024 Alexandre Pujol <alexandre@pujol.io>
 # SPDX-License-Identifier: GPL-2.0-only
 
-  abi <abi/4.0>,
+  abi <abi/5.0>,
 
   owner @{HOME}/@{XDG_DESKTOP_DIR}/ w,
   owner @{HOME}/@{XDG_DOWNLOAD_DIR}/ w,
 
   owner @{HOME}/@{XDG_DESKTOP_DIR}/ r,
-  owner @{HOME}/@{XDG_DESKTOP_DIR}/** rwkl,
+  owner @{HOME}/@{XDG_DESKTOP_DIR}/** rwlk,
 
   owner @{user_download_dirs}/ r,
-  owner @{user_download_dirs}/** rwkl,
+  owner @{user_download_dirs}/** rwlk,
 
   include if exists <abstractions/user-download-strict.d>
 
