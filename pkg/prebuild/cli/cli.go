@@ -40,6 +40,7 @@ Options:
     -f, --fsp         Configure AppArmor for full system policy and RBAC.
     -S, --src DIR     Profile source directory (default: apparmor.d/).
     -b, --buildir DIR Destination root build directory (default: .build/).
+        --future      Enable the future shipping layout.
         --test        Enable test mode.
         --debug       Enable debug mode.
 `
@@ -52,6 +53,7 @@ var (
 	status   bool
 	fsp      bool
 	debug    bool
+	future   bool
 	test     bool
 	abi      int
 	version  float64
@@ -70,6 +72,7 @@ func init() {
 	flag.BoolVar(&status, "status", false, "Show the status of enabled build tasks.")
 	flag.BoolVar(&fsp, "f", false, "Configure AppArmor for full system policy and RBAC.")
 	flag.BoolVar(&fsp, "fsp", false, "Configure AppArmor for full system policy and RBAC.")
+	flag.BoolVar(&future, "future", false, "Enable the future shipping layout.")
 	flag.IntVar(&abi, "a", nilABI, "Target apparmor ABI.")
 	flag.IntVar(&abi, "abi", nilABI, "Target apparmor ABI.")
 	flag.Float64Var(&version, "v", nilVer, "Target apparmor version.")
@@ -97,6 +100,13 @@ func GetPrebuildRoot() *paths.Path {
 		return paths.New(buildir)
 	}
 	return paths.New(".build")
+}
+
+// Future reports whether the `--future` flag is set. When true, the build
+// uses the new shipping layout (e.g. profiles are not merged into a flat
+// apparmor.d/ directory).
+func Future() bool {
+	return future
 }
 
 func Configure(r *runtime.Runners) *runtime.Runners {
@@ -145,39 +155,27 @@ func Configure(r *runtime.Runners) *runtime.Runners {
 			r.Builders.Add(builder.NewAPPARMOR40())
 		}
 
-		// Re-attach disconnected path
 		if tasks.Distribution == "ubuntu" && r.Version >= 4.1 {
-			// Ignored on ubuntu 25.04+ due to a memory leak that fully prevent
-			// profiles compilation with re-attached paths.
-			// See https://bugs.launchpad.net/ubuntu/+source/linux/+bug/2098730
-
 			// Use stacked-dbus builder to resolve dbus rules
 			r.Builders.Add(builder.NewStackedDbus())
 
-		} else {
-			if !r.DownStream {
-				r.Configures.Add(configure.NewAttach())
-			}
-			r.Builders.Add(builder.NewAttach())
 		}
+
+		if !r.DownStream {
+			r.Configures.Add(configure.NewAttach())
+		}
+		r.Builders.Add(builder.NewAttach())
 
 	case 5:
-		// Re-attach disconnected path
 		if tasks.Distribution == "ubuntu" {
-			// Ignored on ubuntu 25.04+ due to a memory leak that fully prevent
-			// profiles compilation with re-attached paths.
-			// See https://bugs.launchpad.net/ubuntu/+source/linux/+bug/2098730
-
 			// Use stacked-dbus builder to resolve dbus rules
 			r.Builders.Add(builder.NewStackedDbus())
-
-		} else {
-			if !r.DownStream {
-				r.Configures.Add(configure.NewAttach())
-			}
-			r.Builders.Add(builder.NewAttach())
-
 		}
+
+		if !r.DownStream {
+			r.Configures.Add(configure.NewAttach())
+		}
+		r.Builders.Add(builder.NewAttach())
 
 	default:
 		logging.Fatal("Invalid ABI version: %d", r.ABI)
