@@ -36,6 +36,7 @@ profile nautilus @{exec_path} flags=(attach_disconnected) {
 
   #aa:dbus talk bus=session name=org.freedesktop.impl.portal.FileChooser path=/org/freedesktop/portal/desktop label=xdg-desktop-portal-gnome
   #aa:dbus talk bus=session name=org.freedesktop.portal.FileTransfer path=/org/freedesktop/portal/documents label=xdg-document-portal
+  #aa:dbus talk bus=session name=org.gnome.NautilusPreviewer label=org.gnome.NautilusPreviewer
   #aa:dbus talk bus=session name=org.gnome.Settings label=gnome-control-center
   #aa:dbus talk bus=session name=org.gtk.MountOperationHandler label=gnome-shell
   #aa:dbus talk bus=session name=org.gtk.Notifications label=gnome-shell
@@ -54,11 +55,6 @@ profile nautilus @{exec_path} flags=(attach_disconnected) {
   dbus send bus=session path=/org/freedesktop/DBus
        interface=org.freedesktop.DBus.Properties
        member=GetAll
-       peer=(name=org.freedesktop.DBus, label="@{p_dbus_session}"),
-
-  dbus send bus=session path=/org/freedesktop/DBus
-       interface=org.freedesktop.DBus
-       member=ListActivatableNames
        peer=(name=org.freedesktop.DBus, label="@{p_dbus_session}"),
 
   dbus send bus=session path=/org/freedesktop/dbus

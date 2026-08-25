@@ -21,22 +21,30 @@ main() {
 
 	case "$ID" in
 	arch)
-		rm -f $SRC/*.sig      # Ignore signature files
-		rm -f $SRC/*enforced* # Ignore enforced package
-		pacman --noconfirm -U $SRC/*.pkg.tar.zst || true
+		rm -f $SRC/*.sig # Ignore signature files
+		pacman -Rdd --noconfirm dbus-broker dbus-broker-units dbus-units || true
+		pacman -U --noconfirm --overwrite '*' $SRC/*.pkg.tar.zst || true
+		systemctl enable aa-flatpak || true
 		;;
 
 	debian | ubuntu)
-		if dpkg-vendor --is Ubuntu; then
-			suffix="ubuntu1~$(lsb_release -sr)"
-		elif dpkg-vendor --is Debian; then
-			suffix="1+deb$(lsb_release -sr)"
+		if [ "$ID" = ubuntu ]; then
+			suffix="ubuntu1~"
+		else
+			suffix="1+deb"
 		fi
-		dpkg -i $SRC/*-"${suffix}"*.deb || true
+		apt-get install -y --no-install-recommends $SRC/*-"${suffix}"*.deb
 		;;
 
-	opensuse* | fedora)
+	opensuse*)
 		mv "/home/$SUDO_USER/.bash_aliases" "/home/$SUDO_USER/.alias"
+		rpm -i $SRC/*.rpm || true
+		;;
+
+	fedora)
+		mkdir -p "/home/$SUDO_USER/.bashrc.d"
+		chown -R "$SUDO_USER:$SUDO_USER" "/home/$SUDO_USER/.bashrc.d"
+		mv "/home/$SUDO_USER/.bash_aliases" "/home/$SUDO_USER/.bashrc.d/aliases"
 		rpm -i $SRC/*.rpm || true
 		;;
 
