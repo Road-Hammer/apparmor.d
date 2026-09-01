@@ -11,6 +11,8 @@ jobs:
     steps:
       - name: Check out repository code
         uses: actions/checkout@v7
+        with:
+          persist-credentials: false
 
       - name: Install linter dependencies
         run: |
@@ -32,6 +34,8 @@ jobs:
     steps:
       - name: Check out repository code
         uses: actions/checkout@v7
+        with:
+          persist-credentials: false
 
       - name: Install Build dependencies
         run: |
@@ -52,14 +56,13 @@ jobs:
           sudo mkdir -p /etc/apparmor
           sudo tee /etc/apparmor/modes > /dev/null <<EOF
           default complain
-          include default
-          reload no
+          include all
+          reload yes
           EOF
 
       - name: Install apparmor.d
         run: |
             sudo dpkg --install .pkg/apparmor.d*.deb
-            sudo aa-install --install --all
 
       - name: Show the installation status
         run: sudo aa-install --status
@@ -94,6 +97,8 @@ jobs:
     steps:
       - name: Check out repository code
         uses: actions/checkout@v7
+        with:
+          persist-credentials: false
 
       - name: Restore the cached build packages
         uses: actions/cache/restore@v6
@@ -118,14 +123,13 @@ jobs:
           sudo mkdir -p /etc/apparmor
           sudo tee /etc/apparmor/modes > /dev/null <<EOF
           default complain
-          include default
-          reload no
+          include all
+          reload yes
           EOF
 
       - name: Install apparmor.d
         run: |
           sudo dpkg --install .pkg/apparmor.d*.deb
-          sudo aa-install --install --all
           sudo systemctl restart apparmor.service
           sudo systemctl daemon-reload
           systemctl --user daemon-reload

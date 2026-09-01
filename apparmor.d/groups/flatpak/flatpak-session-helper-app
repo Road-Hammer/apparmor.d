@@ -1,5 +1,5 @@
 # apparmor.d - Full set of apparmor profiles
-# Copyright (C) 2025 Alexandre Pujol <alexandre@pujol.io>
+# Copyright (C) 2022-2026 Alexandre Pujol <alexandre@pujol.io>
 # SPDX-License-Identifier: GPL-2.0-only
 
 abi <abi/5.0>,
@@ -25,6 +25,12 @@ profile flatpak-session-helper-app flags=(attach_disconnected) {
   ptrace read,
 
   @{exec_path} mrk,
+
+  if ${WITH_FLATPAKAPPS} {
+    #aa:only abi>=5
+    # Sandbox escape using the helper binary is not allowed in this mode.
+    deny @{exec_path} mrk,
+  }
 
   @{bin}/@{shells}                   Ux, #aa:exclude RBAC
   @{bin}/udevadm                     Cx -> udevadm,
